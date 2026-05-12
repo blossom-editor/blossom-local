@@ -1,0 +1,124 @@
+.todo-stat-root {
+  @include box(100%, 100%);
+  padding: 10px 15px 20px 15px;
+
+  .stat-global,
+  .phared-details {
+    @include themeShadow(0 0 5px #d7d7d7, 0 0 5px #000000);
+    @include themeBg(#fafafa, #0f0f0f);
+    border-radius: 6px;
+    margin-bottom: 20px;
+    padding: 10px 0;
+
+    .title {
+      @include font(17px, 300);
+      padding: 5px 10px;
+      color: var(--bl-text-color);
+    }
+
+    .sub-title {
+      @include font(12px, 300);
+      padding: 0 15px;
+      color: var(--bl-text-color-light);
+    }
+  }
+
+  .stat-global {
+    @include themeShadow(0 0 5px #d7d7d7, 0 0 5px #000000);
+    @include themeBg(#fafafa, #0f0f0f);
+    border-radius: 6px;
+    margin-bottom: 20px;
+
+    .chart-line-completed {
+      @include box(100%, 230px);
+    }
+
+    .item-row {
+      padding: 10px;
+
+      & > div:first-child {
+        margin-left: 10px;
+      }
+
+      & > div:last-child {
+        margin-right: 10px;
+      }
+
+      .stat-item {
+        width: 150px;
+        height: 80px;
+        color: var(--bl-text-color);
+        border-radius: 6px;
+        padding: 10px 15px;
+        position: relative;
+        overflow: hidden;
+
+        &:hover {
+          .icon-shadow {
+            transform: scale(1.2);
+          }
+        }
+
+        .label {
+          @include font(17px, 300);
+          padding-bottom: 10px;
+        }
+
+        .value {
+          @include font(24px, 500);
+          position: relative;
+          padding-left: 5px;
+          line-height: 20px;
+
+          // &::before {
+          //   content: '';
+          //   @include box(6px, 100%);
+          //   @include absolute('', '', '', 0px);
+          //   display: block;
+          //   background-color: #000000;
+          //   border-radius: 4px;
+          //   filter: blur(1px);
+          // }
+        }
+
+        .icon-shadow {
+          @include font(60px, 500);
+          @include absolute(5px, 5px, '', '');
+          z-index: 1;
+          color: var(--bl-text-color-light);
+          transition: all 0.3s;
+        }
+      }
+
+      .stat-item.waiting {
+        background-color: var(--bl-todo-wait-color);
+      }
+
+      .stat-item.progress {
+        background-color: var(--bl-todo-proc-color);
+      }
+
+      .stat-item.completed {
+        background-color: var(--bl-todo-comp-color);
+      }
+
+      .stat-item.total {
+        background-color: var(--el-color-primary-light-7);
+
+        .value {
+          &::before {
+            background-color: var(--el-color-primary-light-7);
+          }
+        }
+      }
+    }
+  }
+
+  .phared-details {
+    .row {
+      @include font(12px, 300);
+      padding: 5px 15px 0 15px;
+      color: var(--bl-text-color);
+    }
+  }
+}

@@ -1,0 +1,99 @@
+.config-root {
+  @include box(100%, 100%);
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 10px;
+  padding-bottom: 50px;
+
+  a {
+    color: var(--el-color-primary);
+  }
+
+  .el-form {
+    max-width: 800px;
+    margin-bottom: 50px;
+    :deep(.el-form-item__label) {
+      padding-top: 5px;
+    }
+  }
+
+  .config-module-titile {
+    font-size: 25px;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+    color: var(--bl-text-color);
+    border-bottom: 1px solid var(--el-border-color);
+    .iconbl {
+      font-size: 30px;
+      margin-right: 10px;
+    }
+  }
+
+  .title {
+    color: var(--el-color-primary);
+    margin-bottom: 10px;
+    font-weight: 700;
+    .version {
+      @include font(11px, 300);
+      padding-left: 10px;
+      color: var(--bl-text-color-light);
+    }
+  }
+
+  .desc {
+    @include font(12px, 300);
+    line-height: 30px;
+    margin-bottom: 30px;
+    color: var(--bl-text-color-light);
+
+    .iconbl {
+      @include font(12px, 300);
+      padding-right: 5px;
+    }
+  }
+
+  code {
+    @include themeColor(#909399, #909399);
+    background-color: var(--bl-preview-code-bg-color);
+    border-radius: var(--bl-preview-border-radius);
+    padding: 0px 4px;
+    border-radius: 3px;
+    margin: 0 5px;
+    user-select: text;
+  }
+
+  .conf-tip {
+    color: var(--bl-text-color-light);
+    .blod {
+      color: var(--el-color-primary);
+      font-style: italic;
+    }
+  }
+
+  .conf-watermark {
+    @include box(100%, auto);
+    color: var(--bl-text-color);
+    border: 1px solid var(--el-border-color);
+    background-color: var(--bl-bg-color);
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+
+    .label {
+      min-width: 50px;
+      margin: 0 10px;
+
+      &:first-child {
+        margin-left: 0;
+      }
+    }
+
+    .el-input {
+      width: calc(100% - 80px);
+    }
+
+    .el-input-number {
+      width: 130px;
+    }
+  }
+}

@@ -1,0 +1,204 @@
+.task-workbench {
+  @include box(100%, 90px);
+  font-weight: 300;
+  color: var(--bl-text-color);
+  border-bottom: 1px solid var(--el-border-color);
+
+  .task-name {
+    @include font(16px, 300);
+    text-shadow: var(--bl-text-shadow);
+  }
+
+  .waiting {
+    background-color: var(--bl-todo-wait-color);
+  }
+
+  .processing {
+    background-color: var(--bl-todo-proc-color);
+  }
+
+  .completed {
+    background-color: var(--bl-todo-comp-color);
+  }
+
+  .bars {
+    padding: 10px 10px 5px;
+
+    div {
+      @include font(13px, 300);
+      height: 13px;
+      margin: 0 3px;
+      border-radius: 4px;
+      padding: 3px 10px;
+      text-align: center;
+      transition: width 1s;
+      box-shadow:
+        inset 0 3px #ffffff5d,
+        inset 0 -2px #46464680,
+        0 2px 4px #c0c0c0;
+
+      [class='dark'] & {
+        box-shadow:
+          inset 0 3px #ffffff48,
+          inset 0 -3px #2f2f2fa9,
+          0 2px 4px #000000;
+      }
+    }
+
+    .bar-light {
+      box-shadow:
+        inset 0 1px #ffffff5d,
+        inset 0 -1px #46464680,
+        0 1px 4px #c0c0c0;
+
+      [class='dark'] & {
+        box-shadow:
+          inset 0 1px #ffffff48,
+          inset 0 -1px #2f2f2fa9,
+          0 1px 4px #000000;
+      }
+    }
+  }
+
+  .tag-select {
+    width: 150px;
+
+    :deep(.el-tag--small) {
+      @include themeColor(#fff, #000);
+      background-color: var(--el-color-primary-light-3);
+      height: 18px;
+
+      .el-tag__close {
+        @include themeColor(#fff, #000);
+      }
+    }
+  }
+
+  .bars-legend {
+    font-size: 14px;
+    color: var(--bl-text-color-light);
+
+    & > div {
+      @include box(7px, 7px);
+      border-radius: 50%;
+      margin: 0 5px 0 20px;
+    }
+  }
+}
+
+.task-workbench-child {
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  transition: all 0.2s ease;
+  padding-left: 10px;
+  font-size: 12px;
+  color: var(--bl-text-color);
+}
+
+.progress-container {
+  @include box(100%, calc(100% - 100px));
+  @include flex(row, flex-start, center);
+  padding-top: 20px;
+  overflow-x: scroll;
+
+  .task-tip {
+    @include font(12px, 300);
+    @include themeColor(#d3d3d3, rgb(65, 65, 65));
+  }
+
+  .add-icon {
+    @include font(16px, 300);
+    padding: 0 3px;
+    color: var(--bl-text-color-light);
+    cursor: pointer;
+
+    &:hover {
+      color: var(--el-color-primary);
+    }
+  }
+
+  .waiting,
+  .processing,
+  .completed {
+    @include flex(column, flex-start, center);
+    @include box(350px, 100%, 350px, 350px);
+    color: var(--bl-text-color);
+    position: relative;
+    padding: 0 10px;
+
+    .tasks-title {
+      @include flex(row, space-between, flex-end);
+      @include box(270px, 30px);
+      @include font(28px, 700);
+      text-shadow: var(--bl-text-shadow);
+    }
+
+    .tasks-sub-title {
+      @include flex(row, space-between, center);
+      @include box(270px, 30px);
+      @include font(13px, 300);
+      padding: 0 5px;
+      color: var(--bl-text-color-light);
+      border-bottom: 1px solid var(--el-border-color);
+    }
+
+    .tasks-container {
+      @include box(100%, calc(100% - 60px));
+      @include flex(column, flex-start, center);
+      position: relative;
+      overflow-y: scroll;
+      padding: 20px 0;
+
+      .drag-container {
+        @include box(295px, 100%);
+        @include absolute(0, '', '', calc(50% - 140px));
+        padding: 30px 0;
+        color: transparent;
+        text-align: center;
+        display: none;
+        z-index: 2;
+
+        div {
+          pointer-events: none;
+        }
+      }
+
+      .drag-container.enter {
+        @include themeBg(#f5f5f5e8, #171717e0);
+        @include themeColor(#c6c6c6, #505050);
+        @include themeShadow(inset 0 0 5px 2px #c4c4c4, inset 0 0 8px 2px #000000);
+        font-weight: 300;
+        border-radius: 10px;
+        border: 3px solid var(--el-color-primary);
+
+        .iconbl {
+          @include themeColor(#e4e4e4, #2c2c2c);
+          display: inherit;
+          margin-top: 40px;
+          font-size: 90px;
+        }
+      }
+    }
+  }
+}
+
+.task-popover {
+  background-color: var(--bl-bg-color) !important;
+  color: red;
+
+  & > div {
+    padding: 5px 5px 5px 5px;
+    margin: 0 5px 5px 5px;
+    border-radius: 5px;
+    text-align: left;
+    cursor: pointer;
+
+    &:hover {
+      background: var(--el-color-primary-light-8);
+    }
+
+    .el-input-number--small {
+      margin-left: 10px;
+      width: 80px;
+    }
+  }
+}

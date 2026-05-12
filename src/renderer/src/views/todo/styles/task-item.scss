@@ -1,0 +1,160 @@
+.task-item {
+  @include box(270px, auto, 270px, 270px);
+  font-weight: 300;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  transition: box-shadow 0.1s;
+  position: relative;
+
+  .selection {
+    @include box(270px, 100%);
+    @include themeBg(#f9f9f9b8, #0f0f0fb8);
+    border-radius: 4px;
+    border: 3px dashed var(--el-border-color);
+    position: absolute;
+    z-index: 3;
+    cursor: pointer;
+
+    .iconbl {
+      color: var(--el-border-color);
+      font-size: 45px;
+    }
+  }
+
+  .divider {
+    @include themeColor(#cfcfcf, #545454e0);
+    @include themeBorder(2px, #cfcfcf, #545454e0, 'bottom', 0, dashed);
+    width: 100%;
+    font-size: 12px;
+  }
+
+  &:has(.divider) {
+    width: 100%;
+    background-color: transparent;
+    box-shadow: none;
+    pointer-events: none;
+    border: none;
+
+    &:hover {
+      box-shadow: none;
+    }
+  }
+
+  &:hover {
+    @include themeShadow(0 0 9px #c0c0c0, 0 0 10px #000000);
+
+    .task-title {
+      .iconbl {
+        opacity: 1;
+      }
+    }
+  }
+
+  .task-title {
+    @include themeBrightness(100%, 80%);
+    @include themeColor(#4d4d4d, #d8d8d8);
+    font-size: 14px;
+    padding: 5px 5px 5px 10px;
+    margin-bottom: 5px;
+    border-top-left-radius: 4px;
+    border-top-right-radius: 4px;
+    cursor: move;
+
+    .el-input {
+      --el-input-bg-color: var(--bl-html-color) !important;
+    }
+
+    & > div {
+      transition: color 0.2s;
+
+      &:hover {
+        @include themeColor(#000000, #ececec);
+      }
+    }
+
+    // 任务的操作按钮
+    .iconbl {
+      opacity: 0;
+    }
+  }
+
+  .task-tags {
+    padding: 2px 7px;
+    align-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .task-times {
+    height: 20px;
+    font-size: 13px;
+    padding: 0 10px;
+    color: var(--bl-text-color-light);
+  }
+
+  .dead-line {
+    @include themeColor(#d5002e, #a50024);
+  }
+
+  .task-content-placeholder {
+    height: 10px;
+    width: 250px;
+    margin: 5px 10px 10px 10px;
+    transition: background 0.3s;
+    border-radius: 3px;
+    cursor: cell;
+    &:hover {
+      @include themeBg(#e6e6e6, #242424);
+    }
+  }
+
+  .task-content {
+    padding: 5px 10px;
+    font-size: 13px;
+    color: var(--bl-text-color-light);
+    white-space: pre-line;
+    word-wrap: break-word;
+    overflow: auto;
+    transition: color 0.2s;
+    cursor: cell;
+
+    &:hover {
+      @include themeColor(#555555, #a5a5a5);
+    }
+  }
+
+  .el-progress {
+    padding: 0 10px;
+    margin-bottom: 10px;
+
+    .el-progress__text {
+      font-size: 12px !important;
+      min-width: auto;
+      color: var(--bl-text-color-light);
+    }
+  }
+}
+
+.task-item-normal {
+  @include themeShadow(0 0 5px #c0c0c0, 0 0 3px #000000);
+  @include themeBg(#f9f9f9, #141414);
+}
+
+.task-item-heavy {
+  @include themeShadow(0 0 5px #c0c0c0, 0 0 3px #000000);
+  @include themeBg(#f9f9f9, #141414);
+  border: 1px solid #00000000;
+}
+
+.task-item-light {
+  border: 1px solid var(--el-border-color);
+}
+
+.task-item.moving {
+  border: 1px dashed var(--el-border-color);
+  box-shadow: none;
+  cursor: move;
+
+  * {
+    visibility: hidden;
+  }
+}

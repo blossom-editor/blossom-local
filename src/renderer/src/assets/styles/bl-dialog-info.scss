@@ -1,0 +1,47 @@
+$height-title: 50px;
+$height-footer: 50px;
+$height-form: calc(100% - #{$height-title} - #{$height-footer});
+
+.info-title {
+  @include box(100%, $height-title);
+  @include flex(row, flex-start, center);
+  @include font(16px);
+  border-bottom: 1px solid var(--el-border-color);
+  padding-left: 10px;
+  color: var(--bl-text-title-color);
+  text-shadow: var(--bl-text-shadow);
+  padding-bottom: 8px;
+
+  .iconbl {
+    font-size: 25px;
+    margin-right: 10px;
+  }
+}
+
+.info-form {
+  @include box(100%, $height-form);
+  padding: 10px 10px 0;
+
+  :deep(.el-form--inline .el-form-item) {
+    width: calc(100% - 10px);
+    margin-right: 10px;
+    margin-bottom: 10px;
+  }
+
+  .emoji-link {
+    cursor: pointer;
+  }
+}
+
+.info-footer {
+  @include box(100%, $height-footer);
+  @include flex(row, space-between, center);
+  border-top: 1px solid var(--el-border-color);
+  padding: 10px;
+  text-align: right;
+}
+
+.tips {
+  @include font(13px, 300);
+  padding: 5px 10px;
+}

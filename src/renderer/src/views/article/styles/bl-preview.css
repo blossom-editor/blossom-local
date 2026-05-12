@@ -1,0 +1,450 @@
+/*
+ * 编辑器的预览页样式
+ */
+.bl-preview {
+  color: var(--bl-preview-color);
+  background-color: var(--bl-preview-bg-color);
+  line-height: 20px;
+}
+
+.bl-preview * {
+  user-select: text;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+.bl-preview a {
+  color: var(--el-color-primary);
+  font-weight: bold;
+}
+
+.bl-preview a.inner-link {
+  border-bottom: 2px dashed #858585;
+  box-sizing: border-box;
+  padding: 0 4px;
+  text-decoration: none;
+}
+
+.bl-preview img {
+  border-radius: var(--bl-preview-border-radius);
+  max-width: 100%;
+  filter: var(--bl-preview-img-filter);
+}
+
+/* // 列表 */
+.bl-preview h1 {
+  margin-top: 70px;
+  padding: 10px 0;
+  border-bottom: 3px solid var(--bl-preview-h1-bg-color);
+  text-align: left;
+  position: relative;
+  font-size: 30px !important;
+  line-height: 35px;
+}
+
+.bl-preview h1:first-child {
+  margin-top: 0px;
+}
+
+.bl-preview h2 {
+  font-size: 25px !important;
+  line-height: 30px;
+}
+
+.bl-preview h3 {
+  font-size: 22px !important;
+  line-height: 27px;
+}
+
+.bl-preview h4 {
+  font-size: 19px !important;
+}
+
+.bl-preview h5,
+h6 {
+  font-size: 16px !important;
+}
+
+.bl-preview li::marker {
+  color: #989898;
+}
+
+/* 有序列表 */
+.bl-preview ol {
+  padding-left: 2em;
+  font-size: inherit;
+  font-family: inherit;
+}
+
+/* 无序列表 */
+.bl-preview ul {
+  padding-left: 2em;
+}
+
+/* checkbox */
+.bl-preview li input {
+  margin: 0 0 0 -1.4em;
+}
+
+.bl-preview li:has(> input)::marker {
+  content: none;
+}
+
+.bl-preview li:has(> p > input)::marker {
+  content: none;
+}
+
+/* 分割线 */
+.bl-preview hr {
+  border-color: var(--bl-preview-hr-color);
+}
+
+/* 表格 */
+.bl-preview table {
+  border: 1px solid var(--bl-preview-table-border-color);
+  box-sizing: border-box;
+  padding: 0;
+  border-spacing: 0;
+  margin: 10px 0;
+  max-width: 100%;
+  /* fixed|auto */
+  table-layout: auto;
+  width: 100%;
+}
+
+.bl-preview table thead {
+  background-color: var(--bl-preview-table-thead-bg-color);
+  color: #d4d4d4;
+}
+
+.bl-preview table thead code {
+  background-color: #000000;
+}
+
+.bl-preview table thead tr {
+}
+
+.bl-preview table thead tr th {
+  font-size: 16px !important;
+  padding: 10px;
+  border-right: 1px solid var(--bl-preview-table-border-color);
+}
+
+.bl-preview table thead tr th:last-child {
+  border: 0;
+}
+
+.bl-preview table tbody {
+}
+
+.bl-preview table tbody tr {
+}
+
+.bl-preview table tbody tr td {
+  padding: 5px;
+  border-right: 1px solid var(--bl-preview-table-border-color);
+  border-bottom: 1px solid var(--bl-preview-table-border-color);
+  word-wrap: break-word;
+  width: auto;
+  /* max-width: 200px; */
+}
+
+.bl-preview table tbody tr td:last-child {
+  border-right: 0;
+}
+
+.bl-preview table tbody tr:last-child {
+}
+
+.bl-preview table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* 
+table container
+*/
+
+.bl-preview .bl-table-container {
+  border: 0;
+}
+
+.bl-preview .bl-table-container thead {
+  display: none;
+}
+
+.bl-preview .bl-table-container tbody {
+}
+
+.bl-preview .bl-table-container tbody td {
+  border: 0;
+}
+
+/* 引用 */
+.bl-preview blockquote {
+  padding: 1px 10px;
+  margin: 10px 0;
+  color: var(--bl-preview-blockquote-color);
+  border-left: 3px solid var(--bl-preview-blockquote-border-color);
+  border-radius: var(--bl-preview-border-radius);
+  background-color: var(--bl-preview-blockquote-bg-color);
+}
+
+.bl-preview blockquote blockquote {
+  border: 1px solid var(--bl-preview-blockquote-border-color);
+  /* // border: 1px solid #dedede;
+    // border-left: 3px solid #bebebe; */
+}
+
+.bl-preview .bl-blockquote-green {
+  background-color: var(--bl-preview-blockquote-bg-green);
+  border-left: 3px solid var(--bl-preview-blockquote-border-green);
+}
+
+.bl-preview .bl-blockquote-yellow {
+  background-color: var(--bl-preview-blockquote-bg-yellow);
+  border-left: 3px solid var(--bl-preview-blockquote-border-yellow);
+}
+
+.bl-preview .bl-blockquote-red {
+  background-color: var(--bl-preview-blockquote-bg-red);
+  border-left: 3px solid var(--bl-preview-blockquote-border-red);
+}
+
+.bl-preview .bl-blockquote-blue {
+  background-color: var(--bl-preview-blockquote-bg-blue);
+  border-left: 3px solid var(--bl-preview-blockquote-border-blue);
+}
+
+.bl-preview .bl-blockquote-purple {
+  background-color: var(--bl-preview-blockquote-bg-purple);
+  border-left: 3px solid var(--bl-preview-blockquote-border-purple);
+}
+
+.bl-preview .bl-blockquote-black {
+  background-color: var(--bl-preview-blockquote-bg-black);
+  border-left: 3px solid var(--bl-preview-blockquote-border-black);
+}
+
+/* 单行代码块 */
+.bl-preview code {
+  background-color: var(--bl-preview-code-bg-color);
+  padding: 0px 4px;
+  border-radius: 3px;
+  margin: 0 5px;
+}
+
+/* 代码块 */
+.bl-preview pre {
+  padding: 15px 14px 15px 34px;
+  background-color: var(--bl-preview-pre-bg-color);
+  border-radius: var(--bl-preview-border-radius);
+  box-shadow: var(--bl-preview-pre-box-shadow);
+  position: relative;
+  overflow: hidden;
+}
+
+.bl-preview pre .pre-copy {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  text-align: right;
+  z-index: 10;
+  color: #5c5c5c;
+  padding: 1px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.bl-preview pre .pre-copy:hover {
+  background-color: #1a1a1a;
+  color: #9d9d9d;
+}
+
+.bl-preview pre .pre-copy:active {
+  color: #e2e2e2;
+}
+
+.bl-preview pre ol {
+  margin: 0;
+  padding-left: 0;
+  position: absolute;
+  top: 15px;
+  left: 3px;
+  user-select: none;
+}
+
+.bl-preview pre ol li {
+  list-style: none;
+}
+
+.bl-preview pre ol li .line-num {
+  width: 30px;
+  display: inline-block;
+  text-align: right;
+  padding-right: 10px;
+  color: #6a6a6a;
+  user-select: none;
+}
+
+.bl-preview pre code {
+  background-color: inherit;
+  border-radius: 0;
+  margin: 0;
+
+  height: 100%;
+  width: 100%;
+  display: block;
+  padding: 0;
+  overflow: auto;
+}
+
+.bl-preview pre pre code.hljs {
+  display: block;
+  overflow-x: auto;
+}
+
+.bl-preview pre code.hljs {
+  text-shadow: none;
+}
+
+/*!
+  Theme: Darcula
+  Author: jetbrains
+  License: ~ MIT (or more permissive) [via base16-schemes-source]
+  Maintainer: @highlightjs/core-team
+  Version: 2021.09.0
+*/
+.hljs {
+  color: var(--bl-preview-pre-text-color);
+  background: var(--bl-preview-pre-bg-color);
+}
+
+.hljs ::selection,
+.hljs::selection {
+  background-color: #323232;
+  color: var(--bl-preview-pre-text-color);
+}
+
+.hljs-comment {
+  color: #606366;
+}
+
+.hljs-tag {
+  color: #a4a3a3;
+}
+
+.hljs-operator,
+.hljs-punctuation,
+.hljs-subst {
+  color: var(--bl-preview-pre-text-color);
+}
+
+.hljs-operator {
+  opacity: 0.7;
+}
+
+.hljs-bullet,
+.hljs-deletion,
+.hljs-name,
+.hljs-selector-tag,
+.hljs-template-variable,
+.hljs-variable {
+  color: #4eade5;
+}
+
+.hljs-attr {
+  color: #cc7832;
+}
+
+.hljs-link,
+.hljs-literal,
+.hljs-number,
+.hljs-symbol,
+.hljs-variable.constant_ {
+  color: #689757;
+}
+
+.hljs-class .hljs-title,
+.hljs-title,
+.hljs-title.class_ {
+  color: #e4b568;
+}
+
+.hljs-strong {
+  font-weight: 700;
+  color: #bbb529;
+}
+
+.hljs-addition,
+.hljs-code,
+.hljs-string,
+.hljs-title.class_.inherited__ {
+  color: #6a8759;
+}
+
+.hljs-built_in,
+.hljs-doctag,
+.hljs-keyword.hljs-atrule,
+.hljs-quote,
+.hljs-regexp {
+  color: #629755;
+}
+
+.hljs-attribute,
+.hljs-function .hljs-title,
+.hljs-section,
+.hljs-title.function_,
+.ruby .hljs-property {
+  color: #9876aa;
+}
+
+.diff .hljs-meta,
+.hljs-keyword,
+.hljs-template-tag,
+.hljs-type {
+  color: #cc7832;
+}
+
+.hljs-emphasis {
+  color: #cc7832;
+  font-style: italic;
+}
+
+.hljs-meta,
+.hljs-meta .hljs-keyword,
+.hljs-meta .hljs-string {
+  color: #b4b428;
+}
+
+.hljs-meta .hljs-keyword,
+.hljs-meta-keyword {
+  font-weight: 700;
+}
+
+.bl-preview-analysis-fail-block {
+  width: 100%;
+  padding: 30px;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.bl-preview-analysis-fail-block .fail-title {
+  color: red;
+}
+
+.bl-preview-analysis-fail-inline {
+  display: inline-block;
+  padding: 0 5px;
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.bl-preview .mermaid-container {
+  /* border: 1px solid var(--el-border-color);
+  border-radius: 4px; */
+}
+
+.bl-preview .mermaid-container svg {
+  height: 100% !important;
+}
