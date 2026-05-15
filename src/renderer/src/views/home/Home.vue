@@ -35,18 +35,6 @@
           </bl-col>
         </bl-row>
 
-        <!-- 流量统计 -->
-        <!-- <div > -->
-        <bl-row v-if="userStore.sysParams.SENTINEL_ENABLED === '1'" class="container-name">请求流量</bl-row>
-        <bl-row v-if="userStore.sysParams.SENTINEL_ENABLED === '1'" class="container-sub-name">
-          Flow Statistic / Requests & Average Response Time(ms)
-          <span class="iconbl bl-refresh-smile" @click="loadSentinlLine"></span>
-        </bl-row>
-        <bl-row v-if="userStore.sysParams.SENTINEL_ENABLED === '1'" width="880px" height="250px">
-          <SentinelChartLine ref="SentinelChartLineRef"></SentinelChartLine>
-        </bl-row>
-        <!-- </div> -->
-
         <!-- 热力图 -->
         <bl-row class="container-name">编辑热力图</bl-row>
         <bl-row class="container-sub-name">
@@ -144,21 +132,14 @@ const userStore = useUserStore()
 const { userinfo } = storeToRefs(userStore)
 
 const ChartLineWordsRef = ref()
-const SentinelChartLineRef = ref()
 const ChartHeatmapRef = ref()
 
 onActivated(() => {
   now.value = nowWhen()
-  loadSentinlLine()
 })
 const loadWordLine = () => ChartLineWordsRef.value.reload()
 const loadArticleHeapmap = () => ChartHeatmapRef.value.reload()
-const loadSentinlLine = () => {
-  if (userStore.sysParams.SENTINEL_ENABLED === '1') {
-    SentinelChartLineRef.value.reload()
-    SentinelChartLineRef.value.windowResize()
-  }
-}
+
 const now = ref(nowWhen())
 //#region ----------------------------------------< 字数编辑 >--------------------------------------
 const isShowWordsInfoDialog = ref(false)

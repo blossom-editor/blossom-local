@@ -17,15 +17,10 @@ export const provideKeyCurArticleInfo = Symbol() as InjectionKey<Ref<DocInfo | u
  */
 export const treeToInfo = (tree: DocTree): DocInfo => {
   return {
-    id: tree.i,
-    pid: '0',
-    name: tree.n,
-    tags: tree.t,
-    sort: 1,
-    openStatus: 0,
-    starStatus: 0,
-    type: tree.ty,
-    storePath: tree.sp
+    id: tree.id,
+    path: tree.path,
+    name: tree.name,
+    type: tree.type
   }
 }
 
@@ -45,10 +40,7 @@ export const isArticle = (doc: DocInfo | undefined): boolean => {
   if (isNull(doc)) {
     return false
   }
-  if (isNull(doc!.type) || doc!.type != 3) {
-    return false
-  }
-  return true
+  return doc!.type === 'ARTICLE'
 }
 
 /**

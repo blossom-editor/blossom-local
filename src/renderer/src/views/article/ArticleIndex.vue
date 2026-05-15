@@ -478,26 +478,26 @@ const clickCurDoc = async (tree: DocTree) => {
   let doc: DocInfo = treeToInfo(tree)
   curDoc.value = doc
   // 如果选中的是文章, 则查询文章详情, 用于在编辑器中显示以及注入
-  if (doc.type == 3) {
+  if (doc.type == 'ARTICLE') {
     // 重复点击同一个, 不会多次查询
-    if (isArticle(curArticle.value) && curArticle.value!.id == doc.id) {
+    if (isArticle(curArticle.value) && curArticle.value!.path == doc.path) {
       return
     }
     editorLoadingTimeout = setTimeout(() => (editorLoading.value = true), 100)
     await saveCurArticleContent(true)
     clearTocAndImg()
-    await articleInfoApi({ id: doc.id, showToc: false, showMarkdown: true, showHtml: false })
+    await articleInfoApi({ path: doc.path! })
       .then((resp) => {
-        if (isNull(resp.data)) {
+        if (isNull(resp)) {
           return
         }
-        curArticle.value = resp.data
+        curArticle.value = resp
         // 初次加载时立即渲染
         immediateParse = true
-        if (isBlank(resp.data.markdown)) {
+        if (isBlank(resp.markdown)) {
           setNewState('')
         } else {
-          setNewState(resp.data.markdown)
+          setNewState(resp.markdown!)
         }
       })
       .finally(() => {
@@ -538,29 +538,22 @@ const saveCurArticleContent = async (auto: boolean = false) => {
   }
   articleChanged = false
   let data = {
-    id: curArticle.value!.id,
-    name: curArticle.value!.name,
-    markdown: cmw.getDocString(),
-    html: PreviewRef.value.innerHTML,
-    references: articleImg.value.concat(articleLink.value).map((item) => {
-      let refer: ArticleReference = { targetId: '', targetName: '', targetUrl: '', type: 10 }
-      Object.assign(refer, item)
-      if (isBase64Img(refer.targetUrl)) {
-        refer.targetUrl = ''
-      }
-      return refer
-    })
+    path: curArticle.value!.path!,
+    content: cmw.getDocString()
+    // references: articleImg.value.concat(articleLink.value).map((item) => {
+    //   let refer: ArticleReference = { targetId: '', targetName: '', targetUrl: '', type: 10 }
+    //   Object.assign(refer, item)
+    //   if (isBase64Img(refer.targetUrl)) {
+    //     refer.targetUrl = ''
+    //   }
+    //   return refer
+    // })
   }
   await articleUpdContentApi(data)
     .then((resp) => {
       lastSaveTime = new Date().getTime()
-      curArticle.value!.words = resp.data.words as number
-      curArticle.value!.updTime = resp.data.updTime as string
-      if (curArticle.value!.version != undefined) {
-        curArticle.value!.version = curArticle.value!.version + 1
-      } else {
-        curArticle.value!.version = 1
-      }
+      // curArticle.value!.words = resp.data.words as number
+      // curArticle.value!.updTime = resp.data.updTime as string
       saveCallback()
     })
     .catch(() => {

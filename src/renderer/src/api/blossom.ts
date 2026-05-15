@@ -1,3 +1,5 @@
+// @ts-nocheck
+import { is } from '@electron-toolkit/utils'
 import { defaultRequest as rq } from './request'
 import type { R } from './request'
 import { AxiosRequestConfig } from 'axios'
@@ -90,8 +92,8 @@ export const uploadFileApi = (data?: object): Promise<R<any>> => {
  * }
  * @returns
  */
-export const docTreeApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/doc/trees', { params })
+export const docTreeApi = (params?: object): Promise<R<DocTree[]>> => {
+  return window.electronAPI.docTreeApi()
 }
 
 /**
@@ -184,18 +186,6 @@ export const subjectsApi = (params?: object): Promise<R<any>> => {
 //#region ====================================================< article >===================================================
 
 /**
- * 文章列表
- * @param params {
- *  starStatus: 0/1
- *  openStatus: 0/1
- * }
- * @returns
- */
-export const articleListApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/article/list', { params })
-}
-
-/**
  * 查询文章详情, 如果文章为公开文章, 则会返回对应的公开信息, 如 openVersion, openTime 等
  * <p>注意: 返回的正文信息永远是草稿正文, 公开版本的正文信息需要通过公开文章查询 {@link articleOpenApi}
  * @param params {
@@ -206,8 +196,33 @@ export const articleListApi = (params?: object): Promise<R<any>> => {
  * }
  * @returns
  */
-export const articleInfoApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/article/info', { params })
+export const articleInfoApi = (params: GetFileContentReq): Promise<R<DocInfo>> => {
+  return window.electronAPI.articleInfoApi(params)
+}
+
+/**
+ * 修改文章正文
+ * @param data {
+ *  id: curDoc.value?.id,
+ *  markdown: editor.getMarkdown(),
+ *  html: editor.getHTML()
+ * }
+ * @returns
+ */
+export const articleUpdContentApi = (params: SaveFileContentReq): Promise<R<any>> => {
+  return window.electronAPI.writeFile(params)
+}
+
+/**
+ * 文章列表
+ * @param params {
+ *  starStatus: 0/1
+ *  openStatus: 0/1
+ * }
+ * @returns
+ */
+export const articleListApi = (params?: object): Promise<R<any>> => {
+  return rq.get<R<any>>('/article/list', { params })
 }
 
 /**
@@ -228,18 +243,6 @@ export const articleUpdApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/article/upd', data)
 }
 
-/**
- * 修改文章正文
- * @param data {
- *  id: curDoc.value?.id,
- *  markdown: editor.getMarkdown(),
- *  html: editor.getHTML()
- * }
- * @returns
- */
-export const articleUpdContentApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/article/upd/content', data)
-}
 
 /**
  * 修改文章名称

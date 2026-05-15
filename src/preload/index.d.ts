@@ -3,11 +3,7 @@ import { ElectronAPI } from '@electron-toolkit/preload'
 declare global {
   interface Window {
     electron: ElectronAPI
-    electronAPI: ElectronAPI,
+    electronAPI: ElectronAPI
     api: {}
-  }
-
-  interface ArticleTree {
-
   }
 }

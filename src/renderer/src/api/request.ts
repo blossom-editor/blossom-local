@@ -50,49 +50,50 @@ export class Request {
      */
     this.instance.interceptors.response.use(
       (res: AxiosResponse) => {
-        const status = res.status
+        return res.data
+        // const status = res.status
 
-        if (status !== 200) {
-          Promise.reject(res)
-        }
-        let data = res.data
-        // 本次响应是否正确
-        let isSuccess = false
+        // if (status !== 200) {
+        //   Promise.reject(res)
+        // }
+        // let data = res.data
+        // // 本次响应是否正确
+        // let isSuccess = false
 
-        // 返回文件流
-        if (
-          res.config.responseType === 'blob' ||
-          res.headers['content-type'] === 'application/force-download' ||
-          res.headers['content-type'] === 'application/octet-stream'
-        ) {
-          // 返回文件流但仍然有JSON返回体(例如接口报错时), 仍要判断返回码
-          if (isNotNull(data.code) && !isSuccessRCode(data.code)) {
-            isSuccess = false
-          } else {
-            isSuccess = true
-            return res
-          }
-        }
-        // 响应码为正确的直接返回
-        if (isSuccessRCode(data.code)) {
-          isSuccess = true
-        }
+        // // 返回文件流
+        // if (
+        //   res.config.responseType === 'blob' ||
+        //   res.headers['content-type'] === 'application/force-download' ||
+        //   res.headers['content-type'] === 'application/octet-stream'
+        // ) {
+        //   // 返回文件流但仍然有JSON返回体(例如接口报错时), 仍要判断返回码
+        //   if (isNotNull(data.code) && !isSuccessRCode(data.code)) {
+        //     isSuccess = false
+        //   } else {
+        //     isSuccess = true
+        //     return res
+        //   }
+        // }
+        // // 响应码为正确的直接返回
+        // if (isSuccessRCode(data.code)) {
+        //   isSuccess = true
+        // }
 
-        if (isSuccess) {
-          return data
-        } else if (data.code === 'AUTH-40101') {
-          /* 授权被拦截, 则需要退回登录页请求 */
-          const userStore = useUserStore()
-          userStore.reset()
-          toLogin()
-          return Promise.reject(res)
-        } else {
-          /* 其他接口报错, 直接拒绝并提示错误信息 */
-          let errorResponse = data
-          errorResponse['url'] = res.config.url
-          Notify.error(data.msg, '处理失败')
-          return Promise.reject(res)
-        }
+        // if (isSuccess) {
+        //   return data
+        // } else if (data.code === 'AUTH-40101') {
+        //   /* 授权被拦截, 则需要退回登录页请求 */
+        //   const userStore = useUserStore()
+        //   userStore.reset()
+        //   toLogin()
+        //   return Promise.reject(res)
+        // } else {
+        //   /* 其他接口报错, 直接拒绝并提示错误信息 */
+        //   let errorResponse = data
+        //   errorResponse['url'] = res.config.url
+        //   Notify.error(data.msg, '处理失败')
+        //   return Promise.reject(res)
+        // }
       },
       /**
        * 返回非 200 接口
@@ -105,30 +106,6 @@ export class Request {
           code: 20000,
           data: {}
         }
-        // let url = ''
-        // if (err.config) {
-        //   url = ':' + err.config.url
-        // }
-        // let code = err.code
-        // let resp = err.response
-        // console.log("🚀 ~ Request ~ constructor ~ resp:123123123", resp)
-        // if (code === 'ERR_NETWORK') {
-        //   Notify.error('网络错误, 请检查您的网络是否通畅', '请求失败')
-        //   return Promise.reject(err)
-        // }
-        // if (err.request && err.request.status === 404) {
-        //   Notify.error('未找到您的请求', '请求失败(404)')
-        //   return Promise.reject(err)
-        // }
-        // if (err.request && err.request.status === 405) {
-        //   Notify.error(`您的请求地址可能有误, 请检查请求地址${url}`, '请求失败(405)')
-        //   return Promise.reject(err)
-        // }
-        // if (resp && resp.data) {
-        //   Notify.error(resp.data.msg, '请求失败')
-        //   return Promise.reject(err)
-        // }
-        // return Promise.reject(err)
       }
     )
   }
@@ -143,7 +120,10 @@ export class Request {
   }
 
   public get<T>(url: string, params?: object): Promise<R<T>> {
-    return this.instance.get(url, params)
+    // return this.instance.get(url, params)
+    return new Promise((resolve, reject) => {
+      resolve({ ok: true, code: 20000, msg: ''})
+    })
   }
 
   public post<T>(url: string, data?: object, config?: AxiosRequestConfig): Promise<R<T>> {
@@ -155,13 +135,13 @@ export class Request {
   }
 }
 
-export interface R<T = any> {
-  ok: boolean
-  code: number
-  msg: string
-  traceId: string
-  data?: T
-}
+// export interface R<T = any> {
+//   ok: boolean
+//   code: number
+//   msg: string
+//   traceId: string
+//   data?: T
+// }
 
 /**
  * 判断接口响应码是否正确

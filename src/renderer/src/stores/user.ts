@@ -13,14 +13,6 @@ export const KEY_BLOSSOM_OBJECT_STORAGE_DOMAIN: string = 'BLOSSOM_OBJECT_STORAGE
  * 博客访问地址参数名
  */
 export const KEY_WEB_ARTICLE_URL: string = 'WEB_ARTICLE_URL'
-/**
- * blossom 对象存储的默认域名
- */
-const DEFAULT_WEB_ARTICLE_URL = 'https://www.domain.com/blossom/#/articles?articleId='
-/**
- * 博客的默认地址
- */
-const DEFAULT_BLOSSOM_OBJECT_STORAGE_DOMAIN = 'http://www.google.com/'
 
 /**
  * 登录状态枚举
@@ -49,10 +41,10 @@ const initAuth = () => {
  * 默认用户信息
  */
 export const DEFAULT_USER_INFO = {
-  id: '',
+  id: '1',
   type: 2,
-  username: '暂未登录',
-  nickName: '暂未登录',
+  username: '用户A',
+  nickName: '用户A',
   avatar: '',
   remark: '',
   articleCount: 0,
@@ -168,18 +160,6 @@ export const useUserStore = defineStore('userStore', {
       // if (state.auth.status !== AuthStatus.Succ) {
       //   return true
       // }
-      // if (state.userinfo.params.BLOSSOM_OBJECT_STORAGE_DOMAIN === '') {
-      //   return false
-      // }
-      // if (state.userinfo.params.BLOSSOM_OBJECT_STORAGE_DOMAIN === DEFAULT_BLOSSOM_OBJECT_STORAGE_DOMAIN) {
-      //   return false
-      // }
-      // if (state.userinfo.userParams && state.userinfo.userParams.WEB_ARTICLE_URL === '') {
-      //   return false
-      // }
-      // if (state.userinfo.userParams && state.userinfo.userParams.WEB_ARTICLE_URL === DEFAULT_WEB_ARTICLE_URL) {
-      //   return false
-      // }
       return true
     }
   },
@@ -191,62 +171,30 @@ export const useUserStore = defineStore('userStore', {
      */
     async loginByPassword(username: string, password: string) {
       this.auth.status = AuthStatus.Loging
-      /*
-       * 客户端ID, 见服务器配置 project.auth.clients.clientid
-       * 登录模式, 见服务器配置 project.auth.clients.grantType
-       */
-      await loginApi({ username: username, password: password, clientId: 'blossom', grantType: 'password' })
-        .then((resp: any) => {
-          let auth = { token: resp.data.token, status: AuthStatus.Succ }
-          this.auth = auth
-          Local.set(storeKey, auth)
-          this.getUserinfo()
-        })
-        .catch((_e) => {
-          this.reset()
-          // 登录失败的状态需要特别更改
-          let auth = { token: '', status: AuthStatus.Fail }
-          this.auth = auth
-        })
+      let auth = { token: '123123', status: AuthStatus.Succ }
+      this.auth = auth
+      Local.set(storeKey, auth)
+      this.getUserinfo()
     },
     /**
      * 退出登录
      */
-    async logout() {
-      await logoutApi().then((_) => {
-        this.reset()
-      })
-    },
+    async logout() {},
     /**
      * 检查登录状态
      */
     async checkToken(succ: any, fail: any) {
-      this.auth.status = AuthStatus.Checking
-      await checkApi()
-        .then((resp) => {
-          let auth = { token: resp.data.token, status: AuthStatus.Succ }
-          this.auth = auth
-          Local.set(storeKey, auth)
-          this.getUserinfo()
-          succ()
-        })
-        .catch((_error) => {
-          this.reset()
-          // 登录失败的状态需要特别更改
-          let auth = { token: '', status: AuthStatus.Wait }
-          this.auth = auth
-          fail()
-        })
+      this.auth.status = AuthStatus.Succ
+      Local.set(storeKey, { token: "1", status: AuthStatus.Succ })
+      this.getUserinfo()
     },
     /**
      * 获取用户信息
      */
     getUserinfo() {
-      userinfoApi().then((resp) => {
-        this.userinfo = resp.data
-        Local.set(userinfoKey, resp.data)
-        setUserinfo(resp.data)
-      })
+      this.userinfo = DEFAULT_USER_INFO
+      Local.set(userinfoKey, DEFAULT_USER_INFO)
+      setUserinfo(DEFAULT_USER_INFO)
     },
     /**
      * 重置登录状态和用户信息

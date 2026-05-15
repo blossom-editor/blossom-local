@@ -200,14 +200,3 @@ export const download = (url: string): void => {
 
 //#endregion
 
-//#region ====================================================< file >===================================================
-
-export const readFile = (): Promise<any> => {
-  return window.electronAPI.readFile()
-}
-
-export const writeFile = (path: string, id: string, content: string): Promise<any> => {
-  return window.electronAPI.writeFile(path, id, content)
-}
-
-//#endregion

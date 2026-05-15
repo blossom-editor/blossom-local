@@ -27,6 +27,12 @@ const rednerToIpc = {
    */
   readFile: (): any => ipcRenderer.invoke('read-file'),
   writeFile: (path: string, id: string, content: string): any => ipcRenderer.invoke('write-file', path, id, content),
+  docTreeApi: (): Promise<DocTree[]> => ipcRenderer.invoke('read-doc-tree'),
+  articleInfoApi: (params: GetFileContentReq): Promise<DocInfo> => ipcRenderer.invoke('read-doc-info', params),
+  articleUpdContentApi: (params: SaveFileContentReq): Promise<any> => ipcRenderer.invoke('write-file', params),
+
+  //#region
+
   /**
    * 窗口操作
    */
@@ -114,6 +120,8 @@ const rednerToIpc = {
    * @returns
    */
   openExtenal: (url: string, options?: OpenExternalOptions) => shell.openExternal(url, options)
+
+  //#endregion
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to
