@@ -1,7 +1,8 @@
-import { is } from '@electron-toolkit/utils'
-import { ipcMain } from 'electron'
+import { ipcMain, dialog } from 'electron'
+import { toObj, readFile } from './fileUtils'
 import path from 'path'
 const fs = require('fs').promises
+import R from '../preload/r'
 
 export const initOnFileManager = () => {
   console.log('3.3 监听文件监听事件')
@@ -9,10 +10,7 @@ export const initOnFileManager = () => {
   initWirteFile()
   initReadDocTree()
   initReadDocInfo()
-}
-
-const toObj = (str: string): any => {
-  return JSON.parse(str)
+  initOpenFileDialog()
 }
 
 const tempFileJson = 'F:\\WebProjects\\blossom-demo-workspace\\.blossom\\article-tree.json'
@@ -23,13 +21,10 @@ const initReadFile = () => {
   ipcMain.handle('read-file', async (_event, filePath) => {
     filePath = tempFileJson
     try {
-      console.log('读取文件: ')
-      const data = await fs.readFile(filePath, 'utf8')
-      console.log(data)
-      return { ok: true, data: toObj(data) }
+      const data = await readFile(filePath)
+      return R.ok(toObj(data))
     } catch (error) {
-      console.error(`读取文件失败: ${filePath}`, error)
-      return error
+      return R.fail(50001, error)
     }
   })
 }
@@ -114,3 +109,41 @@ const readDocInfo = async (params: GetFileContentReq): Promise<DocInfo> => {
     return doc
   }
 }
+
+const initOpenFileDialog = () => {
+  ipcMain.handle('open-file-dialog', () => {
+    return openFileDialog()
+  })
+}
+
+// 打开文件夹选择窗口, 将选择的文件夹作为文档库使用, 文档库内容的保存在渲染进程, 并不在主进程持久化到文件中
+// 无论是首次打开, 还是重复打开, 每次打开文档库都要检查并创建各类配置文件
+const openFileDialog = async (): Promise<R<DocLibItem>> => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    title: '选择一个文件夹作为文档库'
+  })
+  const docLibItem: DocLibItem = {
+    name: '',
+    path: '',
+    creTime: ''
+  }
+  if (!result.canceled && result) {
+    const docPath = result.filePaths[0]
+
+    const stats = await fs.stat(docPath)
+
+    docLibItem.name = path.basename(docPath)
+    docLibItem.path = docPath
+    docLibItem.creTime = stats.birthtime.toISOString().slice(0, 10)
+    return R.ok(docLibItem)
+  } else {
+    const r = R.ok(docLibItem)
+    return r
+  }
+}
+
+//
+const createDoclibSystemConfig = (path: string) => {}
+
+const writeBlossomConfig = () => {}

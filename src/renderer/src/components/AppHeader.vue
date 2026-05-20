@@ -1,5 +1,6 @@
 <template>
   <div class="app-header-root">
+    <div class="cur-doclib">文档库：{{ docLibStore.cur?.name }} {{ docLibStore.cur?.path }}</div>
     <div class="drag">{{ tryuseComment }}</div>
     <div class="window-workbench">
       <el-popover
@@ -83,6 +84,7 @@ import { ClickOutside as vClickOutside } from 'element-plus'
 import { toRoute } from '@renderer/router'
 import { useUserStore } from '@renderer/stores/user'
 import { useThemeStore } from '@renderer/stores/theme'
+import { useDocLibStore } from '@renderer/stores/docLib'
 import { windowMin, windowMax, windowHide, setBestSize } from '@renderer/assets/utils/electron'
 import { isWindows, isElectron } from '@renderer/assets/utils/util'
 import { isTryuse } from '@renderer/scripts/env'
@@ -92,6 +94,7 @@ import QuickSetting from '@renderer/views/index/setting/QuickSetting.vue'
 
 const themeStrore = useThemeStore()
 const userStore = useUserStore()
+const docLibStore = useDocLibStore()
 
 onMounted(() => {
   window.addEventListener('resize', handleResize)
@@ -160,9 +163,17 @@ const quickSettingComplete = () => {
 .app-header-root {
   @include box(100%, 100%);
   @include flex(row, space-between, center);
+  position: relative;
 
   $width-workbench: 240px;
   $width-drag: calc(100% - #{$width-workbench});
+
+  .cur-doclib {
+    @include themeColor(#9b9b9b, #5d5d5d);
+    font-size: 12px;
+    position: absolute;
+    left: 10px;
+  }
 
   .drag {
     @include flex(row, flex-start, center);

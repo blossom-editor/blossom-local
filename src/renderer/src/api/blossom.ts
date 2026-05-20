@@ -1,7 +1,6 @@
 // @ts-nocheck
 import { is } from '@electron-toolkit/utils'
 import { defaultRequest as rq } from './request'
-import type { R } from './request'
 import { AxiosRequestConfig } from 'axios'
 
 //#region ====================================================< sys >=======================================================
@@ -103,6 +102,10 @@ export const docTreeApi = (params?: object): Promise<R<DocTree[]>> => {
  */
 export const docUpdSortApi = (data: object): Promise<R<any>> => {
   return rq.post<R<any>>('/doc/upd/sort', data)
+}
+
+export const openFileDialog = (): Promise<R<DocLibItem>> => {
+  return window.electronAPI.openFileDialog()
 }
 
 //#endregion
@@ -242,7 +245,6 @@ export const articleAddApi = (data?: object): Promise<R<any>> => {
 export const articleUpdApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/article/upd', data)
 }
-
 
 /**
  * 修改文章名称

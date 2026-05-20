@@ -30,7 +30,7 @@ const rednerToIpc = {
   docTreeApi: (): Promise<DocTree[]> => ipcRenderer.invoke('read-doc-tree'),
   articleInfoApi: (params: GetFileContentReq): Promise<DocInfo> => ipcRenderer.invoke('read-doc-info', params),
   articleUpdContentApi: (params: SaveFileContentReq): Promise<any> => ipcRenderer.invoke('write-file', params),
-
+  openFileDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('open-file-dialog'),
   //#region
 
   /**

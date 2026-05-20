@@ -3,7 +3,7 @@ const blossom = {
    * 基础配置
    */
   SYS: {
-    NAME: 'Blossom',
+    NAME: 'Blossom Local',
     FULL_NAME: 'BLOSSOM-LOCAL',
     VERSION: 'v0.0.1',
 

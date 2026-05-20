@@ -5,3 +5,10 @@
     }
   }
 }
+
+.el-dropdown__popper {
+  .el-dropdown-menu__item {
+    border-radius: 5px;
+    margin: 5px 5px;
+  }
+}

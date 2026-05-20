@@ -1,6 +1,6 @@
 {
-  "name": "blossom",
-  "productName": "Blossom",
+  "name": "blossom-local",
+  "productName": "Blossom Local",
   "version": "0.0.1",
   "description": "A markdown editor",
   "license": "MIT",

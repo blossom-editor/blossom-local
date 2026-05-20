@@ -1,0 +1,138 @@
+.doclib-root {
+  @include box(100%, 100%);
+  @include flex(column, flex-start, flex-start);
+  padding: 40px;
+
+  .doclib-container {
+    @include box(100%, auto);
+    @include flex(row, flex-start, flex-start);
+    align-content: flex-start;
+    flex-wrap: wrap;
+    overflow-y: scroll;
+
+    .doclib-item {
+      @include flex(column, flex-start, flex-start);
+      @include box(150px, 250px);
+      @include themeBg(#f5f5f5, #252525);
+      margin: 15px 13px 25px 13px;
+      border-radius: 6px;
+      transition:
+        box-shadow 0.2s,
+        transform 0.3s;
+      position: relative;
+      cursor: pointer;
+      overflow: hidden;
+      @include themeShadow(0 3px 5px 0 rgb(190, 190, 190), 0 3px 5px 0 rgb(20, 20, 20));
+
+      &:hover {
+        @include themeShadow(0 7px 9px 0 rgb(168, 168, 168), 0 7px 9px 0 rgb(0, 0, 0));
+      }
+
+      .avatar-wrapper {
+        @include flex(row, center, center);
+        @include box(100%, 70px);
+        overflow: hidden;
+        .avatar {
+          @include themeBrightness();
+          width: 100%;
+          object-fit: contain;
+        }
+      }
+      .name {
+        @include box(100%, 35px);
+        padding: 7px 5px 0 5px;
+        @include themeColor(#3b3b3b, #d9d9d9);
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        white-space: pre;
+        &:hover {
+          @include themeBg(#dcdcdc, #252525);
+        }
+      }
+      .path {
+        @include box(100%, 25px);
+        @include themeColor(#acacac, #5d5d5d);
+        font-size: 12px;
+        padding: 5px 5px;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        white-space: pre;
+        transition: background 0.2s;
+
+        &:hover {
+          @include themeBg(#dcdcdc, #252525);
+        }
+      }
+
+      .desc {
+        @include box(100%, calc(250px - 70px - 35px - 50px));
+        @include themeColor(#acacac, #5d5d5d);
+        font-size: 12px;
+        padding: 0 10px 0 5px;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 6;
+        word-wrap: break-word;
+        overflow: hidden;
+      }
+
+      .operation {
+        @include box(100%, 25px);
+        @include flex(row, space-between, center);
+        @include themeColor(#acacac, #5d5d5d);
+        padding: 0 5px;
+        .cretime {
+          font-size: 12px;
+        }
+        .iconbl {
+          @include themeColor(#acacac, #5d5d5d);
+        }
+      }
+    }
+
+    .doclib-item-empty {
+      @include flex(column, flex-start, flex-start);
+      @include box(150px, 250px);
+      margin: 15px 15px 25px 15px;
+      position: relative;
+      cursor: pointer;
+
+      .iconbl {
+        font-size: 40px;
+        margin-bottom: 7px;
+      }
+
+      .item {
+        @include box(100%, 50%);
+        @include flex(column, center, center);
+        @include themeBg(#f5f5f5, #252525);
+        @include themeColor(#e0e0e0, #5d5d5d);
+        z-index: 10;
+        transition:
+          box-shadow 0.4s,
+          transform 0.3s,
+          color 0.4s;
+
+        &:hover {
+          z-index: 15;
+          @include themeColor(#acacac, #5d5d5d);
+          @include themeShadow(0 0 3px 2px rgb(190, 190, 190), 0 0 3px 2px rgb(20, 20, 20));
+          border-color: transparent !important;
+        }
+      }
+
+      .item:first-child {
+        border-bottom: 1px solid var(--el-border-color);
+        border-top-left-radius: 6px;
+        border-top-right-radius: 6px;
+      }
+
+      .item:last-child {
+        border-bottom-left-radius: 6px;
+        border-bottom-right-radius: 6px;
+      }
+    }
+  }
+}

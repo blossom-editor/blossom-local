@@ -1,10 +1,11 @@
-import { app, shell, ipcMain, BrowserWindow, Menu, IpcMainEvent, Tray, HandlerDetails } from 'electron'
+import { app, protocol, net, shell, ipcMain, BrowserWindow, Menu, IpcMainEvent, Tray, HandlerDetails } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is, platform } from '@electron-toolkit/utils'
+import { initOnFileManager } from './article'
+import { pathToFileURL } from 'url'
 import icon from '../../resources/imgs/icon.ico?asset'
 import printScreen from './printScreen'
 import ShortcutRegistrant from './shortcut'
-import { initOnFileManager } from './fileManager'
 
 // 主窗口
 let mainWindow: BrowserWindow | undefined
@@ -148,6 +149,7 @@ function createMainWindow(): void {
   openDevToos(mainWindow)
   // 创建 Tray
   initTray()
+  initProtocol()
   // 创建焦点窗口事件
   initOnFocusedWindow()
   // 主窗口监听事件
@@ -453,6 +455,17 @@ export const initOnWindow = (window: BrowserWindow) => {
       shell.openExternal(url)
     }
     // return { action: "deny" }
+  })
+}
+
+// 由于在渲染进程无法直接读取本地文件, 需要自定义协议 blossom:// ,并进行拦截
+// 主要用在渲染进程读取本地文件
+const initProtocol = () => {
+  protocol.handle('blossom', (request) => {
+    const url = request.url.slice('blossom://'.length + 1)
+    const fileUrl = pathToFileURL(decodeURIComponent(url)).href
+    console.log(fileUrl)
+    return net.fetch(fileUrl)
   })
 }
 

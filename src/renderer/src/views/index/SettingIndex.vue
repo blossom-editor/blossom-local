@@ -1,11 +1,9 @@
 <template>
   <div class="setting-index-root">
     <el-tabs tab-position="left" class="setting-tabs" v-model="activeTab">
-      <el-tab-pane label="登录" name="login">
+      <el-tab-pane label="文档库" name="login">
         <div class="setting-container">
-          <div class="wrapper">
-            <SettingLogin></SettingLogin>
-          </div>
+          <SettingLogin></SettingLogin>
         </div>
       </el-tab-pane>
       <el-tab-pane label="设置" name="setting">
@@ -57,7 +55,7 @@ const getServerVersion = () => {
 <style scoped lang="scss">
 .setting-index-root {
   @include box(100%, 100%);
-  background-image: linear-gradient(145deg, transparent 0%, transparent 55%, var(--el-color-primary-light-5));
+  background-image: linear-gradient(160deg, transparent 0%, transparent 75%, var(--el-color-primary-light-5));
   padding: 50px 0 0 50px;
   z-index: 2;
 
@@ -84,18 +82,13 @@ const getServerVersion = () => {
 
   .setting-container {
     @include box(100%, 100%);
-    @include flex(row, center, center);
-
-    .wrapper {
-      width: 600px;
-      height: 600px;
-    }
+    @include flex(row, center, flex-start);
   }
 }
 
 .version {
-  @include themeColor(#ffffff, #9b9b9b);
-  @include font(12px, 100);
+  @include themeColor(#474747, #c0c0c0);
+  @include font(12px, 300);
   @include absolute('', 10px, 7px, '');
   z-index: 2;
 }

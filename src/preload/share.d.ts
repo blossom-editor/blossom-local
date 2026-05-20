@@ -1,3 +1,12 @@
+// 文档库结构
+declare interface DocLibItem {
+  name: string
+  path: string
+  icon?: string
+  desc?: string
+  creTime: string
+}
+
 declare interface DocTree {
   id: string
   type: 'FOLDER' | 'ARTICLE'
@@ -35,9 +44,9 @@ declare interface SaveFileContentReq {
   content: string
 }
 
-declare interface R<T = any> {
-  ok: boolean
-  code: number
-  msg: string
-  data?: T
+declare interface R<T> {
+  public ok: boolean
+  public code: number
+  public msg: string
+  public data?: T
 }
