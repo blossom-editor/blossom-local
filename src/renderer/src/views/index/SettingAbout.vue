@@ -59,7 +59,7 @@
       <div class="developer">
         <bl-row class="item" v-for="dever in developer" width="250px" height="70px" @click="toView(dever.github)">
           <div>
-            <img :src="dever.avatar" />
+            <!-- <img :src="dever.avatar" /> -->
           </div>
           <bl-col just="flex-start" align="flex-start">
             <div class="name">

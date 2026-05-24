@@ -1,3 +1,8 @@
+declare interface Base {
+  // 文档库的路径
+  docLibPath?: string
+}
+
 // 文档库结构
 declare interface DocLibItem {
   name: string
@@ -11,6 +16,7 @@ declare interface DocTree {
   id: string
   type: 'FOLDER' | 'ARTICLE'
   name: string
+  formatName: string // 无后缀名称
   path: string
   icon?: string
   updn?: boolean
@@ -27,21 +33,43 @@ declare interface DocInfo {
   name: string
   words?: number
   version?: number
-  path?: string
+  path: string
   type: 'FOLDER' | 'ARTICLE'
   creTime?: string
   updTime?: string
-  // 文章正文
-  markdown?: string
+  markdown?: string // 文章正文
 }
 
-declare interface GetFileContentReq {
+/**
+ * 获取文件内容
+ */
+declare interface GetFileContentReq extends Base {
   path: string
 }
 
-declare interface SaveFileContentReq {
+/**
+ * 保存文件内容
+ */
+declare interface SaveFileContentReq extends Base {
   path: string
   content: string
+  words?: number
+}
+
+/**
+ * 重命名文件
+ */
+declare interface RenameFileReq extends Base {
+  oldPath: string
+  newPath: string
+}
+
+/**
+ * 移动文件
+ */
+declare interface MoveFileReq extends Base {
+  oldPath: string
+  newPath: string
 }
 
 declare interface R<T> {

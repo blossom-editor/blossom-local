@@ -88,18 +88,6 @@ export const openNewArticleReferenceWindow = (article?: any) => {
 }
 
 /**
- * 打开文章编辑历史记录
- */
-export const openNewArticleLogWindow = (article: any) => {
-  if (isElectron()) {
-    window.electronAPI.openNewArticleLogWindow(article)
-  } else {
-    const href = router.resolve({ name: 'ArticleHistory', path: `/articleHistory`, query: { articleId: article?.id } })
-    window.open(href.href, '_blank')
-  }
-}
-
-/**
  * 使用默认浏览器打开链接
  * @param url 访问链接
  */
@@ -199,4 +187,3 @@ export const download = (url: string): void => {
 }
 
 //#endregion
-

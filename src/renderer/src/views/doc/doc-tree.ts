@@ -1,6 +1,7 @@
 /* ======================================================================
  * 文章树状列表
  * ====================================================================== */
+import { getParentDirPath, joinPath } from '@renderer/assets/utils/util'
 import Node from 'element-plus/es/components/tree/src/model/node'
 import { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNode'
 import { NodeDropType } from 'element-plus/es/components/tree/src/tree.type'
@@ -42,7 +43,7 @@ export interface NeedUpd {
  * @param DocTreeRef 树状列表对象
  * @param docTreeData 树状类表数据
  * @param folderType 文件夹类型: 1:文章文件夹|2:图片文件夹
- * @param updateFn 修改后的回调方法
+ * @param dropAfter 修改后的回调方法, 请求接口
  */
 export const handleTreeDrop = (
   drag: Node,
@@ -50,186 +51,64 @@ export const handleTreeDrop = (
   dropType: NodeDropType,
   _event: DragEvents,
   DocTreeRef: Ref,
-  docTreeData: Ref<DocTree[]>,
-  folderType: FolderType,
-  updateFn: (needUpd: NeedUpd[]) => void
-) => {
+  docTreeData: Ref<DocTree[]>
+): MoveFileReq | null => {
   // 是否同级别
-  const isSame = drag.data.p === enter.data.p
-  const dragSourceSort = drag.data.s
-  const enterSourceSort = enter.data.s
-  // 记录最终需要修改的数据
-  const needUpd: NeedUpd[] = []
-
-  // 保存需要传入后台修改的节点
-  const addUpd = (node: Node) => {
-    needUpd.push({
-      i: node.data.i,
-      p: node.data.p,
-      s: node.data.s,
-      n: node.data.n,
-      ty: node.data.ty
-    })
-  }
-
-  console.log(`same: ${isSame}, dropType: ${dropType}, drag-srot: ${dragSourceSort}, enter-srot: ${enterSourceSort}`)
+  const isSame = drag.data.path === enter.data.path
+  // 同级别不能移动, 目前有校验显示, 该判断不会为 true
   if (isSame) {
-    // drag 在 enter 前
-    if (dropType === 'before') {
-      // 下方的拖动到上方
-      if (dragSourceSort > enterSourceSort) {
-        drag.data.s = enterSourceSort
-        addUpd(drag)
-        for (let i = 0; i < enter.parent.childNodes.length; i++) {
-          const node = enter.parent.childNodes[i]
-          if (checkFolderType(node, folderType) && node.data.s >= enterSourceSort && node.data.s < dragSourceSort && node.data.i != drag.data.i) {
-            node.data.s += 1
-            addUpd(node)
-          }
-        }
-      }
-      // 上方的拖动到下方
-      else if (isSame) {
-        drag.data.s = enterSourceSort - 1
-        addUpd(drag)
-        for (let i = 0; i < enter.parent.childNodes.length; i++) {
-          const node = enter.parent.childNodes[i]
-          if (checkFolderType(node, folderType) && node.data.s < enterSourceSort && node.data.s > dragSourceSort && node.data.i != drag.data.i) {
-            node.data.s -= 1
-            addUpd(node)
-          }
-        }
-      }
+    return null
+  }
+
+  const parmas: MoveFileReq = {
+    oldPath: drag.data.path,
+    newPath: ''
+  }
+
+  // console.log(`same: ${isSame}, dropType: ${dropType}, 拖动文件类型: ${drag.data.type}`)
+  // console.log('拖动的', drag.data)
+  // console.log('放置的', enter.data)
+
+  if (dropType === 'inner') {
+    if (drag.data.type === 'ARTICLE') {
+      parmas.newPath = joinPath(enter.data.path, drag.data.name)
+    } else if (drag.data.type === 'FOLDER') {
+      parmas.newPath = joinPath(enter.data.path, drag.data.name)
     }
-
-    // drag 在 enter 后
-    else if (dropType === 'after') {
-      // 下方拖动到上方, 即拖拽的节点排序大于放置的节点排序
-      if (dragSourceSort > enterSourceSort) {
-        drag.data.s = enterSourceSort + 1
-        addUpd(drag)
-        for (let i = 0; i < enter.parent.childNodes.length; i++) {
-          const node = enter.parent.childNodes[i]
-          if (checkFolderType(node, folderType) && node.data.s > enterSourceSort && node.data.s < dragSourceSort && node.data.i != drag.data.i) {
-            node.data.s += 1
-            addUpd(node)
-          }
-        }
-      } else {
-        drag.data.s = enterSourceSort
-        addUpd(drag)
-        for (let i = 0; i < enter.parent.childNodes.length; i++) {
-          const node = enter.parent.childNodes[i]
-          if (checkFolderType(node, folderType) && node.data.s <= enterSourceSort && node.data.s > dragSourceSort && node.data.i != drag.data.i) {
-            node.data.s -= 1
-            addUpd(node)
-          }
-        }
-      }
-    }
-
-    // drag 在 enter 内部
-    if (dropType === 'inner') {
-      const dragSourcePid = drag.data.p
-      const dragSourceParent = DocTreeRef.value.getNode(dragSourcePid)
-      if (dragSourceParent) {
-        for (let i = 0; i < dragSourceParent.childNodes.length; i++) {
-          const node = dragSourceParent.childNodes[i]
-          if (checkFolderType(node, folderType) && node.data.s > dragSourceSort) {
-            node.data.s -= 1
-            addUpd(node)
-          }
-        }
-      }
-
-      drag.data.p = enter.data.i
-
-      let maxSort: number = 0
-      if (!enter.childNodes || enter.childNodes.length == 0) {
-        maxSort = 0
-      } else if (enter.childNodes.length == 1 && enter.childNodes[0].data.i === drag.data.i) {
-        maxSort = 0
-      } else {
-        maxSort = getMaxSort(drag, enter.childNodes)
-      }
-      drag.data.s = maxSort + 1
-      addUpd(drag)
+  } else if (dropType === 'before' || dropType === 'after') {
+    if (drag.data.type === 'ARTICLE') {
+      parmas.newPath = joinPath(getParentDirPath(enter.data.path), drag.data.name)
+    } else if (drag.data.type === 'FOLDER') {
+      parmas.newPath = joinPath(getParentDirPath(enter.data.path), drag.data.name)
     }
   }
-  // 不同的父级
-  else {
-    const dragSourcePid = drag.data.p
-    // pid 为 0 时需要特殊处理, 无法通过 node 获取, 只能通过 docTreeData 获取
-    if (dragSourcePid === '0') {
-      for (let i = 0; i < docTreeData.value.length; i++) {
-        const node = docTreeData.value[i]
-        if (checkFolderTypeByOrigin(node, folderType) && node.s > dragSourceSort) {
-          node.s -= 1
-          needUpd.push({ i: node.i, p: node.p, n: node.n, s: node.s, ty: node.ty })
-        }
-      }
-    } else {
-      const dragSourceParent = DocTreeRef.value.getNode(dragSourcePid)
-      if (dragSourceParent) {
-        for (let i = 0; i < dragSourceParent.childNodes.length; i++) {
-          const node = dragSourceParent.childNodes[i]
-          if (checkFolderType(node, folderType) && node.data.s > dragSourceSort) {
-            node.data.s -= 1
-            addUpd(node)
-          }
-        }
-      }
-    }
-
-    // 拖拽与被拖拽的文件夹属于不同的父级 > 将一个文件夹拖拽到另一个文件夹之前
-    if (dropType === 'before') {
-      drag.data.p = enter.data.p
-      drag.data.s = enterSourceSort
-      // 拖拽的文件夹需修改
-      addUpd(drag)
-      //
-      for (let i = 0; i < enter.parent.childNodes.length; i++) {
-        const node = enter.parent.childNodes[i]
-        if (checkFolderType(node, folderType) && node.data.s >= enterSourceSort && node.data.i != drag.data.i) {
-          node.data.s += 1
-          addUpd(node)
-        }
-      }
-    }
-
-    if (dropType === 'after') {
-      drag.data.p = enter.data.p
-      drag.data.s = enterSourceSort + 1
-      addUpd(drag)
-      for (let i = 0; i < enter.parent.childNodes.length; i++) {
-        const node = enter.parent.childNodes[i]
-        if (checkFolderType(node, folderType) && node.data.s > enterSourceSort && node.data.i != drag.data.i) {
-          node.data.s += 1
-          addUpd(node)
-        }
-      }
-    }
-
-    if (dropType === 'inner') {
-      drag.data.p = enter.data.i
-      let maxSort: number = 0
-      if (!enter.childNodes || enter.childNodes.length == 0) {
-        maxSort = 0
-      } else if (enter.childNodes.length == 1 && enter.childNodes[0].data.i === drag.data.i) {
-        maxSort = 0
-      } else {
-        maxSort = getMaxSort(drag, enter.childNodes)
-      }
-      drag.data.s = maxSort + 1
-      addUpd(drag)
-    }
-  }
-  if (needUpd.length > 0) {
-    updateFn(needUpd)
-  }
-  console.log(needUpd)
-  console.log('==========================================')
+  // console.log('最终数据', parmas)
+  return parmas
 }
+
+// const handleChildPath = (childPaths: MoveFileChildReq[], node: Node, newBasePath: string): MoveFileChildReq[] => {
+//   console.log('子文件夹', childPaths)
+//   if (node.childNodes && node.childNodes.length > 0) {
+//     node.childNodes.forEach((child) => {
+//       if (child.data.type === 'ARTICLE') {
+//         const childPath: MoveFileChildReq = {
+//           oldPath: child.data.path,
+//           newPath: child.data.path.replace(node.data.path, newBasePath)
+//         }
+//         childPaths.push(childPath)
+//       }
+//       if (child.data.type === 'FOLDER') {
+//         const childPath: MoveFileChildReq = {
+//           oldPath: child.data.path,
+//           newPath: child.data.path.replace(node.data.path, newBasePath)
+//         }
+//         childPaths.push(childPath)
+//         handleChildPath(childPaths, child, newBasePath)
+//       }
+//     })
+//   }
+//   return childPaths
+// }
 
 /**
  * 从 nodes 中获取最大排序, 排除掉 drag

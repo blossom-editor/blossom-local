@@ -204,7 +204,7 @@ import Notify from '@renderer/scripts/notify'
 import { useDraggable } from '@renderer/scripts/draggable'
 import type { shortcutFunc } from '@renderer/scripts/shortcut-register'
 import { treeToInfo, provideKeyDocInfo, provideKeyCurArticleInfo, isArticle } from '@renderer/views/doc/doc'
-import { TempTextareaKey, ArticleReference, parseTocAsync } from './scripts/article'
+import { TempTextareaKey, ArticleReference, parseTocAsync, countWords } from './scripts/article'
 import type { Toc } from './scripts/article'
 import { beforeUpload, onError, picCacheWrapper, picCacheRefresh, uploadForm, uploadDate } from '@renderer/views/picture/scripts/picture'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
@@ -470,34 +470,40 @@ provide(provideKeyCurArticleInfo, curArticle)
  * 点击 doc title 的回调, 用于选中某个文档
  * 选中分为两种
  * 1:选中的是文件夹
- * 2:选中的是文章, 则查询文章内容, 变
+ * 2:选中的是文章, 则查询文章内容
  *
  * @param tree
  */
 const clickCurDoc = async (tree: DocTree) => {
   let doc: DocInfo = treeToInfo(tree)
   curDoc.value = doc
-  // 如果选中的是文章, 则查询文章详情, 用于在编辑器中显示以及注入
+  console.log('clickCurDoc', doc)
   if (doc.type == 'ARTICLE') {
     // 重复点击同一个, 不会多次查询
     if (isArticle(curArticle.value) && curArticle.value!.path == doc.path) {
       return
     }
+    // 如果保存用时过长, 则显示一个loading
     editorLoadingTimeout = setTimeout(() => (editorLoading.value = true), 100)
+    // 先保存当前文章内容, 再查询下一个文章
     await saveCurArticleContent(true)
     clearTocAndImg()
     await articleInfoApi({ path: doc.path! })
       .then((resp) => {
-        if (isNull(resp)) {
+        if (isNull(resp) || isNull(resp.data)) {
           return
         }
-        curArticle.value = resp
+
+        curArticle.value = resp.data
+
         // 初次加载时立即渲染
         immediateParse = true
-        if (isBlank(resp.markdown)) {
+        if (isBlank(resp.data!.markdown)) {
+          curArticle.value!.words = 0
           setNewState('')
         } else {
-          setNewState(resp.markdown!)
+          curArticle.value!.words = countWords(resp.data!.markdown!)
+          setNewState(resp.data!.markdown!)
         }
       })
       .finally(() => {
@@ -527,7 +533,7 @@ const saveCurArticleContent = async (auto: boolean = false) => {
   }
   // 如果文档发生变动才保存
   if (!articleChanged) {
-    console.info('%c文档内容无变化, 无需保存', 'background:#AD8CF2;color:#fff;padding-top:2px')
+    console.info('%c文档内容无变化, 无需保存', 'background:#057620;color:#fff;padding-top:2px')
     saveCallback()
     return
   }
@@ -537,7 +543,7 @@ const saveCurArticleContent = async (auto: boolean = false) => {
     await sleep(100)
   }
   articleChanged = false
-  let data = {
+  let data: SaveFileContentReq = {
     path: curArticle.value!.path!,
     content: cmw.getDocString()
     // references: articleImg.value.concat(articleLink.value).map((item) => {
@@ -549,11 +555,11 @@ const saveCurArticleContent = async (auto: boolean = false) => {
     //   return refer
     // })
   }
+  curArticle.value!.words = countWords(data.content)
+  data.words = curArticle.value!.words
   await articleUpdContentApi(data)
     .then((resp) => {
       lastSaveTime = new Date().getTime()
-      // curArticle.value!.words = resp.data.words as number
-      // curArticle.value!.updTime = resp.data.updTime as string
       saveCallback()
     })
     .catch(() => {

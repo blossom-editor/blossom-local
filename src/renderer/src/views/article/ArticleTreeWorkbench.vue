@@ -115,7 +115,7 @@ const unbindKeys = () => {
 }
 
 //#endregion
-const emits = defineEmits(['show-sort', 'show-search'])
+const emits = defineEmits(['show-search'])
 </script>
 
 <style scoped lang="scss">

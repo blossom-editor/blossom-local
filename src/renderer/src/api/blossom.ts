@@ -2,6 +2,7 @@
 import { is } from '@electron-toolkit/utils'
 import { defaultRequest as rq } from './request'
 import { AxiosRequestConfig } from 'axios'
+import { invoke } from './ipc-wrapper'
 
 //#region ====================================================< sys >=======================================================
 
@@ -81,29 +82,15 @@ export const uploadFileApi = (data?: object): Promise<R<any>> => {
 //#region ====================================================< doc >=======================================================
 
 /**
- *
- * @param params {
- *  onlyFolder:  [Folder] 只查询文件夹, 包含文章文件夹和图片文件夹
- *  onlyPicture: [Picture + Article] 只查询图片文件夹, 以及含有图片的文章文件夹
- *  onlyOpen:    [Article] 只查询公开的文章文件夹
- *  onlySubject: [Article] 只查询专题文件夹
- *  onlyStar:    [Article] 问查询有 star 文章的文件夹
- * }
- * @returns
+ * 获取文档树
  */
-export const docTreeApi = (params?: object): Promise<R<DocTree[]>> => {
-  return window.electronAPI.docTreeApi()
+export const docTreeApi = (docLibPath: string): Promise<R<DocTree[]>> => {
+  return window.electronAPI.docTreeApi(docLibPath)
 }
 
 /**
- * 修改文档的排序
- * @param data
- * @returns
+ * 打开文件选择框
  */
-export const docUpdSortApi = (data: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/doc/upd/sort', data)
-}
-
 export const openFileDialog = (): Promise<R<DocLibItem>> => {
   return window.electronAPI.openFileDialog()
 }
@@ -137,15 +124,6 @@ export const folderAddApi = (data?: object): Promise<R<any>> => {
  */
 export const folderUpdApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/folder/upd', data)
-}
-
-/**
- * 修改文件夹
- * @param data
- * @returns
- */
-export const folderUpdNameApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/folder/upd/name', data)
 }
 
 /**
@@ -191,12 +169,6 @@ export const subjectsApi = (params?: object): Promise<R<any>> => {
 /**
  * 查询文章详情, 如果文章为公开文章, 则会返回对应的公开信息, 如 openVersion, openTime 等
  * <p>注意: 返回的正文信息永远是草稿正文, 公开版本的正文信息需要通过公开文章查询 {@link articleOpenApi}
- * @param params {
- *  id: 文章ID,
- *  showToc: 返回 toc 目录,
- *  showMarkdown: 返回 markdown 正文,
- *  showHtml: 返回 html 正文
- * }
  * @returns
  */
 export const articleInfoApi = (params: GetFileContentReq): Promise<R<DocInfo>> => {
@@ -214,6 +186,24 @@ export const articleInfoApi = (params: GetFileContentReq): Promise<R<DocInfo>> =
  */
 export const articleUpdContentApi = (params: SaveFileContentReq): Promise<R<any>> => {
   return window.electronAPI.writeFile(params)
+}
+
+/**
+ * 修改文章名称
+ */
+export const articleUpdNameApi = (params: RenameFileReq): Promise<R<any>> => {
+  return invoke('rename-file', params)
+}
+
+/**
+ * 修改文件夹名称
+ */
+export const folderUpdNameApi = (params: RenameFileReq): Promise<R<any>> => {
+  return invoke('rename-file', params)
+}
+
+export const moveFileApi = (params: MoveFileReq): Promise<R<any>> => {
+  return invoke('move-file', params)
 }
 
 /**
@@ -244,18 +234,6 @@ export const articleAddApi = (data?: object): Promise<R<any>> => {
  */
 export const articleUpdApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/article/upd', data)
-}
-
-/**
- * 修改文章名称
- * @param data {
- *  id: curDoc.value?.id,
- *  name: curDoc.value.name
- * }
- * @returns
- */
-export const articleUpdNameApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/article/upd/name', data)
 }
 
 /**

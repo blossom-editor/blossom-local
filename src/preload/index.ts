@@ -25,11 +25,13 @@ const rednerToIpc = {
    * 文件操作
    * date: 2026-5-12
    */
+  invoke: (channel: string, ...args: any): Promise<R<any>> => ipcRenderer.invoke(channel, ...args),
   readFile: (): any => ipcRenderer.invoke('read-file'),
   writeFile: (path: string, id: string, content: string): any => ipcRenderer.invoke('write-file', path, id, content),
-  docTreeApi: (): Promise<DocTree[]> => ipcRenderer.invoke('read-doc-tree'),
-  articleInfoApi: (params: GetFileContentReq): Promise<DocInfo> => ipcRenderer.invoke('read-doc-info', params),
+  docTreeApi: (docPath: string): Promise<R<DocTree[]>> => ipcRenderer.invoke('read-doc-tree', docPath),
+  articleInfoApi: (params: GetFileContentReq): Promise<R<DocInfo>> => ipcRenderer.invoke('read-doc-info', params),
   articleUpdContentApi: (params: SaveFileContentReq): Promise<any> => ipcRenderer.invoke('write-file', params),
+  renameFile: (params: RenameFileReq): Promise<R<any>> => ipcRenderer.invoke('rename-file', params),
   openFileDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('open-file-dialog'),
   //#region
 
@@ -129,7 +131,10 @@ const rednerToIpc = {
 // just add to the DOM global.
 if (process.contextIsolated) {
   try {
-    contextBridge.exposeInMainWorld('electronAPI', { ...rednerToIpc, ...ipcToRender })
+    contextBridge.exposeInMainWorld('electronAPI', {
+      ...rednerToIpc,
+      ...ipcToRender
+    })
     // contextBridge.exposeInMainWorld('electron', electronAPI)
     // contextBridge.exposeInMainWorld('api', api)
   } catch (error) {

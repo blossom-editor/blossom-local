@@ -1,8 +1,7 @@
 <template>
   <!-- 文件夹操作 -->
   <div class="doc-workbench">
-    <ArticleTreeWorkbench @show-sort="handleShowSort" @show-search="handleShowArticleSearchDialog" ref="ArticleTreeWorkbenchRef">
-    </ArticleTreeWorkbench>
+    <ArticleTreeWorkbench @show-search="handleShowArticleSearchDialog" ref="ArticleTreeWorkbenchRef"> </ArticleTreeWorkbench>
   </div>
   <!--   -->
   <div class="doc-tree-operator">
@@ -54,17 +53,16 @@
       :indent="14"
       :icon="ArrowRightBold"
       :accordion="false"
-      :default-expanded-keys="Array.from(docTreeCurrentExpandId)"
+      :default-expanded-keys="Array.from(docTreeCurrentExpandPathSet)"
       :filter-node-method="filterNode"
       :draggable="isBlank(treeFilterText)"
-      node-key="i"
+      node-key="path"
       @nodeClick="clickCurDoc"
       @nodeExpand="handleNodeExpand"
       @nodeCollapse="handleNodeCollapse"
       @nodeDrop="handleDrop">
       <template #default="{ node, data }">
-        <div v-if="isShowSort" class="sort-tag" :style="{ backgroundColor: getColor(node) }">{{ data.s }}</div>
-        <div class="menu-item-wrapper" :id="'article-doc-wrapper-' + data.i" @click.right="handleClickRightMenu($event, data)">
+        <div class="menu-item-wrapper" :id="'article-doc-wrapper-' + data.path" @click.right="handleClickRightMenu($event, data)">
           <div :class="[viewStyle.isShowSubjectStyle ? (data.t?.includes('subject') ? 'subject-title' : 'doc-title') : 'doc-title']">
             <div class="doc-name">
               <img class="menu-icon-img" v-if="isShowImg(data, viewStyle)" :src="data.icon" />
@@ -73,13 +71,13 @@
               </svg>
               <el-input
                 v-if="data?.updn"
-                v-model="data.name"
+                v-model="data.formatName"
                 :id="'article-doc-name-' + data.path"
                 @blur="blurArticleNameInput(data)"
                 @keyup.enter="blurArticleNameInput(data)"
                 style="width: 95%"></el-input>
               <div v-else class="name-wrapper" :style="{ maxWidth: isNotBlank(data.icon) ? 'calc(100% - 25px)' : '100%' }">
-                {{ data.name }}
+                {{ data.formatName }}{{ data.id }}
               </div>
             </div>
             <div
@@ -107,10 +105,13 @@
       <div class="menu-content">
         <div @click="rename"><span class="iconbl bl-pen"></span>重命名</div>
         <div @click="handleShowDocInfoDialog('upd')"><span class="iconbl bl-a-fileedit-line"></span>编辑详情</div>
+        <div><span class="iconbl bl-a-fileedit-line"></span>查看原文件</div>
         <div v-if="curDoc.type === 'FOLDER'" @click="addFolderToDoc()"><span class="iconbl bl-folderadd-line"></span>新增文件夹</div>
         <div v-if="curDoc.type === 'FOLDER'" @click="addArticleToDoc()"><span class="iconbl bl-fileadd-line"></span>新增笔记</div>
         <!-- <div v-if="curDoc.type === 3" @click="createUrl('link')"><span class="iconbl bl-correlation-line"></span>复制双链引用</div> -->
-        <div v-if="curDoc.type === 'FOLDER'" @click="handleShowArticleImportDialog()"><span class="iconbl bl-file-upload-line"></span>导入文章</div>
+        <div v-if="curDoc.type === 'FOLDER'" @click="handleShowArticleImportDialog()">
+          <span class="iconbl bl-file-upload-line"></span>导入到该文件夹
+        </div>
 
         <!-- <div @mouseenter="handleHoverRightMenuLevel2($event, 2)" data-bl-prevet="true">
           <span class="iconbl bl-a-rightsmallline-line"></span>
@@ -137,14 +138,14 @@
         <div v-if="curDoc.type === 'ARTICLE'" class="menu-item-divider"></div>
         <div v-if="curDoc.type === 'ARTICLE'" @click="openArticleWindow"><span class="iconbl bl-a-computerend-line"></span>新窗口查看</div>
 
-        <div v-if="curDoc.type === 'ARTICLE'" @mouseenter="handleHoverRightMenuLevel2($event, 4)" data-bl-prevet="true">
+        <!-- <div v-if="curDoc.type === 'ARTICLE'" @mouseenter="handleHoverRightMenuLevel2($event, 4)" data-bl-prevet="true">
           <span class="iconbl bl-a-rightsmallline-line"></span>
           <span class="iconbl bl-file-download-line"></span>导出文章
           <div class="tree-menu-level2" :style="rMenuLevel2">
             <div @click="articleDownloadHtml"><span class="iconbl bl-HTML"></span>导出为 HTML</div>
             <div @click="articleBackup('HTML')"><span class="iconbl bl-HTML"></span>导出为本地 HTML</div>
           </div>
-        </div>
+        </div> -->
         <div class="menu-item-divider"></div>
         <div @click="delDoc()"><span class="iconbl bl-delete-line"></span>删除{{ curDocType }}</div>
       </div>
@@ -194,6 +195,7 @@ import { ref, provide, onBeforeUnmount, nextTick, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
+import { useDocLibStore } from '@renderer/stores/docLib'
 // element plus
 import { ElMessageBox, TreeNode } from 'element-plus'
 import type { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNode'
@@ -207,10 +209,9 @@ import {
   folderDelApi,
   folderUpdNameApi,
   articleDelApi,
-  articleBackupApi,
   articleUpdNameApi,
   docTreeApi,
-  docUpdSortApi
+  moveFileApi
 } from '@renderer/api/blossom'
 import { grammar } from './scripts/markedjs'
 import { provideKeyDocTree } from '@renderer/views/doc/doc'
@@ -220,8 +221,9 @@ import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
 // util
 import { isEmpty } from 'lodash'
-import { isNotNull, isNotBlank, isBlank } from '@renderer/assets/utils/obj'
-import { openExtenal, writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
+import { getParentDirPath } from '@renderer/assets/utils/util'
+import { isNotNull, isNotBlank, isBlank, isNull } from '@renderer/assets/utils/obj'
+import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
 import Notify from '@renderer/scripts/notify'
 import ArticleTreeWorkbench from './ArticleTreeWorkbench.vue'
@@ -231,6 +233,7 @@ import ArticleSearch from './ArticleSearch.vue'
 
 const route = useRoute()
 const user = useUserStore()
+const docLibStore = useDocLibStore()
 const { viewStyle } = useConfigStore()
 
 useLifecycle(
@@ -244,7 +247,7 @@ onBeforeUnmount(() => {
   document.body.removeEventListener('contextmenu', closeTreeDocsMenuShow)
 })
 watch(
-  () => user.currentUserId,
+  () => docLibStore.cur?.path,
   (_newVal, _oldVal) => getDocTree()
 )
 
@@ -258,15 +261,15 @@ provide(provideKeyDocTree, docTreeData) // 提供菜单列表依赖注入, 主�
 
 /** 获取路由参数 */
 const getRouteQueryParams = () => {
-  let routeArticleId = route.query.articleId
-  if (isNotNull(routeArticleId)) {
-    const articleId = routeArticleId as string
-    emits('clickDoc', { ty: 3, i: articleId })
+  let routeArticlePath = route.query.articleId
+  if (isNotNull(routeArticlePath)) {
+    const articlePath = routeArticlePath as string
+    emits('clickDoc', { ty: 3, i: articlePath })
     nextTick(() => {
-      docTreeLastId.value = articleId
-      const parentNode = DocTreeRef.value.getNode(articleId)
-      setCurrentKey({ i: articleId, p: parentNode.data.p, ty: 3 })
-      const ele = document.getElementById('article-doc-wrapper-' + articleId)
+      docTreeCurrentChoisePath.value = articlePath
+      const parentNode = DocTreeRef.value.getNode(articlePath)
+      setCurrentKey({ path: articlePath, parentPath: parentNode.data.path, type: 'ARTICLE' })
+      const ele = document.getElementById('article-doc-wrapper-' + articlePath)
       if (ele) {
         ;(DocTreeContainer.value as Element).scrollTop = ele.offsetTop
       }
@@ -278,10 +281,10 @@ const getRouteQueryParams = () => {
  * 聚焦当前打开的文章
  */
 const collimationCurrentArticle = () => {
-  if (!isEmpty(docTreeData.value) && isNotBlank(articleCurrnetId.value)) {
-    DocTreeRef.value.setCurrentKey(articleCurrnetId.value)
+  if (!isEmpty(docTreeData.value) && isNotBlank(articleCurrnetChoisePath.value)) {
+    DocTreeRef.value.setCurrentKey(articleCurrnetChoisePath.value)
     nextTick(() => {
-      const ele = document.getElementById('article-doc-wrapper-' + articleCurrnetId.value)
+      const ele = document.getElementById('article-doc-wrapper-' + articleCurrnetChoisePath.value)
       if (ele) {
         ;(DocTreeContainer.value as Element).scrollTop = ele.offsetTop
       }
@@ -295,8 +298,8 @@ const collimationCurrentArticle = () => {
 const refreshDocTree = () => {
   getDocTree(() => {
     nextTick(() => {
-      if (!isEmpty(docTreeData.value) && isNotBlank(docTreeLastId.value)) {
-        DocTreeRef.value.setCurrentKey(docTreeLastId.value)
+      if (!isEmpty(docTreeData.value) && isNotBlank(docTreeCurrentChoisePath.value)) {
+        DocTreeRef.value.setCurrentKey(docTreeCurrentChoisePath.value)
       }
     })
   })
@@ -309,10 +312,10 @@ const refreshDocTree = () => {
  */
 const getDocTree = (callback?: () => void) => {
   startLoading()
-  docTreeApi()
+  docTreeApi(docLibStore.cur!.path)
     .then((resp) => {
       console.log(resp)
-      docTreeData.value = resp
+      docTreeData.value = resp.data!
       if (callback) callback()
     })
     .finally(() => endLoading())
@@ -328,7 +331,7 @@ const getDocTree = (callback?: () => void) => {
  */
 const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: MouseEvent) => {
   closeTreeDocsMenuShow(event)
-  setCurrentKey(tree, node, treeNode, event)
+  setCurrentKey({ path: tree.path, parentPath: node.parent.data.path, type: tree.type }, node, treeNode, event)
   emits('clickDoc', tree)
 }
 
@@ -338,9 +341,6 @@ const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: Mouse
 const getDocTreeData = (): DocTree[] => {
   return docTreeData.value
 }
-
-/** 是否显示排序 */
-const handleShowSort = () => (isShowSort.value = !isShowSort.value)
 
 /** 开始加载 */
 const startLoading = () => {
@@ -360,11 +360,12 @@ const endLoading = () => {
 //#endregion
 
 //#region ----------------------------------------< 树状列表管理 >--------------------------------------
-const articleCurrnetId = ref('')
-// 文档的最后选中项, 用于外部跳转后选中菜单
-const docTreeLastId = ref('')
+// 当前选中的文章
+const articleCurrnetChoisePath = ref('')
+// 当前选中的文档, 包含文章和文件夹
+const docTreeCurrentChoisePath = ref('')
 // 所有展开的节点
-const docTreeCurrentExpandId = ref<Set<string>>(new Set())
+const docTreeCurrentExpandPathSet = ref<Set<string>>(new Set())
 // 搜索内容
 const treeFilterText = ref('')
 const isShowTreeFilter = ref(false)
@@ -384,21 +385,21 @@ watch(treeFilterText, (val) => {
 
 /**
  * 设置选中项, 并展开所有上级
- *
- * @param tree 当前选中的文档
+ * 通过 key 设置某个节点的当前选中状态，使用此方法必须设置 node-key  属性
  */
-const setCurrentKey = (tree: { id: string; path: string; type: 'FOLDER' | 'ARTICLE' }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
+const setCurrentKey = (tree: { path: string; parentPath: string; type: 'FOLDER' | 'ARTICLE' }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
   if (tree.type === 'FOLDER') {
-    docTreeLastId.value = tree.path
+    docTreeCurrentChoisePath.value = tree.path
     if (node && node.expanded) {
-      docTreeCurrentExpandId.value.add(tree.path)
+      docTreeCurrentExpandPathSet.value.add(tree.path)
     }
+    DocTreeRef.value.setCurrentKey(tree.path)
   } else if (tree.type === 'ARTICLE') {
-    articleCurrnetId.value = tree.path
-    docTreeLastId.value = tree.path
-    docTreeCurrentExpandId.value.add(tree.path)
+    articleCurrnetChoisePath.value = tree.path
+    docTreeCurrentChoisePath.value = tree.parentPath
+    docTreeCurrentExpandPathSet.value.add(tree.parentPath)
+    DocTreeRef.value.setCurrentKey(tree.parentPath)
   }
-  DocTreeRef.value.setCurrentKey(tree.path)
 }
 
 /**
@@ -431,7 +432,7 @@ const filterNode = (value: string, data: DocTree) => {
  * @return boolean 节点是否允许被拖动
  */
 const handleAllowDrag = (node: Node) => {
-  return notAllowDragKey !== node.data.i
+  return notAllowDragKey !== node.data.path
 }
 
 /**
@@ -442,18 +443,16 @@ const handleAllowDrag = (node: Node) => {
  * @param type 放置的类型
  * @return boolean 是否允许被放置
  */
-const handleAllowDrop = (_draggingNode: Node, dropNode: Node, type: NodeDropType) => {
-  if (dropNode.data.ty === 3 && type === 'inner') {
-    return false
-  }
-  return true
+const handleAllowDrop = (_draggingNode: Node, dropNode: Node, _type: NodeDropType) => {
+  return !(dropNode.data.type === 'ARTICLE')
 }
 
 /**
  * 折叠全部, 清空当前选中状态, 并刷新列表
  */
 const collapseAll = () => {
-  docTreeCurrentExpandId.value.clear()
+  docTreeCurrentExpandPathSet.value.clear()
+  DocTreeRef.value.setCurrentKey('')
   getDocTree()
 }
 
@@ -477,7 +476,7 @@ const collapseNoChild = () => {
 const collapseChild = (doc: DocTree) => {
   if (doc.type === 'FOLDER' || doc.type === 'ARTICLE') {
     if (isEmpty(doc.children)) {
-      docTreeCurrentExpandId.value.delete(doc.path)
+      docTreeCurrentExpandPathSet.value.delete(doc.path)
     } else {
       for (let i = 0; i < doc.children!.length; i++) {
         const cdoc = doc.children![i]
@@ -491,14 +490,14 @@ const collapseChild = (doc: DocTree) => {
  * 处理节点展开
  */
 const handleNodeExpand = (tree: DocTree, _node: Node) => {
-  docTreeCurrentExpandId.value.add(tree.path)
+  docTreeCurrentExpandPathSet.value.add(tree.path)
 }
 
 /**
  * 处理节点折叠, 同时清除所有子节点的展开状态
  */
 const handleNodeCollapse = async (tree: DocTree, node: Node) => {
-  docTreeCurrentExpandId.value.delete(tree.path)
+  docTreeCurrentExpandPathSet.value.delete(tree.path)
   collapseChilds(node)
 }
 
@@ -511,7 +510,7 @@ const collapseChilds = async (node: Node) => {
     if (child.isLeaf) {
     } else {
       child.expanded = false
-      docTreeCurrentExpandId.value.delete(child.data.i)
+      docTreeCurrentExpandPathSet.value.delete(child.data.path)
       collapseChilds(child)
     }
   }
@@ -524,7 +523,7 @@ const collapseChilds = async (node: Node) => {
 const closeParentIfNoChild = (pid: string) => {
   let node: Node = DocTreeRef.value.getNode(pid)
   if (node && isEmpty(node.childNodes)) {
-    docTreeCurrentExpandId.value.delete(pid)
+    docTreeCurrentExpandPathSet.value.delete(pid)
   }
 }
 
@@ -532,20 +531,20 @@ const closeParentIfNoChild = (pid: string) => {
  * 拖拽后处理各个节点排序
  */
 const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: DragEvents) => {
-  handleTreeDrop(drag, enter, dropType, _event, DocTreeRef, docTreeData, 1, (needUpd) => {
-    docUpdSortApi({ docs: needUpd, folderType: 1 })
-      .then((resp) => {
-        docTreeData.value = resp.data
-        collapseNoChild()
-      })
-      .catch(() => getDocTree())
+  const moveFileParams = handleTreeDrop(drag, enter, dropType, _event, DocTreeRef, docTreeData)
+  if (isNull(moveFileParams)) {
+    getDocTree()
+    return
+  }
+  moveFileApi(moveFileParams!).then(() => {
+    getDocTree()
   })
 }
 
 //#endregion
 
 //#region ----------------------------------------< 右键菜单 >--------------------------------------
-const curDoc = ref<DocTree>({ id: '0', path: '0', name: '选择菜单', type: 'ARTICLE', updn: false })
+const curDoc = ref<DocTree>({ id: '0', path: '0', name: '选择菜单', formatName: '', type: 'ARTICLE', updn: false })
 const rMenu = ref<RightMenu>({ show: false, clientX: 0, clientY: 0 })
 const rMenuLevel2 = ref<RightMenuLevel2>({ top: '0px' })
 const ArticleDocTreeRightMenuRef = ref()
@@ -565,7 +564,6 @@ const curDocType = computed(() => {
  */
 const handleClickRightMenu = (event: MouseEvent, doc: DocTree) => {
   event.preventDefault()
-  docTreeCurrentExpandId.value.add(doc.path)
   if (!doc) return
 
   curDoc.value = doc
@@ -621,9 +619,9 @@ const handleHoverRightMenuLevel2 = (event: MouseEvent, childMenuCount: number = 
  */
 const rename = () => {
   curDoc.value.updn = true
-  notAllowDragKey = curDoc.value.i
+  notAllowDragKey = curDoc.value.path
   nextTick(() => {
-    let ele = document.getElementById('article-doc-name-' + curDoc.value.i)
+    let ele = document.getElementById('article-doc-name-' + curDoc.value.path)
     if (ele) ele.focus()
   })
 }
@@ -632,22 +630,51 @@ const rename = () => {
  * 重命名文章失去焦点
  */
 const blurArticleNameInput = (doc: DocTree) => {
-  if (doc.ty === 3) {
-    articleUpdNameApi({ id: doc.i, name: doc.n }).then((_resp) => {
-      doc.updn = false
-      notAllowDragKey = ''
+  const params = {
+    oldPath: doc.path,
+    newPath: ''
+  }
+
+  const newName = doc.formatName
+  const parentPath = getParentDirPath(doc.path)
+
+  function resetUpdateState() {
+    doc.updn = false
+    notAllowDragKey = ''
+  }
+
+  if (doc.type === 'ARTICLE') {
+    params.newPath = parentPath + newName + '.md'
+
+    if (params.oldPath === params.newPath) {
+      resetUpdateState()
+      return
+    }
+
+    articleUpdNameApi(params).then((_resp) => {
+      resetUpdateState()
+      getDocTree()
     })
   } else {
-    folderUpdNameApi({ id: doc.i, name: doc.n }).then((_resp) => {
-      doc.updn = false
-      notAllowDragKey = ''
+    params.newPath = parentPath + newName
+
+    if (params.oldPath === params.newPath) {
+      resetUpdateState()
+      return
+    }
+
+    folderUpdNameApi(params).then((_resp) => {
+      resetUpdateState()
+      getDocTree()
     })
   }
 }
 
-/** 打开新页面, 文件夹(curDoc.value.ty == 1)无法使用新页面打开 */
+/**
+ * 打开新页面, 文件夹(curDoc.value.ty == 1)无法使用新页面打开
+ */
 const openArticleWindow = () => {
-  if (curDoc.value.ty === 1) return
+  if (curDoc.value.type === 'FOLDER') return
   openNewArticleWindow(curDoc.value.n, curDoc.value.i)
 }
 
@@ -662,38 +689,14 @@ const createUrlLink = (name: string, id: string) => {
 }
 
 /**
- * 批量导出文章
- * @param type 导出类型
- */
-const articleBackup = (type: 'MARKDOWN' | 'HTML') => {
-  articleBackupApi({ type: type, articleId: curDoc.value.i, toLocal: 'YES' }).then((resp) => {
-    ElMessageBox.confirm(
-      `由于导出为本地文章时需要导出图片等信息，所以文章将会以
-    <span style="color:#C02B2B;text-decoration: underline;">备份压缩包</span>
-    的形式存储在服务器上，文件名为：「${resp.data.filename}」，你可以前往备份页面查看导出进度和导出文件压缩包。`,
-      {
-        confirmButtonText: '立即查看',
-        cancelButtonText: '稍后再说',
-        type: 'info',
-        draggable: true,
-        dangerouslyUseHTMLString: true
-      }
-    ).then(() => {
-      ArticleTreeWorkbenchRef.value.handleShowBackupDialog()
-    })
-  })
-}
-
-/**
  * 删除文档, 删除后将文档从树状节点中删除
  */
 const delDoc = () => {
-  let type = curDoc.value.ty === 3 ? '文章' : '文件夹'
+  let type = curDoc.value.type === 'ARTICLE' ? '文章' : '文件夹'
   ElMessageBox.confirm(
     `<strong>注意：</strong><br/>
-    1. 公开访问记录将永久删除。<br/>
-    2. 双链引用将永久删除，还原后续重新编辑才可再次生成。<br/>
-    是否继续删除${type}: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.n}</span>？`,
+    删除的文章可在回收站中找回<br/>
+    是否继续删除${type}: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.formatName}</span>？`,
     {
       confirmButtonText: '确定删除',
       cancelButtonText: '我再想想',
@@ -702,7 +705,7 @@ const delDoc = () => {
       dangerouslyUseHTMLString: true
     }
   ).then(() => {
-    if (curDoc.value.ty === 3) {
+    if (curDoc.value.type === 'ARTICLE') {
       articleDelApi({ id: curDoc.value.i }).then((_resp) => {
         Notify.success(`删除文章成功`)
         DocTreeRef.value.remove(curDoc.value.i)
@@ -794,7 +797,7 @@ const addDocToTail = (doc: DocTree) => {
   if (doc.p !== '0') {
     // 插入到根目录
     DocTreeRef.value.append(doc, DocTreeRef.value.getNode(doc.p))
-    docTreeCurrentExpandId.value.add(doc.p)
+    docTreeCurrentExpandPathSet.value.add(doc.p)
   } else {
     docTreeData.value.push(doc)
   }
@@ -894,7 +897,7 @@ const openArticle = (article: DocTree) => {
   const articleId = article.i
   emits('clickDoc', { ty: 3, i: articleId })
   nextTick(() => {
-    docTreeLastId.value = articleId
+    docTreeCurrentChoisePath.value = articleId
     const parentNode = DocTreeRef.value.getNode(articleId)
     setCurrentKey({ i: articleId, p: parentNode.data.p, ty: 3 })
     isShowArticleSearchDialog.value = false

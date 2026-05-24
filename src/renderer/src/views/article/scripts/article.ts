@@ -125,3 +125,13 @@ export const downloadTextPlain = (resp: any) => {
   URL.revokeObjectURL(a.href)
   a.remove()
 }
+
+// 简单的字数统计
+// 一个英文单词（如 “hello”）算 1 字，一个汉字（如 “你”）也算 1 字
+export function countWords(text: string) {
+  // 匹配中文字符（基本汉字）或 英文单词（允许连字符和撇号）
+  const regex = /[\u4e00-\u9fff]|\d+|[A-Za-z]+(?:[-'][A-Za-z]+)*/g
+  const matches = text.match(regex)
+  return matches ? matches.length : 0
+}
+

@@ -137,7 +137,7 @@ import { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNod
 import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 import Node from 'element-plus/es/components/tree/src/model/node'
 // ts
-import { docTreeApi, docUpdSortApi, folderAddApi, folderDelApi, folderUpdNameApi } from '@renderer/api/blossom'
+import { docTreeApi, folderAddApi, folderDelApi, folderUpdNameApi } from '@renderer/api/blossom'
 import { provideKeyDocTree } from '@renderer/views/doc/doc'
 import { isShowImg, isShowSvg, tags } from '@renderer/views/doc/doc-tree-detail'
 import { getColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
@@ -447,14 +447,14 @@ const closeParentIfNoChild = (pid: string) => {
  * 拖拽后处理各个节点排序
  */
 const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: DragEvents) => {
-  handleTreeDrop(drag, enter, dropType, _event, DocTreeRef, docTreeData, 2, (needUpd) => {
-    docUpdSortApi({ docs: needUpd, folderType: 2, onlyPicture: true })
-      .then((resp) => {
-        addTreeDivider(resp.data)
-        collapseNoChild()
-      })
-      .catch(() => getDocTree())
-  })
+  // handleTreeDrop(drag, enter, dropType, _event, DocTreeRef, docTreeData, 2, (needUpd) => {
+  //   docUpdSortApi({ docs: needUpd, folderType: 2, onlyPicture: true })
+  //     .then((resp) => {
+  //       addTreeDivider(resp.data)
+  //       collapseNoChild()
+  //     })
+  //     .catch(() => getDocTree())
+  // })
 }
 
 //#endregion
