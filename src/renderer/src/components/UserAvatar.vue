@@ -1,10 +1,10 @@
 <template>
   <div ref="AvatorWrapperRef" class="avator-wrapper" @mouseleave="mouseLevel" @mouseenter="mouseEnter($event)" @mousemove="mouseMove($event)">
     <img
-      v-if="userinfo.avatar != ''"
+      v-if="docLibStore.cur?.icon != ''"
       ref="AcatorInnerRef"
       :class="['avatar-img', viewStyle.isGlobalShadow ? 'img-shadow' : '']"
-      :src="userinfo.avatar"
+      :src="docLibStore.cur?.icon"
       :style="innerStyle" />
     <img
       v-else
@@ -17,13 +17,11 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { useUserStore } from '@renderer/stores/user'
+import { useDocLibStore } from '@renderer/stores/docLib'
 import { useConfigStore } from '@renderer/stores/config'
-import { storeToRefs } from 'pinia'
 
 const configStore = useConfigStore()
-const userStore = useUserStore()
-const { userinfo } = storeToRefs(userStore)
+const docLibStore = useDocLibStore()
 const { viewStyle } = configStore
 
 onMounted(() => {

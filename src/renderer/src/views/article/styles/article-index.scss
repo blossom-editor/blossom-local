@@ -59,7 +59,7 @@
 
   // 编辑器内容
   .editor-container {
-    @include box(calc(100% - 2px), 100%);
+    @include box(100%, 100%);
     position: relative;
     background-color: #ffffff00;
 
@@ -226,6 +226,12 @@
       @include box(100%, $heightStatus);
       border-top: 1px solid var(--el-border-color);
       z-index: 2;
+    }
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      border-radius: 3px !important;
     }
   }
 }

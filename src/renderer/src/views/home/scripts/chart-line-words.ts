@@ -70,7 +70,7 @@ export const renderChart = async (chart: any, chartData: ChartLineWordsData, cal
     yAxis: echartTheme.yAxis(),
     series: [
       {
-        name: 'Words',
+        name: '总字数',
         type: 'line',
         sampling: 'lttb',
         smooth: true,
@@ -106,7 +106,7 @@ export const renderChart = async (chart: any, chartData: ChartLineWordsData, cal
       },
       {
         z: 2,
-        name: 'Month on Month',
+        name: '相较上月',
         type: 'line',
         sampling: 'lttb',
         smooth: true, // 平滑曲线

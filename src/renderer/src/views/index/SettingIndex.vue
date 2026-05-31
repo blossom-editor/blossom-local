@@ -15,41 +15,23 @@
     </el-tabs>
   </div>
   <div class="version">
-    <span>{{ CONFIG.SYS.NAME + ' | ' + CONFIG.SYS.VERSION + getServerVersion() }}</span>
+    <span>{{ CONFIG.SYS.NAME + ' | ' + CONFIG.SYS.VERSION }}</span>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useUserStore } from '@renderer/stores/user'
-import { useRoute } from 'vue-router'
-import { isNotBlank } from '@renderer/assets/utils/obj'
 import SettingLogin from './SettingLogin.vue'
 import SettingConfig from './SettingConfig.vue'
 import SettingAboutVue from './SettingAbout.vue'
 import CONFIG from '@renderer/assets/constants/system'
 
-const userStore = useUserStore()
-const route = useRoute()
-
 onMounted(() => {
   document.title = 'Blossom 设置'
-  let actTab = route.query.activeTab as string
-  if (isNotBlank(actTab)) {
-    activeTab.value = actTab
-  } else {
-    activeTab.value = 'login'
-  }
+  activeTab.value = 'login'
 })
 
 const activeTab = ref('login')
-
-const getServerVersion = () => {
-  if (userStore.sysParams && userStore.sysParams.SERVER_VERSION) {
-    return ' | v' + userStore.sysParams.SERVER_VERSION.replaceAll('-SNAPSHOT', '')
-  }
-  return ''
-}
 </script>
 
 <style scoped lang="scss">

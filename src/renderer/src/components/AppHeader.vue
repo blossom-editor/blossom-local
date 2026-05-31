@@ -1,6 +1,6 @@
 <template>
   <div class="app-header-root">
-    <div class="cur-doclib">文档库：{{ docLibStore.cur?.name }} {{ docLibStore.cur?.path }}</div>
+    <div class="cur-doclib">文档库：{{ docLibStore.cur?.name }}</div>
     <div class="drag">{{ tryuseComment }}</div>
     <div class="window-workbench">
       <el-popover
@@ -16,21 +16,8 @@
         virtual-triggering>
         <div v-if="!userStore.isLogin" class="caution-popover-placeholder">登录后查看</div>
         <div v-else class="caution-content">
-          <bl-row class="caution-row caution-row-warn" v-if="!userStore.paramIsCorrect" @click="showQuickSetting">
-            <bl-col width="40px" height="40px" class="iconbl bl-blog" just="center"></bl-col>
-            <bl-col just="center">您有一些设置需要修改，点击快速设置。</bl-col>
-          </bl-row>
-
-          <!-- <bl-row class="caution-row">
-            <bl-col width="40px" height="40px" class="iconbl bl-a-cloudrefresh-line" just="center"></bl-col>
-            <bl-col just="center">发现新版本，点击查看更新内容。</bl-col>
-          </bl-row> -->
-
           <bl-row class="no-more" just="center"> 无更多内容 </bl-row>
         </div>
-        <bl-row v-if="userStore.isLogin" class="caution-footer" just="flex-end">
-          <div @click="showQuickSetting">快速配置</div>
-        </bl-row>
       </el-popover>
       <div
         v-if="!props.simple"
@@ -63,19 +50,6 @@
   <el-drawer class="web-collect-drawer" size="420" v-model="isShowWebDrawer">
     <WebCollect></WebCollect>
   </el-drawer>
-
-  <el-dialog
-    v-model="isShowQuickSetting"
-    class="bl-dialog-bigger-headerbtn"
-    width="750px"
-    :align-center="true"
-    :append-to-body="true"
-    :lock-scroll="false"
-    :destroy-on-close="true"
-    :close-on-click-modal="false"
-    draggable>
-    <QuickSetting ref="PlanDayInfoRef" @completed="quickSettingComplete"></QuickSetting>
-  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -90,7 +64,6 @@ import { isWindows, isElectron } from '@renderer/assets/utils/util'
 import { isTryuse } from '@renderer/scripts/env'
 import SYSTEM from '@renderer/assets/constants/system'
 import WebCollect from './WebCollect.vue'
-import QuickSetting from '@renderer/views/index/setting/QuickSetting.vue'
 
 const themeStrore = useThemeStore()
 const userStore = useUserStore()
@@ -139,7 +112,6 @@ const handleResize = () => {
 
 const ButtonRef = ref()
 const PopoverRef = ref()
-const isShowQuickSetting = ref(false)
 
 /**
  * 点击外部时关闭
@@ -148,14 +120,6 @@ const onClickOutside = () => {
   unref(PopoverRef).popperRef?.delayHide?.()
 }
 
-const showQuickSetting = () => {
-  unref(PopoverRef).popperRef?.delayHide?.()
-  isShowQuickSetting.value = true
-}
-
-const quickSettingComplete = () => {
-  isShowQuickSetting.value = false
-}
 //#endregion
 </script>
 
@@ -293,15 +257,6 @@ const quickSettingComplete = () => {
     font-size: 12px;
     margin: 10px 0;
     color: var(--bl-text-color-light);
-  }
-}
-
-.caution-footer {
-  padding: 5px;
-  color: var(--bl-text-color-light);
-  div {
-    padding: 0 10px;
-    cursor: pointer;
   }
 }
 </style>

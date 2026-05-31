@@ -8,7 +8,7 @@
           <div class="now-time">
             <DateLine></DateLine>
           </div>
-          <div class="user-name">{{ userinfo.nickName }}</div>
+          <div class="user-name"></div>
           <Laptop></Laptop>
         </div>
         <Weather></Weather>
@@ -17,20 +17,19 @@
       <div style="height: 10px"></div>
       <!-- 统计 -->
       <div class="chart-container">
-        <bl-row class="container-name" style="height: 50px; min-height: 50px">字数统计</bl-row>
+        <bl-row class="container-name">字数统计</bl-row>
         <bl-row height="270px">
           <!-- 字数图表 -->
           <bl-col width="670px">
             <bl-row class="container-sub-name">
               The last 36 months
               <span class="iconbl bl-refresh-smile" @click="loadWordLine"></span>
-              <span class="iconbl bl-statistic-line container-operator" @click="showWordsInfo"></span>
             </bl-row>
             <ChartLineWords ref="ChartLineWordsRef"></ChartLineWords>
           </bl-col>
           <!-- 统计卡片 -->
           <bl-col width="200px">
-            <bl-row class="container-sub-name">Blossom Statistic</bl-row>
+            <bl-row class="container-sub-name" just="flex-end">文章与图片</bl-row>
             <StatisticCard></StatisticCard>
           </bl-col>
         </bl-row>
@@ -38,7 +37,7 @@
         <!-- 热力图 -->
         <bl-row class="container-name">编辑热力图</bl-row>
         <bl-row class="container-sub-name">
-          每日编辑文章数 (每5分钟更新)
+          每日编辑文章数
           <span class="iconbl bl-refresh-smile" @click="loadArticleHeapmap"></span>
         </bl-row>
         <bl-row width="870px" height="260px">
@@ -91,23 +90,10 @@
       <WebCollect></WebCollect>
     </div>
   </div>
-
-  <el-dialog
-    v-model="isShowWordsInfoDialog"
-    width="80%"
-    :align-center="true"
-    :append-to-body="true"
-    :destroy-on-close="true"
-    :close-on-click-modal="false"
-    draggable>
-    <WordsInfo></WordsInfo>
-  </el-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, onActivated } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
 // components
 import Laptop from '@renderer/components/Laptop.vue'
@@ -118,18 +104,13 @@ import Weather from '@renderer/components/Weather.vue'
 // charts
 import ChartLineWords from './ChartLineWords.vue'
 import ChartHeatmap from './ChartHeatmap.vue'
-import SentinelChartLine from '@renderer/views/statistic/SentinelChartLine.vue'
 // articles
 import ArticleSubjects from './ArticleSubjects.vue'
 import ArticleStars from './ArticleStars.vue'
 import StatisticCard from './StatisticCard.vue'
 import TaskProgressSimpleVue from '../todo/TaskProgressSimple.vue'
-import WordsInfo from './WordsInfo.vue'
 
 import { nowWhen } from '@renderer/assets/utils/util'
-
-const userStore = useUserStore()
-const { userinfo } = storeToRefs(userStore)
 
 const ChartLineWordsRef = ref()
 const ChartHeatmapRef = ref()
@@ -141,13 +122,6 @@ const loadWordLine = () => ChartLineWordsRef.value.reload()
 const loadArticleHeapmap = () => ChartHeatmapRef.value.reload()
 
 const now = ref(nowWhen())
-//#region ----------------------------------------< 字数编辑 >--------------------------------------
-const isShowWordsInfoDialog = ref(false)
-
-const showWordsInfo = () => {
-  isShowWordsInfoDialog.value = !isShowWordsInfoDialog.value
-}
-//#endregion
 
 //#region ----------------------------------------< 网页收藏 >--------------------------------------
 const config = useConfigStore()

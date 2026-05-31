@@ -235,7 +235,10 @@ export const formatFileSize = (size: number): string => {
  * @param param
  * @returns 返回字符串
  */
-export const formartNumber = (param: number): string => {
+export const formartNumber = (param: number | undefined): string => {
+  if (param === undefined) {
+    return '0'
+  }
   let num: string = (param || 0).toString()
   let result: string = ''
   let isNegative = param < 0
@@ -324,6 +327,20 @@ export const isWindows = () => {
 
 export const isMacOS = () => {
   return platform() === 'darwin'
+}
+
+/**
+ * 根据不同平台显示不同的信息
+ * @returns
+ */
+export const platformText = (win: string, mac: string) => {
+  if (isWindows()) {
+    return win
+  }
+  if (isMacOS()) {
+    return mac
+  }
+  return win
 }
 
 /**
@@ -535,4 +552,13 @@ export const uuid = (): string => {
       v = c == 'x' ? r : (r & 0x3) | 0x8
     return v.toString(16)
   })
+}
+
+/**
+ * 文件名不允许包含如下特殊字符
+ * mac平台的约束在win平台同样生效, 放置文档库在不同设备之间同步
+ */
+export const inValidateFileName = (str: string): boolean => {
+  const regex = /[<>\/\\:*?"|.]/
+  return regex.test(str)
 }

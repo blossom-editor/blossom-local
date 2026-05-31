@@ -21,10 +21,6 @@ const ipcToRender = {
  * 渲染进程调用主进程方法
  */
 const rednerToIpc = {
-  /**
-   * 文件操作
-   * date: 2026-5-12
-   */
   invoke: (channel: string, ...args: any): Promise<R<any>> => ipcRenderer.invoke(channel, ...args),
   readFile: (): any => ipcRenderer.invoke('read-file'),
   writeFile: (path: string, id: string, content: string): any => ipcRenderer.invoke('write-file', path, id, content),
@@ -32,7 +28,9 @@ const rednerToIpc = {
   articleInfoApi: (params: GetFileContentReq): Promise<R<DocInfo>> => ipcRenderer.invoke('read-doc-info', params),
   articleUpdContentApi: (params: SaveFileContentReq): Promise<any> => ipcRenderer.invoke('write-file', params),
   renameFile: (params: RenameFileReq): Promise<R<any>> => ipcRenderer.invoke('rename-file', params),
-  openFileDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('open-file-dialog'),
+  selectDocLibFolderDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('select-doclib-folder-dialog'),
+  openFileLocation: (filePath: string): Promise<R<void>> => ipcRenderer.invoke('open-file-location', filePath),
+
   //#region
 
   /**

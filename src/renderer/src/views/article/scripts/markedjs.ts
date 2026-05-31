@@ -333,7 +333,7 @@ export const renderCode = (code: string, language: string | undefined, _isEscape
     }
 
     return `<iframe width="${width}" height="${height}" style="margin: 10px 0"
-      scrolling="no" border="0" frameborder="no" framespacing="0" loading="lazy" 
+      scrolling="no" border="0" frameborder="no" framespacing="0" loading="lazy"
       src="https://player.bilibili.com/player.html?bvid=${bvid}&page=1&autoplay=0" ></iframe>`
   }
 

@@ -22,7 +22,7 @@ type Option = {
 }
 
 /**
- * 左右拖动改变布局的功能
+ * 左右拖动改变布局的功能, 分割线是垂直的
  *
  * @param oneRef 拖动影响到组件1
  * @param twoRef 拖动影响到组件2
@@ -63,7 +63,7 @@ export const useResizeVertical = (
 
   const hideOne = () => {
     oneRef.value!.style.width = `0px`
-    twoRef.value!.style.width = `calc(100% - 2px)`
+    twoRef.value!.style.width = `100%`
   }
 
   const resotreOne = () => {
@@ -98,7 +98,7 @@ export const useResizeVertical = (
         oneWidth = Math.max(options.minOne, oneWidth)
       }
       oneRef.value!.style.width = `${oneWidth}px`
-      twoRef.value!.style.width = `calc(100% - ${oneWidth}px - 2px)`
+      twoRef.value!.style.width = `calc(100% - ${oneWidth}px)`
       if (twoPendantRef) {
         twoPendantRef.value!.style.left = `${oneWidth}px`
       }

@@ -40,23 +40,21 @@
 <script setup lang="ts">
 import router from '@renderer/router'
 import { ref, watch } from 'vue'
-import { storeToRefs } from 'pinia'
 import { useThemeStore } from '@renderer/stores/theme'
 import { useConfigStore } from '@renderer/stores/config'
-import { useUserStore, AuthStatus } from '@renderer/stores/user'
-import { ElNotification } from 'element-plus'
+import { useDocLibStore } from '@renderer/stores/docLib'
 import user from './AsideUser.vue'
 import upload from './AsideUpload.vue'
 import setting from './AsideSetting.vue'
 import logo from '@renderer/components/Logo.vue'
 import ThemeSetting from './setting/ThemeSetting.vue'
 import { isMacOS } from '@renderer/assets/utils/util'
+import Notify from '@renderer/scripts/notify.js'
 
+const docLibStore = useDocLibStore()
 const themeStrore = useThemeStore()
-const userStore = useUserStore()
 const configStore = useConfigStore()
 const { viewStyle } = configStore
-const { auth } = storeToRefs(userStore)
 
 interface AsideMenu {
   login: boolean
@@ -67,10 +65,10 @@ interface AsideMenu {
 const menus = ref<AsideMenu[]>([
   { login: true, name: 'Home', path: '/home', icon: 'bl-a-home1-line' },
   { login: true, name: 'Editor', path: '/articleIndex', icon: 'bl-a-texteditorhighlightcolor-line' },
-  { login: true, name: 'Pic', path: '/pictureIndex', icon: 'bl-picture-line' },
-  { login: true, name: 'Todo', path: '/todoIndex', icon: 'bl-a-labellist-line' },
-  { login: true, name: 'Plan', path: '/planIndex', icon: 'bl-calendar-line' },
-  { login: true, name: 'Note', path: '/noteIndex', icon: 'bl-note-line' }
+  { login: true, name: 'Pic', path: '/pictureIndex', icon: 'bl-picture-line' }
+  // { login: true, name: 'Todo', path: '/todoIndex', icon: 'bl-a-labellist-line' },
+  // { login: true, name: 'Plan', path: '/planIndex', icon: 'bl-calendar-line' },
+  // { login: true, name: 'Note', path: '/noteIndex', icon: 'bl-note-line' }
 ])
 
 const activeMenuPath = ref<string>('home')
@@ -87,9 +85,12 @@ watch(
  * 跳转页面, 非登录状态无法跳转
  */
 const toRoute = (menu: AsideMenu) => {
-
-  activeMenuPath.value = menu.path
-  router.push(menu.path)
+  if (docLibStore.isLogin) {
+    activeMenuPath.value = menu.path
+    router.push(menu.path)
+  } else {
+    Notify.info('请现在左下角设置中选择文档库。', '请选择文档库')
+  }
 }
 
 const isActive = (path: string): string => {

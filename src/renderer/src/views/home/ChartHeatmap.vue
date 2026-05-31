@@ -36,12 +36,6 @@ watch(
   }
 )
 
-type Heatmap = {
-  chartData: any[]
-  maxUpdateNum: number
-  dateBegin: ''
-  dateEnd: ''
-}
 const ChartHeatmapRef = ref()
 const rqLoading = ref<boolean>(true)
 let chartHeatmap: any
@@ -49,24 +43,16 @@ let chartData: any = []
 let maxUpdateNum = 0
 let dateBegin = ''
 let dateEnd = ''
-let articleHeatmap: Heatmap = { chartData: [], maxUpdateNum: 0, dateBegin: '', dateEnd: '' }
 
 const getBlossomHeatmap = () => {
   rqLoading.value = true
-  let handle = () => {
-    maxUpdateNum = articleHeatmap.maxUpdateNum
-    dateBegin = articleHeatmap.dateBegin
-    dateEnd = articleHeatmap.dateEnd
-    chartData = articleHeatmap.chartData.filter((item) => item[1] !== 0)
-    renderChart(setTimeout(() => (rqLoading.value = false), 300))
-  }
   // 查6个月内的记录
-  articleHeatmapApi({ offsetMonth: -5 }).then((res) => {
-    articleHeatmap.maxUpdateNum = res.data.maxStatValues
-    articleHeatmap.dateBegin = res.data.dateBegin
-    articleHeatmap.dateEnd = res.data.dateEnd
-    articleHeatmap.chartData = res.data.data
-    handle()
+  articleHeatmapApi().then((res) => {
+    maxUpdateNum = res.data.maxUpdateNum
+    dateBegin = res.data.dateBegin
+    dateEnd = res.data.dateEnd
+    chartData = res.data.chartData.filter((item: number[]) => item[1] !== 0)
+    renderChart(setTimeout(() => (rqLoading.value = false), 300))
   })
 }
 

@@ -1,22 +1,21 @@
 <template>
   <div class="article-index-placeholder-root">
     <bl-row just="center" align="flex-end">
-      <div class="iconbl bl-a-leftdirection-line">
+      <div class="iconbl bl-delete-line">
         <div class="desc-line">
-          <div class="desc-text">显示排序</div>
+          <div class="desc-text">文章回收站</div>
         </div>
       </div>
-      <div class="iconbl bl-search-line">
+      <!-- <div class="iconbl bl-search-line">
         <div class="desc-line">
           <div class="desc-text">全文搜索</div>
         </div>
       </div>
-      <div class="iconbl bl-a-cloudrefresh-line"></div>
       <div class="iconbl bl-a-fileadd-line">
         <div class="desc-line">
           <div class="desc-text">新增文档</div>
         </div>
-      </div>
+      </div> -->
       <div class="iconbl bl-correlation-line">
         <div class="desc-line">
           <div class="desc-text">引用知识网络</div>
@@ -36,10 +35,6 @@
       <bl-row>
         <div class="label">格式化</div>
         <div class="key">{{ keymaps.formatAll }}</div>
-      </bl-row>
-      <bl-row>
-        <div class="label">全文搜索</div>
-        <div class="key">{{ keymaps.fullSearch }}</div>
       </bl-row>
     </div>
   </div>
@@ -77,7 +72,7 @@ import { keymaps } from './scripts/editor-tools'
   }
 
   // 排序
-  .bl-a-leftdirection-line {
+  .bl-delete-line {
     padding-bottom: 5px;
     padding-right: 0px;
     .desc-line {

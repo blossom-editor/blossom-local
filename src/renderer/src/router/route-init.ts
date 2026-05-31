@@ -12,18 +12,9 @@ import NoteIndex from '@renderer/views/note/NoteIndex.vue'
 import PlanIndex from '@renderer/views/plan/PlanIndex.vue'
 import IconListIndex from '@renderer/components/IconList.vue'
 
-// const Home = () => import('@renderer/views/home/Home.vue')
-// const ArticleIndex = () => import('@renderer/views/article/ArticleIndex.vue')
-// const PictureIndex = () => import('@renderer/views/picture/PictureIndex.vue')
-// const TodoIndex = () => import('@renderer/views/todo/TodoIndex.vue')
-// const NoteIndex = () => import('@renderer/views/note/NoteIndex.vue')
-// const PlanIndex = () => import('@renderer/views/plan/PlanIndex.vue')
-// const IconListIndex = () => import('@renderer/components/IconList.vue')
-
 // 新窗口页面
 import ArticleViewWindow from '@renderer/views/article/ArticleViewWindow.vue'
 import ArticleReference from '@renderer/views/article/ArticleReferenceChartGraph.vue'
-import ArticleHistory from '@renderer/views/article/ArticleHistory.vue'
 
 router.addRoute({
   path: '/',
@@ -64,4 +55,3 @@ router.addRoute({
   component: ArticleReference,
   meta: { keepAlive: true }
 })
-router.addRoute({ path: '/articleHistory', name: 'ArticleHistory', component: ArticleHistory, meta: { keepAlive: true } })

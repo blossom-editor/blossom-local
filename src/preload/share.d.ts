@@ -1,17 +1,34 @@
-declare interface Base {
-  // 文档库的路径
-  docLibPath?: string
+declare interface R<T> {
+  public ok: boolean
+  public code: string
+  public msg: string
+  public data?: T
 }
 
-// 文档库结构
+/**
+ * 基础接口
+ */
+declare interface Base {
+  // 类型定义时非必填, 但拦截器会默认填充, 作为文档库的路径
+  docLibPath?: string,
+  outsideDocLib?: boolean  = false
+}
+
+/**
+ * 文档库结构
+ */
 declare interface DocLibItem {
   name: string
   path: string
   icon?: string
   desc?: string
+  isTop: boolean = false
   creTime: string
 }
 
+/**
+ * 文档树结构
+ */
 declare interface DocTree {
   id: string
   type: 'FOLDER' | 'ARTICLE'
@@ -51,9 +68,10 @@ declare interface GetFileContentReq extends Base {
  * 保存文件内容
  */
 declare interface SaveFileContentReq extends Base {
+  id: string
   path: string
   content: string
-  words?: number
+  words: number
 }
 
 /**
@@ -72,9 +90,39 @@ declare interface MoveFileReq extends Base {
   newPath: string
 }
 
-declare interface R<T> {
-  public ok: boolean
-  public code: number
-  public msg: string
-  public data?: T
+/**
+ * 创建文件
+ */
+declare interface CreateFileReq extends Base {
+  path: string
 }
+
+/**
+ * 创建文件的返回结果, 新建文件后会查询文档列表, 用于刷新页面, 无需再次调用查询接口
+ */
+declare interface CreateFileRes {
+  newFileId: string
+  docTree: DocTree[]
+}
+
+/**
+ * 选择系统中的文件并移动到文档库
+ */
+declare interface SelectFileAndMoveReq extends Base {
+  // 将选择的文件保存到指定位置
+  targetFilePath: string,
+  // 是否覆盖同名文件
+  cover: boolean = false,
+  // 是否将文件名重命名
+  newFileName: string = '',
+}
+
+/**
+ * 选择系统中的文件并移动到文档库
+ */
+declare interface SelectFileAndMoveRes extends Base {
+  // 文件在文档库中的位置
+  filePath: string
+  fileName: string
+}
+

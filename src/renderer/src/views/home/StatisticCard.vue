@@ -2,8 +2,8 @@
   <div>
     <div class="statistic-article-root">
       <div class="statistic">
-        <div class="main-stat"><span style="font-size: 20px">A</span>{{ formartNumber(article.articleCount) }}</div>
-        <div class="sub-stat"><span class="iconbl bl-pen-line"></span> Words {{ formartNumber(article.articleWords) }}</div>
+        <div class="main-stat"><span style="font-size: 20px">A</span>{{ formartNumber(article.articleTotal) }}</div>
+        <div class="sub-stat"><span class="iconbl bl-pen-line"></span> {{ formartNumber(article.articleTotalWords) }}</div>
       </div>
       <div class="iconbl bl-a-texteditorhighlightcolor-line icon"></div>
       <div class="iconbl bl-a-texteditorhighlightcolor-line icon-shadow"></div>
@@ -29,15 +29,15 @@ import { useLifecycle } from '@renderer/scripts/lifecycle'
 useLifecycle(
   () => {
     getArticleWords()
-    getPictureStat()
+    // getPictureStat()
   },
   () => {
     getArticleWords()
-    getPictureStat()
+    // getPictureStat()
   }
 )
 
-let article = ref({ articleCount: 0, articleWords: 0 })
+let article = ref({ articleTotal: 0, articleTotalWords: 0 })
 let picture = ref({ pictureCount: 0, pictureSize: 0 })
 
 const getArticleWords = () => {

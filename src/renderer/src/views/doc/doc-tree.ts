@@ -86,30 +86,6 @@ export const handleTreeDrop = (
   return parmas
 }
 
-// const handleChildPath = (childPaths: MoveFileChildReq[], node: Node, newBasePath: string): MoveFileChildReq[] => {
-//   console.log('子文件夹', childPaths)
-//   if (node.childNodes && node.childNodes.length > 0) {
-//     node.childNodes.forEach((child) => {
-//       if (child.data.type === 'ARTICLE') {
-//         const childPath: MoveFileChildReq = {
-//           oldPath: child.data.path,
-//           newPath: child.data.path.replace(node.data.path, newBasePath)
-//         }
-//         childPaths.push(childPath)
-//       }
-//       if (child.data.type === 'FOLDER') {
-//         const childPath: MoveFileChildReq = {
-//           oldPath: child.data.path,
-//           newPath: child.data.path.replace(node.data.path, newBasePath)
-//         }
-//         childPaths.push(childPath)
-//         handleChildPath(childPaths, child, newBasePath)
-//       }
-//     })
-//   }
-//   return childPaths
-// }
-
 /**
  * 从 nodes 中获取最大排序, 排除掉 drag
  */

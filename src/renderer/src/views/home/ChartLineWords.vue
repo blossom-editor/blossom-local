@@ -52,8 +52,6 @@ const getWords = () => {
   rqLoading.value = true
   articleWordLineApi().then((resp) => {
     chartData = resp.data
-    
-
     renderChart(
       chartLine,
       chartData,

@@ -1,18 +1,18 @@
 <template>
   <div class="index-user-root">
     <img
-      v-if="userStore.userinfo.avatar != ''"
+      v-if="docLibStore.cur && docLibStore.cur?.icon != ''"
       :class="['avatar-img', viewStyle.isShowAsideSimple ? 'simple' : '']"
-      :src="userStore.userinfo.avatar" />
+      :src="docLibStore.cur?.icon" />
     <img v-else :class="['avatar-img', viewStyle.isShowAsideSimple ? 'simple' : '']" src="@renderer/assets/imgs/default_user_avatar.jpg" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { useUserStore } from '@renderer/stores/user'
+import { useDocLibStore } from '@renderer/stores/docLib'
 import { useConfigStore } from '@renderer/stores/config'
 
-const userStore = useUserStore()
+const docLibStore = useDocLibStore()
 const { viewStyle } = useConfigStore()
 </script>
 

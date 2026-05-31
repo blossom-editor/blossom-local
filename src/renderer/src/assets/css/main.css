@@ -15,7 +15,7 @@ img {
 }
 
 /*
- 用于 iconfont symbol 方式 icon 的基础样式 
+ 用于 iconfont symbol 方式 icon 的基础样式
  {@link @renderer/assets/iconfont/blossom}
  {@link @renderer/assets/iconfont/tech}
 */
@@ -43,7 +43,7 @@ img {
 
 /* 定义滑块 内阴影+圆角 */
 ::-webkit-scrollbar-thumb {
-  border-radius: 2px;
+  border-radius: 3px;
   background-color: var(--bl-scrollbar-color);
 }
 

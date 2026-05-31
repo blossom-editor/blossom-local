@@ -4,79 +4,49 @@ import { defaultRequest as rq } from './request'
 import { AxiosRequestConfig } from 'axios'
 import { invoke } from './ipc-wrapper'
 
-//#region ====================================================< sys >=======================================================
+//#region ====================================================< doclib >=======================================================
 
 /**
- * 获取系统参数列表
- * @returns
+ * 打开文档库选择框, 此时未选择文档库, 不使用拦截器填充 docLibPath
  */
-export const paramListApi = (): Promise<R<any>> => {
-  return rq.get<R<any>>('/sys/param/list', {})
+export const selectDocLibFolderDialog = (): Promise<R<DocLibItem>> => {
+  return window.electronAPI.selectDocLibFolderDialog()
 }
 
 /**
- * 修改系统参数
+ * 文章数和文章字数统计
+ * @param params
  * @returns
  */
-export const paramUpdApi = (data: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/sys/param/upd', data)
+export const articleWordsApi = (params?: object): Promise<R<any>> => {
+  return invoke('doclib-stats-words')
 }
 
 /**
- * 刷新系统参数缓存
- * @param data 文件 form
+ * 文章字数折线图
+ * @param params
  * @returns
  */
-export const paramRefreshApi = (): Promise<R<any>> => {
-  return rq.post<R<any>>('/sys/param/refresh', {})
-}
-
-// 用户参数
-
-/**
- * 获取用户参数列表
- * @returns
- */
-export const userParamListApi = (): Promise<R<any>> => {
-  return rq.get<R<any>>('/user/param/list', {})
+export const articleWordLineApi = (params?: object): Promise<R<any>> => {
+  return invoke('doclib-stats-words-chatline')
 }
 
 /**
- * 修改用户参数
+ * 文章编辑热力图
+ * @param params
  * @returns
  */
-export const userParamUpdApi = (data: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/user/param/upd', data)
+export const articleHeatmapApi = (params?: object): Promise<R<any>> => {
+  return invoke('doclib-stats-words-chatheatmap')
 }
 
 /**
- * 管理员修改用户参数
- * @returns
+ * 通用文件选择框, 用于选择图片等
+ * 通常会默认填充 docLibPath, 但设置文档库的图标时, 需要手动添加文档库路径
  */
-export const userParamUpdAdminApi = (data: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/user/param/upd/admin', data)
+export const selectFileAndMoveDialog = (params: SelectFileAndMoveReq): Promise<R<SelectFileAndMoveRes>> => {
+  return invoke('select-file-and-move-dialog', params)
 }
-
-/**
- * 刷新系统参数缓存
- * @param data 文件 form
- * @returns
- */
-export const userParamRefreshApi = (): Promise<R<any>> => {
-  return rq.post<R<any>>('/user/param/refresh', {})
-}
-
-/**
- * 上传文件
- * @param data 文件 form
- * @returns
- */
-export const uploadFileApiUrl = '/picture/file/upload'
-export const uploadFileApi = (data?: object): Promise<R<any>> => {
-  let config: object = { contentType: 'multipart/form-data;' }
-  return rq.post<R<any>>(uploadFileApiUrl, data, config)
-}
-
 //#endregion
 
 //#region ====================================================< doc >=======================================================
@@ -84,87 +54,13 @@ export const uploadFileApi = (data?: object): Promise<R<any>> => {
 /**
  * 获取文档树
  */
-export const docTreeApi = (docLibPath: string): Promise<R<DocTree[]>> => {
-  return window.electronAPI.docTreeApi(docLibPath)
-}
-
-/**
- * 打开文件选择框
- */
-export const openFileDialog = (): Promise<R<DocLibItem>> => {
-  return window.electronAPI.openFileDialog()
+export const docTreeApi = (): Promise<R<DocTree[]>> => {
+  return invoke('read-doc-tree')
 }
 
 //#endregion
 
-//#region ====================================================< folder >====================================================
-
-/**
- * 查询文件夹详情
- * @param params
- * @returns
- */
-export const folderInfoApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/folder/info', { params })
-}
-
-/**
- * 新增文件夹
- * @param data
- * @returns
- */
-export const folderAddApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/folder/add', data)
-}
-
-/**
- * 修改文件夹
- * @param data
- * @returns
- */
-export const folderUpdApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/folder/upd', data)
-}
-
-/**
- * 快捷增加标签
- * @param data
- * @returns
- */
-export const folderUpdTagApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/folder/upd/tag', data)
-}
-
-/**
- * 删除文件夹
- * @param data
- * @returns
- */
-export const folderDelApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/folder/del', data)
-}
-
-/**
- * 公开文件夹
- * @param data
- * @returns
- */
-export const folderOpenApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/folder/open', data)
-}
-
-/**
- * 查看专题文章
- * @param params
- * @returns
- */
-export const subjectsApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/folder/subjects', { params })
-}
-
 //#endregion
-
-//#region ====================================================< article >===================================================
 
 /**
  * 查询文章详情, 如果文章为公开文章, 则会返回对应的公开信息, 如 openVersion, openTime 等
@@ -177,15 +73,10 @@ export const articleInfoApi = (params: GetFileContentReq): Promise<R<DocInfo>> =
 
 /**
  * 修改文章正文
- * @param data {
- *  id: curDoc.value?.id,
- *  markdown: editor.getMarkdown(),
- *  html: editor.getHTML()
- * }
  * @returns
  */
-export const articleUpdContentApi = (params: SaveFileContentReq): Promise<R<any>> => {
-  return window.electronAPI.writeFile(params)
+export const saveArticleContentApi = (params: SaveFileContentReq): Promise<R<any>> => {
+  return invoke('save-article-content', params)
 }
 
 /**
@@ -202,9 +93,28 @@ export const folderUpdNameApi = (params: RenameFileReq): Promise<R<any>> => {
   return invoke('rename-file', params)
 }
 
+/**
+ * 移动文件
+ */
 export const moveFileApi = (params: MoveFileReq): Promise<R<any>> => {
   return invoke('move-file', params)
 }
+
+/**
+ * 新建文件夹
+ */
+export const createFolderApi = (params: CreateFileReq): Promise<R<CreateFileRes>> => {
+  return invoke('create-folder', params)
+}
+
+/**
+ * 新建文件
+ */
+export const createMarkdownApi = (params: CreateFileReq): Promise<R<CreateFileRes>> => {
+  return invoke('create-markdown', params)
+}
+
+//#region ====================================================< article >===================================================
 
 /**
  * 文章列表
@@ -296,24 +206,6 @@ export const articleDownloadHtmlApi = (params?: object): Promise<any> => {
 }
 
 /**
- * 文章字数折线图
- * @param params
- * @returns
- */
-export const articleWordLineApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/article/stat/line', { params })
-}
-
-/**
- * 文章数和文章字数统计
- * @param params
- * @returns
- */
-export const articleWordsApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/article/stat/words', { params })
-}
-
-/**
  * 指定用户的文章数和文章字数统计
  * @param params
  * @returns
@@ -336,15 +228,6 @@ export const articleWordsListApi = (params?: object): Promise<R<any>> => {
  */
 export const articleWordsSaveApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/article/stat/words/save', data)
-}
-
-/**
- * 文章编辑热力图
- * @param params
- * @returns
- */
-export const articleHeatmapApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/article/stat/heatmap', { params })
 }
 
 /**
@@ -503,6 +386,73 @@ export const articleSearchApi = (params?: object): Promise<any> => {
 }
 //#endregion
 
+//#region ====================================================< folder >====================================================
+
+/**
+ * 查询文件夹详情
+ * @param params
+ * @returns
+ */
+export const folderInfoApi = (params?: object): Promise<R<any>> => {
+  return rq.get<R<any>>('/folder/info', { params })
+}
+
+/**
+ * 新增文件夹
+ * @param data
+ * @returns
+ */
+export const folderAddApi = (data?: object): Promise<R<any>> => {
+  return rq.post<R<any>>('/folder/add', data)
+}
+
+/**
+ * 修改文件夹
+ * @param data
+ * @returns
+ */
+export const folderUpdApi = (data?: object): Promise<R<any>> => {
+  return rq.post<R<any>>('/folder/upd', data)
+}
+
+/**
+ * 快捷增加标签
+ * @param data
+ * @returns
+ */
+export const folderUpdTagApi = (data?: object): Promise<R<any>> => {
+  return rq.post<R<any>>('/folder/upd/tag', data)
+}
+
+/**
+ * 删除文件夹
+ * @param data
+ * @returns
+ */
+export const folderDelApi = (data?: object): Promise<R<any>> => {
+  return rq.post<R<any>>('/folder/del', data)
+}
+
+/**
+ * 公开文件夹
+ * @param data
+ * @returns
+ */
+export const folderOpenApi = (data?: object): Promise<R<any>> => {
+  return rq.post<R<any>>('/folder/open', data)
+}
+
+/**
+ * 查看专题文章
+ * @param params
+ * @returns
+ */
+export const subjectsApi = (params?: object): Promise<R<any>> => {
+  return rq.get<R<any>>('/folder/subjects', { params })
+}
+
+//#endregion
+
 //#region ====================================================< picture >===================================================
 
 /**
@@ -577,4 +527,79 @@ export const pictureStatUserApi = (params?: object): Promise<R<any>> => {
 export const pictureTransferApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/picture/transfer', data)
 }
+//#endregion
+
+//#region ====================================================< sys >=======================================================
+
+/**
+ * 获取系统参数列表
+ * @returns
+ */
+export const paramListApi = (): Promise<R<any>> => {
+  return rq.get<R<any>>('/sys/param/list', {})
+}
+
+/**
+ * 修改系统参数
+ * @returns
+ */
+export const paramUpdApi = (data: object): Promise<R<any>> => {
+  return rq.post<R<any>>('/sys/param/upd', data)
+}
+
+/**
+ * 刷新系统参数缓存
+ * @param data 文件 form
+ * @returns
+ */
+export const paramRefreshApi = (): Promise<R<any>> => {
+  return rq.post<R<any>>('/sys/param/refresh', {})
+}
+
+// 用户参数
+
+/**
+ * 获取用户参数列表
+ * @returns
+ */
+export const userParamListApi = (): Promise<R<any>> => {
+  return rq.get<R<any>>('/user/param/list', {})
+}
+
+/**
+ * 修改用户参数
+ * @returns
+ */
+export const userParamUpdApi = (data: object): Promise<R<any>> => {
+  return rq.post<R<any>>('/user/param/upd', data)
+}
+
+/**
+ * 管理员修改用户参数
+ * @returns
+ */
+export const userParamUpdAdminApi = (data: object): Promise<R<any>> => {
+  return rq.post<R<any>>('/user/param/upd/admin', data)
+}
+
+/**
+ * 刷新系统参数缓存
+ * @param data 文件 form
+ * @returns
+ */
+export const userParamRefreshApi = (): Promise<R<any>> => {
+  return rq.post<R<any>>('/user/param/refresh', {})
+}
+
+/**
+ * 上传文件
+ * @param data 文件 form
+ * @returns
+ */
+export const uploadFileApiUrl = '/picture/file/upload'
+export const uploadFileApi = (data?: object): Promise<R<any>> => {
+  let config: object = { contentType: 'multipart/form-data;' }
+  return rq.post<R<any>>(uploadFileApiUrl, data, config)
+}
+
 //#endregion

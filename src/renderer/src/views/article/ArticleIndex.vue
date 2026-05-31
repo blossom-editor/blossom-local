@@ -8,8 +8,8 @@
 
       <div class="doc-temp-textarea">
         <bl-row just="space-between" height="28px" class="doc-temp-textarea-workbench">
-          <bl-row><img src="@renderer/assets/imgs/note/cd.png" />临时内容(可从便签快速设置)</bl-row>
-          <div class="iconbl bl-subtract-line" @click="tempTextareaExpand = !tempTextareaExpand"></div>
+          <!-- <bl-row><img src="@renderer/assets/imgs/note/cd.png" />临时内容(可从便签快速设置)</bl-row> -->
+          <!-- <div class="iconbl bl-subtract-line" @click="tempTextareaExpand = !tempTextareaExpand"></div> -->
         </bl-row>
         <bl-row class="doc-temp-textarea-input" :style="tempTextareaStyle.tempTextarea">
           <el-input v-model="tempTextarea" type="textarea" resize="none" @input="tempInput"></el-input>
@@ -187,7 +187,7 @@ import type { UploadProps, UploadRawFile } from 'element-plus'
 import { useUserStore } from '@renderer/stores/user'
 import { useServerStore } from '@renderer/stores/server'
 import { useConfigStore } from '@renderer/stores/config'
-import { articleInfoApi, articleUpdContentApi, uploadFileApiUrl } from '@renderer/api/blossom'
+import { articleInfoApi, saveArticleContentApi, uploadFileApiUrl } from '@renderer/api/blossom'
 // utils
 import { Local } from '@renderer/assets/utils/storage'
 import { isBlank, isNull } from '@renderer/assets/utils/obj'
@@ -319,7 +319,7 @@ const changeEditorPreviewStyle = () => {
  * 临时文本框
  */
 const tempTextarea = ref('')
-const tempTextareaExpand = ref(true)
+const tempTextareaExpand = ref(false)
 const tempTextareaStyle = computed<any>(() => {
   if (tempTextareaExpand.value) {
     return {
@@ -477,7 +477,6 @@ provide(provideKeyCurArticleInfo, curArticle)
 const clickCurDoc = async (tree: DocTree) => {
   let doc: DocInfo = treeToInfo(tree)
   curDoc.value = doc
-  console.log('clickCurDoc', doc)
   if (doc.type == 'ARTICLE') {
     // 重复点击同一个, 不会多次查询
     if (isArticle(curArticle.value) && curArticle.value!.path == doc.path) {
@@ -493,6 +492,7 @@ const clickCurDoc = async (tree: DocTree) => {
         if (isNull(resp) || isNull(resp.data)) {
           return
         }
+        console.log('查询文章成功:', resp.data)
 
         curArticle.value = resp.data
 
@@ -544,8 +544,10 @@ const saveCurArticleContent = async (auto: boolean = false) => {
   }
   articleChanged = false
   let data: SaveFileContentReq = {
+    id: curArticle.value!.id!,
     path: curArticle.value!.path!,
-    content: cmw.getDocString()
+    content: cmw.getDocString(),
+    words: 0
     // references: articleImg.value.concat(articleLink.value).map((item) => {
     //   let refer: ArticleReference = { targetId: '', targetName: '', targetUrl: '', type: 10 }
     //   Object.assign(refer, item)
@@ -557,8 +559,8 @@ const saveCurArticleContent = async (auto: boolean = false) => {
   }
   curArticle.value!.words = countWords(data.content)
   data.words = curArticle.value!.words
-  await articleUpdContentApi(data)
-    .then((resp) => {
+  await saveArticleContentApi(data)
+    .then((_resp) => {
       lastSaveTime = new Date().getTime()
       saveCallback()
     })
