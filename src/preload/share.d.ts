@@ -5,6 +5,8 @@ declare interface R<T> {
   public data?: T
 }
 
+declare type DocType = 'FOLDER' | 'ARTICLE' | 'PICTURE'
+
 /**
  * 基础接口
  */
@@ -26,15 +28,20 @@ declare interface DocLibItem {
   creTime: string
 }
 
+declare interface DocTreeReq extends Base {
+  type: DocType
+}
+
 /**
  * 文档树结构
  */
 declare interface DocTree {
   id: string
-  type: 'FOLDER' | 'ARTICLE'
+  type: DocType
   name: string
   formatName: string // 无后缀名称
   path: string
+  size: bigint = 0n
   icon?: string
   updn?: boolean
   creTime?: string
@@ -61,7 +68,8 @@ declare interface DocInfo {
  * 获取文件内容
  */
 declare interface GetFileContentReq extends Base {
-  path: string
+  id: string,
+  path?: string
 }
 
 /**
@@ -103,6 +111,10 @@ declare interface CreateFileReq extends Base {
 declare interface CreateFileRes {
   newFileId: string
   docTree: DocTree[]
+}
+
+declare interface DeleteFileReq extends Base {
+  path: string
 }
 
 /**

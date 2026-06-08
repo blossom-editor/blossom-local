@@ -12,11 +12,6 @@
     <div class="bl-preview-toc-block">
       <div class="doc-info">
         <div class="doc-name">《{{ article?.name }}》</div>
-        <div class="doc-subtitle">
-          <span class="iconbl bl-pen-line"></span> {{ article?.words }} 字 | <span class="iconbl bl-read-line"></span> {{ article?.uv }} |
-          <span class="iconbl bl-like-line"></span> {{ article?.likes }}
-        </div>
-        <div class="doc-subtitle"><span class="iconbl bl-a-clock3-line"></span> 公开 {{ article?.openTime }}</div>
         <div class="doc-subtitle"><span class="iconbl bl-a-clock3-line"></span> 修改 {{ article?.updTime }}</div>
         <div class="toc-title">目录</div>
       </div>

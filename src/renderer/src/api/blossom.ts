@@ -54,8 +54,8 @@ export const selectFileAndMoveDialog = (params: SelectFileAndMoveReq): Promise<R
 /**
  * 获取文档树
  */
-export const docTreeApi = (): Promise<R<DocTree[]>> => {
-  return invoke('read-doc-tree')
+export const docTreeApi = (req: DocTreeReq): Promise<R<DocTree[]>> => {
+  return invoke('read-doc-tree', req)
 }
 
 //#endregion
@@ -68,7 +68,8 @@ export const docTreeApi = (): Promise<R<DocTree[]>> => {
  * @returns
  */
 export const articleInfoApi = (params: GetFileContentReq): Promise<R<DocInfo>> => {
-  return window.electronAPI.articleInfoApi(params)
+  // return window.electronAPI.articleInfoApi(params)
+  return invoke('read-doc-info', params)
 }
 
 /**
@@ -114,6 +115,15 @@ export const createMarkdownApi = (params: CreateFileReq): Promise<R<CreateFileRe
   return invoke('create-markdown', params)
 }
 
+/**
+ * 删除文件
+ * @param data {id:文章ID}
+ * @returns
+ */
+export const deleteFileApi = (params: DeleteFileReq): Promise<R<DocTree[]>> => {
+  return invoke('delete-file', params)
+}
+
 //#region ====================================================< article >===================================================
 
 /**
@@ -156,15 +166,6 @@ export const articleUpdApi = (data?: object): Promise<R<any>> => {
  */
 export const articleUpdTagApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/article/upd/tag', data)
-}
-
-/**
- * 删除文章
- * @param data {id:文章ID}
- * @returns
- */
-export const articleDelApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/article/del', data)
 }
 
 /**
@@ -422,15 +423,6 @@ export const folderUpdApi = (data?: object): Promise<R<any>> => {
  */
 export const folderUpdTagApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/folder/upd/tag', data)
-}
-
-/**
- * 删除文件夹
- * @param data
- * @returns
- */
-export const folderDelApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/folder/del', data)
 }
 
 /**

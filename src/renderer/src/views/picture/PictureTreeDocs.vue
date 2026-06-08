@@ -137,7 +137,7 @@ import { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNod
 import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 import Node from 'element-plus/es/components/tree/src/model/node'
 // ts
-import { docTreeApi, folderAddApi, folderDelApi, folderUpdNameApi } from '@renderer/api/blossom'
+import { docTreeApi, folderAddApi,folderUpdNameApi } from '@renderer/api/blossom'
 import { provideKeyDocTree } from '@renderer/views/doc/doc'
 import { isShowImg, isShowSvg, tags } from '@renderer/views/doc/doc-tree-detail'
 import { getColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
@@ -517,11 +517,11 @@ const delDoc = () => {
     draggable: true,
     dangerouslyUseHTMLString: true
   }).then(() => {
-    folderDelApi({ id: curDoc.value.i }).then((_resp) => {
-      Notify.success(`删除文件夹成功`)
-      DocTreeRef.value.remove(curDoc.value.i)
-      closeParentIfNoChild(curDoc.value.p)
-    })
+    // folderDelApi({ id: curDoc.value.i }).then((_resp) => {
+    //   Notify.success(`删除文件夹成功`)
+    //   DocTreeRef.value.remove(curDoc.value.i)
+    //   closeParentIfNoChild(curDoc.value.p)
+    // })
   })
 }
 

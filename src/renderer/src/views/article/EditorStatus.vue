@@ -1,49 +1,68 @@
 <template>
   <div class="editor-status-root">
     <bl-row width="calc(100% - 260px)" height="100%" class="status-item-container-left">
-      <div v-show="curDoc">{{ curDoc?.name }}</div>
-      <div v-show="curDoc" class="updTime">最近修改:{{ curDoc?.updTime }}</div>
-      <el-tooltip :content="curDoc?.path" trigger="click" effect="light" placement="top" :hide-after="0">
-        <div v-show="curDoc" class="path">路径:{{ curDoc?.path }}</div>
+      <div v-show="curArticle">{{ curArticle?.name }}</div>
+      <div v-show="curArticle" class="updTime">最近修改:{{ curArticle?.updTime }}</div>
+      <el-tooltip :content="curArticle?.path" effect="light" placement="top" :hide-after="0" :show-after="500">
+        <div v-show="curArticle" class="path" @click="openFileLocation(curArticle!.path)">路径:{{ curArticle?.path }}</div>
       </el-tooltip>
-      <el-tooltip :content="curDoc?.id" trigger="click" effect="light" placement="top" :hide-after="0">
-        <div v-show="curDoc" class="id">ID:{{ curDoc?.id }}</div>
+      <el-tooltip :content="curArticle?.id" effect="light" placement="top" :hide-after="0" :show-after="500">
+        <div v-show="curArticle" class="id">ID:{{ curArticle?.id }}</div>
       </el-tooltip>
     </bl-row>
-    <bl-row just="flex-end" width="260px" height="100%" class="status-item-container-left">
-      <div v-show="curDoc" class="button" @click="openArticleReferenceWindow"><span class="iconbl bl-correlation-line"></span>引用</div>
-      <div v-show="curDoc" just="center">字数:{{ formartNumber(curDoc?.words) }}</div>
-      <div v-show="curDoc" just="center">渲染:{{ props.renderInterval }}ms</div>
-      <div v-show="curDoc">保存状态: <span style="color: red">●</span></div>
+    <bl-row just="flex-end" width="260px" height="100%" class="status-item-container-right">
+      <div v-show="curArticle" class="button" @click="openArticleReferenceWindow"><span class="iconbl bl-correlation-line"></span>引用</div>
+      <div v-show="curArticle" just="center">字数:{{ formartNumber(curArticle?.words) }}</div>
+      <div v-show="curArticle" just="center">渲染:{{ props.renderInterval }}ms</div>
+
+      <el-tooltip :content="'上次保存: ' + (!lastSaveTime ? '未保存' : lastSaveTime)" trigger="click" effect="light" placement="top" :hide-after="0">
+        <div v-show="curArticle">保存状态: <span :class="[saveStatus ? 'save-yes' : 'save-no']">●</span></div>
+      </el-tooltip>
     </bl-row>
   </div>
 </template>
 
 <script setup lang="ts">
-import { inject, toRaw } from 'vue'
+import { inject, toRaw, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { provideKeyCurArticleInfo } from '@renderer/views/doc/doc'
 import { openNewArticleReferenceWindow } from '@renderer/assets/utils/electron'
-import { formartNumber } from '@renderer/assets/utils/util'
+import { formartNumber, getDateTimeFormat } from '@renderer/assets/utils/util'
+import { openFileLocation } from '@renderer/api/docLib'
 
 const props = defineProps({
-  renderInterval: {
-    type: Number,
-    default: 0
-  },
-  isSave: {
-    type: Boolean,
-    default: false
-  }
+  renderInterval: { type: Number, default: 0 }
 })
 
-const curDoc = inject<Ref<DocInfo | undefined>>(provideKeyCurArticleInfo)
+const curArticle = inject<Ref<DocInfo | undefined>>(provideKeyCurArticleInfo)
+const lastSaveTime = ref<string | undefined>()
+const saveStatus = ref(true)
+
+watch(
+  () => curArticle?.value?.id,
+  (newVal: string | undefined) => {
+    if (newVal) {
+      lastSaveTime.value = undefined
+    }
+  }
+)
 
 const openArticleReferenceWindow = () => {
-  if (curDoc && curDoc.value) {
-    openNewArticleReferenceWindow(toRaw(curDoc.value))
+  if (curArticle && curArticle.value) {
+    openNewArticleReferenceWindow(toRaw(curArticle.value))
   }
 }
+
+const noSave = () => {
+  saveStatus.value = false
+}
+
+const isSave = () => {
+  saveStatus.value = true
+  lastSaveTime.value = getDateTimeFormat()
+}
+
+defineExpose({ noSave, isSave })
 </script>
 
 <style scoped lang="scss">
@@ -54,7 +73,8 @@ const openArticleReferenceWindow = () => {
   color: var(--bl-editor-color);
   background-color: var(--bl-editor-gutters-bg-color);
 
-  .status-item-container-left {
+  .status-item-container-left,
+  .status-item-container-right {
     overflow-x: hidden;
     white-space: nowrap;
 
@@ -95,6 +115,12 @@ const openArticleReferenceWindow = () => {
   }
 
   .status-item-container-right {
+    .save-yes {
+      color: var(--el-color-success);
+    }
+    .save-no {
+      color: var(--el-color-danger);
+    }
     & > div {
       border-left: 1px solid var(--el-border-color);
     }

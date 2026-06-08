@@ -13,15 +13,15 @@ export class FileItem {
 /**
  * 文件管理器, 将文件ID与文件路径进行映射, 保证文件移动时仍然能正常的保存文章
  */
-export class FileManager {
+export class IdMapping {
   public files: Map<string, FileItem> = new Map()
   // 单例
-  private static instance: FileManager
-  public static getInstance(): FileManager {
-    if (!FileManager.instance) {
-      FileManager.instance = new FileManager()
+  private static instance: IdMapping
+  public static getInstance(): IdMapping {
+    if (!IdMapping.instance) {
+      IdMapping.instance = new IdMapping()
     }
-    return FileManager.instance
+    return IdMapping.instance
   }
 
   /**

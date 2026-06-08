@@ -11,16 +11,16 @@
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文件夹">
       <div class="iconbl bl-folderadd-line" @click="addFolderToRoot()"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" :show-after="1000" content="搜索">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="搜索文件名">
       <div class="iconbl bl-search-item" @click="showTreeFilter()"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" :show-after="1000" content="刷新">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="刷新">
       <div class="iconbl bl-refresh-line" @click="refreshDocTree()"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" :show-after="1000" content="定位到当前文章">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="定位到当前文章">
       <div class="iconbl bl-collimation" @click="collimationCurrentArticle"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" :show-after="1000" content="折叠所有文件夹">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="折叠所有文件夹">
       <div class="iconbl bl-collapse" @click="collapseAll"></div>
     </el-tooltip>
     <div class="doc-tree-search" ref="DocTreeSearch" v-show="isShowTreeFilter">
@@ -105,7 +105,9 @@
       <div class="doc-name">{{ curDoc.name }}</div>
       <div class="menu-content">
         <div @click="rename"><span class="iconbl bl-pen"></span>重命名</div>
-        <div><span class="iconbl bl-computer-line"></span>{{ platformText('在资源管理器中查看', '在访达中查看') }}</div>
+        <div @click="openFileLocation(curDoc.path)">
+          <span class="iconbl bl-computer-line"></span>{{ platformText('在资源管理器中查看', '在访达中查看') }}
+        </div>
         <div v-if="curDoc.type === 'FOLDER'" @click="addFolderToDoc()"><span class="iconbl bl-folderadd-line"></span>新增文件夹</div>
         <div v-if="curDoc.type === 'FOLDER'" @click="addArticleToDoc()"><span class="iconbl bl-fileadd-line"></span>新增笔记</div>
         <div v-if="curDoc.type === 'ARTICLE'" @click=""><span class="iconbl bl-correlation-line"></span>复制双链引用</div>
@@ -166,9 +168,8 @@ import Node from 'element-plus/es/components/tree/src/model/node'
 import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 // ts
 import {
-  folderDelApi,
   folderUpdNameApi,
-  articleDelApi,
+  deleteFileApi,
   articleUpdNameApi,
   docTreeApi,
   moveFileApi,
@@ -187,8 +188,8 @@ import { getParentDirPath, joinPath, platformText, inValidateFileName } from '@r
 import { isNotNull, isNotBlank, isBlank, isNull } from '@renderer/assets/utils/obj'
 import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
-import Notify from '@renderer/scripts/notify'
 import ArticleTreeWorkbench from './ArticleTreeWorkbench.vue'
+import { openFileLocation } from '@renderer/api/docLib'
 
 const route = useRoute()
 const user = useUserStore()
@@ -226,10 +227,11 @@ const getRouteQueryParams = () => {
   let routeArticleId = route.query.articleId
   if (isNotNull(routeArticleId)) {
     const articleId = routeArticleId as string
-    emits('clickDoc', { ty: 3, i: articleId })
+    const docTree: DocTree = { id: articleId, type: 'ARTICLE', name: '', formatName: '', path: '', size: 0n }
+    emits('clickDoc', docTree)
     nextTick(() => {
       docTreeCurrentChoiseId.value = articleId
-      const parentNode = DocTreeRef.value.getNode(articleId)
+      const parentNode = DocTreeRef.value.getNode(articleId).parent
       setCurrentKey({
         id: articleId,
         parentId: parentNode.data.id,
@@ -278,7 +280,7 @@ const refreshDocTree = () => {
  */
 const getDocTree = (callback?: () => void) => {
   startLoading()
-  docTreeApi()
+  docTreeApi({ type: 'ARTICLE' })
     .then((resp) => {
       console.log(resp)
       docTreeData.value = resp.data!
@@ -362,7 +364,7 @@ watch(treeFilterText, (val) => {
  * 设置选中项, 并展开所有上级
  * 通过 key 设置某个节点的当前选中状态，使用此方法必须设置 node-key  属性
  */
-const setCurrentKey = (tree: { id: string; parentId: string; type: 'FOLDER' | 'ARTICLE' }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
+const setCurrentKey = (tree: { id: string; parentId: string; type: DocType }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
   if (tree.type === 'FOLDER') {
     docTreeCurrentChoiseId.value = tree.id
     if (node && node.expanded) {
@@ -495,12 +497,7 @@ const collapseChilds = async (node: Node) => {
  * 如果父节点没有子节点时, 关闭父节点的展开状态
  * @param pid 父ID
  */
-const closeParentIfNoChild = (pid: string) => {
-  let node: Node = DocTreeRef.value.getNode(pid)
-  if (node && isEmpty(node.childNodes)) {
-    docTreeCurrentExpandIdSet.value.delete(pid)
-  }
-}
+const closeParentIfNoChild = (pid: string) => {}
 
 /**
  * 拖拽后处理各个节点排序
@@ -519,7 +516,15 @@ const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: Dra
 //#endregion
 
 //#region ----------------------------------------< 右键菜单 >--------------------------------------
-const curDoc = ref<DocTree>({ id: '0', path: '0', name: '选择菜单', formatName: '', type: 'ARTICLE', updn: false })
+const curDoc = ref<DocTree>({
+  id: '0',
+  path: '0',
+  name: '选择菜单',
+  formatName: '',
+  type: 'ARTICLE',
+  updn: false,
+  size: 0n
+})
 const rMenu = ref<RightMenu>({ show: false, clientX: 0, clientY: 0 })
 const rMenuLevel2 = ref<RightMenuLevel2>({ top: '0px' })
 const ArticleDocTreeRightMenuRef = ref()
@@ -699,7 +704,7 @@ const addArticleToDoc = () => addFile(curDoc.value.path, curDoc.value.children, 
  *
  * @param parentPath 父目录
  */
-const addFile = (parentPath: string, docTree: DocTree[] | undefined, type: 'ARTICLE' | 'FOLDER', parentId?: string) => {
+const addFile = (parentPath: string, docTree: DocTree[] | undefined, type: DocType, parentId?: string) => {
   let newPath = joinPath(parentPath, type === 'ARTICLE' ? '新建文章' : '新建文件夹')
   let folderSuffix: number = 1
 
@@ -756,42 +761,44 @@ const renameNewFile = (id: string, parentId?: string) => {
  * 删除文档, 删除后将文档从树状节点中删除
  */
 const delDoc = () => {
-  // let type = curDoc.value.type === 'ARTICLE' ? '文章' : '文件夹'
-  // ElMessageBox.confirm(
-  //   `<strong>注意：</strong><br/>
-  //   删除的文章可在回收站中找回<br/>
-  //   是否继续删除${type}: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.formatName}</span>？`,
-  //   {
-  //     confirmButtonText: '确定删除',
-  //     cancelButtonText: '我再想想',
-  //     type: 'info',
-  //     draggable: true,
-  //     dangerouslyUseHTMLString: true
-  //   }
-  // ).then(() => {
-  //   if (curDoc.value.type === 'ARTICLE') {
-  //     articleDelApi({ id: curDoc.value.i }).then((_resp) => {
-  //       Notify.success(`删除文章成功`)
-  //       DocTreeRef.value.remove(curDoc.value.i)
-  //       closeParentIfNoChild(curDoc.value.p)
-  //     })
-  //   } else {
-  //     folderDelApi({ id: curDoc.value.i }).then((_resp) => {
-  //       Notify.success(`删除文件夹成功`)
-  //       DocTreeRef.value.remove(curDoc.value.i)
-  //       closeParentIfNoChild(curDoc.value.p)
-  //     })
-  //   }
-  // })
+  let type = curDoc.value.type === 'ARTICLE' ? '文章' : '文件夹'
+  ElMessageBox.confirm(
+    `<strong>注意：</strong><br/>
+    删除的文件可在系统回收站中找回<br/>
+    是否继续删除${type}: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.formatName}</span>？`,
+    {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '我再想想',
+      type: 'info',
+      draggable: true,
+      dangerouslyUseHTMLString: true
+    }
+  ).then(() => {
+    deleteFileApi({ path: curDoc.value.path }).then((resp) => {
+      docTreeCurrentExpandIdSet.value.delete(curDoc.value.id)
+      let node: Node = DocTreeRef.value.getNode(curDoc.value.id)
+      if (node.parent) {
+        const parent = node.parent
+        if (isEmpty(parent.childNodes)) {
+          docTreeCurrentExpandIdSet.value.delete(parent.data.id)
+        }
+      }
+      if (resp.data) {
+        docTreeData.value = resp.data
+      }
+
+      emits('clearCurDoc', curDoc.value)
+    })
+  })
 }
 
 /**
  * 打开新页面, 文件夹(curDoc.value.ty == 1)无法使用新页面打开
  */
-// const openArticleWindow = () => {
-//   if (curDoc.value.type === 'FOLDER') return
-//   openNewArticleWindow(curDoc.value.n, curDoc.value.i)
-// }
+const openArticleWindow = () => {
+  if (curDoc.value.type === 'FOLDER') return
+  openNewArticleWindow(curDoc.value.name, curDoc.value.id)
+}
 
 /**
  * 收藏/取消收藏
@@ -812,7 +819,7 @@ const delDoc = () => {
 
 //#endregion
 
-const emits = defineEmits(['clickDoc'])
+const emits = defineEmits(['clickDoc', 'clearCurDoc'])
 defineExpose({ getDocTreeData })
 </script>
 

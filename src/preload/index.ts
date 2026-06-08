@@ -25,7 +25,6 @@ const rednerToIpc = {
   readFile: (): any => ipcRenderer.invoke('read-file'),
   writeFile: (path: string, id: string, content: string): any => ipcRenderer.invoke('write-file', path, id, content),
   docTreeApi: (docPath: string): Promise<R<DocTree[]>> => ipcRenderer.invoke('read-doc-tree', docPath),
-  articleInfoApi: (params: GetFileContentReq): Promise<R<DocInfo>> => ipcRenderer.invoke('read-doc-info', params),
   articleUpdContentApi: (params: SaveFileContentReq): Promise<any> => ipcRenderer.invoke('write-file', params),
   renameFile: (params: RenameFileReq): Promise<R<any>> => ipcRenderer.invoke('rename-file', params),
   selectDocLibFolderDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('select-doclib-folder-dialog'),

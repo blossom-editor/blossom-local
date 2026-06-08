@@ -5,10 +5,16 @@ import R from '../../preload/r'
 import { sysFolder, articleExtensionFile, docLibStatsFile } from './docLibManager'
 import { DocLibStatsManager } from './docLibStatsManager'
 import { offsetMounth, timeToYMD, lastDayOfThisMonth, offsetDay, firstDayOfMonth } from '../date'
+import { isSysFile } from '../doclib/docLibManager'
+import { sortDocTreeList } from '../article/fileUtils'
+import { getUniqueId, cutSuffix } from '../utils'
+import { IdMapping, FileItem } from '../doclib/idMapping'
 
+const idMapping = IdMapping.getInstance()
 const docLibStatsManager = DocLibStatsManager.getInstance()
 
 export const initDocLibApi = () => {
+  initReadDocTree()
   initSelectDocLibFolderDialog()
   initcheckDocLibConfig()
   initDocLibStatWords()
@@ -17,6 +23,90 @@ export const initDocLibApi = () => {
   initFileLocation()
   initSelectFileAndMoveDialog()
 }
+
+//#region ====================================< 文档列表 >====================================
+
+const initReadDocTree = () => {
+  ipcMain.handle('read-doc-tree', async (_event, params: DocTreeReq) => {
+    return R.ok(await readDocTreeSort(params))
+  })
+}
+
+/**
+ * 获取文档数并最终排序
+ */
+export const readDocTreeSort = async (params: DocTreeReq): Promise<DocTree[]> => {
+  await docLibStatsManager.clecrArticleUpdToday(params.docLibPath!)
+  const docTree = await readDocTree(params)
+  sortDocTreeList(docTree)
+  docLibStatsManager.save(params.docLibPath!)
+  return docTree
+}
+
+/**
+ * 递归读取文件夹下的所有文件夹和 md 文件
+ *
+ * @param req 文档库路径, 必填项
+ */
+const readDocTree = async (req: DocTreeReq): Promise<DocTree[]> => {
+  if (!req.docLibPath) {
+    return []
+  }
+
+  const files = await fs.promises.readdir(req.docLibPath!, { withFileTypes: true })
+  const nodes: DocTree[] = []
+
+  for (const file of files) {
+    // 根据参数选择显示的文件类型
+    if (!file.isDirectory()) {
+      if (!file.name.endsWith('.md') && req.type === 'ARTICLE') {
+        continue
+      }
+      if (file.name.endsWith('.md') && req.type === 'PICTURE') {
+        continue
+      }
+    }
+
+    const fullPath = path.join(req.docLibPath!, file.name)
+    const stats: BigIntStats = await fs.promises.stat(fullPath, { bigint: true })
+    const doc: DocTree = {
+      id: getUniqueId(stats),
+      type: req.type,
+      name: file.name,
+      size: stats.size,
+      formatName: cutSuffix(file.name),
+      path: fullPath,
+      creTime: timeToYMD(stats.birthtime.toString()), // 创建时间
+      updTime: timeToYMD(stats.mtime.toString()) // 修改时间
+    }
+
+    if (file.isDirectory()) {
+      // 系统文件不显示在文档列表中
+      if (isSysFile(doc.name)) {
+        continue
+      }
+      const fileItem: FileItem = new FileItem(doc.id, doc.path, 'FOLDER')
+      idMapping.add(fileItem)
+
+      // 递归读取子目录
+      const children = await readDocTree({ docLibPath: fullPath, type: req.type })
+      doc.type = 'FOLDER'
+      doc.icon = 'wl-folder'
+      doc.name = file.name
+      doc.formatName = file.name
+      doc.children = children
+    } else {
+      const fileItem: FileItem = new FileItem(doc.id, doc.path, 'ARTICLE')
+      docLibStatsManager.increaseArticleUpdToday(timeToYMD(stats.mtime.toString()))
+      idMapping.add(fileItem)
+    }
+    // 文件没有 children 属性
+    nodes.push(doc)
+  }
+  return nodes
+}
+
+//#endregion
 
 /**
  * 打开文件位置
