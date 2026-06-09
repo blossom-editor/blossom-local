@@ -1,7 +1,7 @@
 import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
 import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
-import { escape2Html, randomInt, sleep } from '@renderer/assets/utils/util'
+import { escape2Html, isHttp, randomInt, sleep } from '@renderer/assets/utils/util'
 import { marked, Marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
 // highlight
@@ -360,6 +360,7 @@ export const renderCodespan = (src: string) => {
   return `<code>${src}</code>`
 }
 
+
 /**
  * 拓展图片设置
  * ![照片A${grammar}shadow${grammar}w100]()
@@ -369,7 +370,7 @@ export const renderCodespan = (src: string) => {
  *  - 图片宽度为100px
  *
  * @param href   图片路径
- * @param _title null
+ * @param title  null
  * @param text   图片的名称
  */
 export const renderImage = (href: string | null, title: string | null, text: string) => {
@@ -390,7 +391,6 @@ export const renderImage = (href: string | null, title: string | null, text: str
       }
     }
   }
-  // 为图片增加缓存标识
   return `<img width="${width}" style="${style}" src="${picCacheWrapper(href as string)}" alt="${title}">`
   // return `<img width="${width}" style="${style}" src="${href}" alt="${title}">`
 }

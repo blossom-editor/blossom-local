@@ -10,7 +10,7 @@ import { readDocTreeSort } from '../doclib/api'
 const idMapping = IdMapping.getInstance()
 
 export const initArticleApi = () => {
-  console.log('3.3 监听文件监听事件')
+  console.log('   4.4 初始化文章接口 initArticleApi')
   initReadDocInfo()
   initRenameFile()
   initMoveFile()
@@ -33,7 +33,7 @@ const initReadDocInfo = () => {
  * @returns 返回包含文档基本信息的 DocInfo 对象。若读取成功，markdown 字段将包含文件内容；若读取失败，markdown 字段为空字符串，但仍返回包含路径等基础信息的对象
  */
 const readDocInfo = async (req: GetFileContentReq): Promise<R<DocInfo>> => {
-  console.log('读取文件信息', req.path)
+  console.log(`读取文章内容与信息(readDocInfo): 文章的路径: ${req.path}, ID: ${req.id}`)
   const cacheDoc: FileItem | undefined = idMapping.get(req.id)
   if (!cacheDoc || cacheDoc.type !== 'ARTICLE') {
     return R.fail('文章不存在', '文章不存在, 请尝试刷新文档列表')

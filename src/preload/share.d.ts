@@ -58,7 +58,7 @@ declare interface DocInfo {
   words?: number
   version?: number
   path: string
-  type: 'FOLDER' | 'ARTICLE'
+  type: DocType
   creTime?: string
   updTime?: string
   markdown?: string // 文章正文
@@ -138,3 +138,17 @@ declare interface SelectFileAndMoveRes extends Base {
   fileName: string
 }
 
+
+//#region ====================================< 图片 >====================================
+declare interface PictureListReq extends Base {
+  // 文件夹或文件的ID
+  id: string
+}
+
+declare interface PictureListRes extends Base {
+  // 文件夹或文件的ID
+  totalCount: number
+  totalSize: bigint
+  pictures: DocTree[]
+}
+//#endregion

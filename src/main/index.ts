@@ -1,4 +1,4 @@
-import { app, protocol, net, shell, ipcMain, BrowserWindow, Menu, IpcMainEvent, Tray, HandlerDetails } from 'electron'
+import { app, shell, ipcMain, BrowserWindow, Menu, IpcMainEvent, Tray, HandlerDetails } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is, platform } from '@electron-toolkit/utils'
 import { initArticleApi } from './article/api'
@@ -7,6 +7,7 @@ import { pathToFileURL } from 'url'
 import icon from '../../resources/imgs/icon.ico?asset'
 import printScreen from './printScreen'
 import ShortcutRegistrant from './shortcut'
+import { initProtocol } from './customProtocol'
 
 // 主窗口
 let mainWindow: BrowserWindow | undefined
@@ -150,14 +151,15 @@ function createMainWindow(): void {
   openDevToos(mainWindow)
   // 创建 Tray
   initTray()
+  // 初始化自定义协议
   initProtocol()
   // 创建焦点窗口事件
   initOnFocusedWindow()
   // 主窗口监听事件
   initOnMainWindow(mainWindow)
-  // 注册文件监听
-  initArticleApi()
+  // 注册各类业务接口
   initDocLibApi()
+  initArticleApi()
   // 注册全局快捷键 printScreen:截屏快捷键
   new ShortcutRegistrant(mainWindow).printScreen()
   console.log('============================================================')
@@ -175,12 +177,12 @@ const initTray = () => {
   console.log('1. 创建托盘 Tray')
   tray = new Tray(icon)
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Blossom 官网 ', click: () => shell.openExternal('https://www.wangyunf.com/blossom-doc/index') },
+    { label: 'Blossom 官网 ', click: () => shell.openExternal('https://github.com/blossom-editor/blossom-local') },
     { type: 'separator' },
     { label: '显示', click: () => mainWindow!.show() },
     { label: '退出', click: () => app.quit() }
   ])
-  tray.setToolTip('Blossom\n未登录')
+  tray.setToolTip('Blossom')
   tray.setContextMenu(contextMenu)
   tray.addListener('double-click', () => {
     mainWindow!.show()
@@ -264,7 +266,7 @@ const openDevToos = (win: BrowserWindow) => {
  * =========================================================================================================================
  */
 const initOnFocusedWindow = (): void => {
-  console.log('2. 监听焦点窗口事件')
+  console.log('3. 监听焦点窗口事件 initOnFocusedWindow')
   /**
    * 窗口最小化
    */
@@ -334,7 +336,8 @@ const initOnFocusedWindow = (): void => {
  * =========================================================================================================================
  */
 const initOnMainWindow = (mainWindow: BrowserWindow): void => {
-  console.log('3.1 监听主窗口事件')
+  console.log('4. 初始化各类事件与接口')
+  console.log('   4.1 监听主窗口事件 initOnMainWindow')
   initOnWindow(mainWindow)
   /**
    * 窗口准备好后, 立即显示
@@ -437,7 +440,7 @@ const initOnMainWindow = (mainWindow: BrowserWindow): void => {
  * =========================================================================================================================
  */
 export const initOnWindow = (window: BrowserWindow) => {
-  console.log('3.2 监听非主窗口事件')
+  console.log('   4.2 监听非主窗口事件 initOnWindow')
   /**
    * 拦截页面链接
    */
@@ -457,18 +460,6 @@ export const initOnWindow = (window: BrowserWindow) => {
       shell.openExternal(url)
     }
     // return { action: "deny" }
-  })
-}
-
-// 由于在渲染进程无法直接读取本地文件, 需要自定义协议 blossom:\\ ,并进行拦截
-// 主要用在渲染进程读取本地文件
-const initProtocol = () => {
-  protocol.handle('blossom', (request) => {
-    const url = request.url.slice('blossom:\\'.length )
-    // const fileUrl = pathToFileURL(decodeURIComponent(url)).href
-    // const fileUrl = pathToFileURL(url).href
-    // console.log('fileUrl', fileUrl)
-    return net.fetch(url)
   })
 }
 

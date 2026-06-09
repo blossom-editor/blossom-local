@@ -47,9 +47,6 @@ export const articleHeatmapApi = (params?: object): Promise<R<any>> => {
 export const selectFileAndMoveDialog = (params: SelectFileAndMoveReq): Promise<R<SelectFileAndMoveRes>> => {
   return invoke('select-file-and-move-dialog', params)
 }
-//#endregion
-
-//#region ====================================================< doc >=======================================================
 
 /**
  * 获取文档树
@@ -60,8 +57,7 @@ export const docTreeApi = (req: DocTreeReq): Promise<R<DocTree[]>> => {
 
 //#endregion
 
-//#endregion
-
+//#region ====================================================< 文章 >=======================================================
 /**
  * 查询文章详情, 如果文章为公开文章, 则会返回对应的公开信息, 如 openVersion, openTime 等
  * <p>注意: 返回的正文信息永远是草稿正文, 公开版本的正文信息需要通过公开文章查询 {@link articleOpenApi}

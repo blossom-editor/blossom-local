@@ -529,8 +529,11 @@ export const getFilePrefix = (name: string): string => {
  * @param url
  * @returns
  */
-export const isHttp = (url: string) => {
-  return url.startsWith('http://') || url.startsWith('https://')
+export const isHttp = (url: string | null | undefined) => {
+  if (url === undefined || url == null) {
+    return false
+  }
+  return url!.startsWith('http://') || url!.startsWith('https://')
 }
 
 /**
@@ -561,4 +564,51 @@ export const uuid = (): string => {
 export const inValidateFileName = (str: string): boolean => {
   const regex = /[<>\/\\:*?"|.]/
   return regex.test(str)
+}
+
+/**
+ * 解析 URL 中 ? 后面的查询参数
+ * @param url - 要解析的 URL 地址
+ * @returns 包含所有查询参数的对象
+ */
+export const parseQueryParams = (url: string): Record<string, string> | null => {
+  const params: Record<string, string> = {}
+
+  // 查找 ? 的位置
+  const queryIndex = url.indexOf('?')
+
+  // 如果没有查询参数，返回空对象
+  if (queryIndex === -1) {
+    return null
+  }
+
+  // 获取查询字符串部分
+  const queryString = url.substring(queryIndex + 1)
+
+  // 去除 hash 部分（如果有的话）
+  const cleanQueryString = queryString.split('#')[0]
+
+  // 如果没有查询参数，返回空对象
+  if (!cleanQueryString) {
+    return params
+  }
+
+  // 分割每个参数
+  const pairs = cleanQueryString.split('&')
+
+  for (const pair of pairs) {
+    // 分割键值对
+    const [key, value = ''] = pair.split('=')
+
+    // 对键和值进行 URL 解码
+    const decodedKey = decodeURIComponent(key)
+    const decodedValue = decodeURIComponent(value)
+
+    // 如果键不为空，添加到结果对象中
+    if (decodedKey) {
+      params[decodedKey] = decodedValue
+    }
+  }
+
+  return params
 }

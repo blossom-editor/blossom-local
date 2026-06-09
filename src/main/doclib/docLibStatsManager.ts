@@ -80,8 +80,8 @@ export class DocLibStatsManager {
       return
     }
     fs.writeFileSync(path.join(docLibPath, sysFolder, docLibStatsFile), JSON.stringify(this.stats, null, 2))
-    console.log('持久化文档库统计(docLib stats)', this.stats)
-    console.log('============================================================')
+    // console.log('持久化文档库统计(docLib stats)', this.stats)
+    // console.log('============================================================')
   }
 
   /**

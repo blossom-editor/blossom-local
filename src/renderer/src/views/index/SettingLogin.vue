@@ -91,7 +91,7 @@ const selectIcon = (docLib: DocLibItem) => {
     if (isNull(resp.data)) {
       return
     }
-    docLib.icon = 'blossom:\\' + resp.data?.filePath + '?picCache=' + new Date().getTime()
+    docLib.icon = 'blossom:\\' + resp.data?.filePath + '?t=' + new Date().getTime()
     docLibStore.updItem(docLib)
   })
 }

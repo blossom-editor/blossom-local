@@ -3,6 +3,7 @@ import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
 import { sysFolder, articleExtensionFile, docLibStatsFile } from './docLibManager'
+import { CurDocLibManager } from './curDocLibManager'
 import { DocLibStatsManager } from './docLibStatsManager'
 import { offsetMounth, timeToYMD, lastDayOfThisMonth, offsetDay, firstDayOfMonth } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
@@ -12,8 +13,10 @@ import { IdMapping, FileItem } from '../doclib/idMapping'
 
 const idMapping = IdMapping.getInstance()
 const docLibStatsManager = DocLibStatsManager.getInstance()
+const curDocLibManager = CurDocLibManager.getInstance()
 
 export const initDocLibApi = () => {
+  console.log('   4.3 初始化文档库接口 initDocLibApi')
   initReadDocTree()
   initSelectDocLibFolderDialog()
   initcheckDocLibConfig()
@@ -243,6 +246,7 @@ export const checkDocLibConfig = async (base: Base) => {
   await checkdocLibStatsFileFile(base.docLibPath)
   await checkArticleExtensionFileFile(base.docLibPath)
   docLibStatsManager.statsBegin(base.docLibPath)
+  curDocLibManager.change(base.docLibPath)
   // 统计所有文章的字数
   return R.ok('')
 }

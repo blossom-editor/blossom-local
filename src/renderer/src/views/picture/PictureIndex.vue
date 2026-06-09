@@ -114,19 +114,19 @@
                   <bl-row>图片名称: {{ pic.name }}</bl-row>
                   <bl-row>图片大小: {{ formatFileSize(pic.size) }}</bl-row>
                   <bl-row>上传时间: {{ pic.creTime }}</bl-row>
-                  <bl-row>图片路径: {{ pic.pathName }}</bl-row>
-                  <bl-row v-if="!isEmpty(pic.articleNames)" align="flex-start"
-                  >引用文章:
+                  <bl-row>图片路径: {{ pic.path }}</bl-row>
+                  <!-- <bl-row v-if="!isEmpty(pic.articleNames)" align="flex-start"
+                    >引用文章:
                     <div>
                       <div v-for="aname in articleNamesToArray(pic.articleNames)" style="margin-left: -13px">《{{ aname }}》</div>
                     </div>
-                  </bl-row>
+                  </bl-row> -->
                 </div>
               </template>
               <div class="item iconbl bl-problem-line"></div>
             </el-tooltip>
-            <div class="item iconbl bl-copy-line" @click="copyUrl(pic.url)" @click.right="copyMarkdownUrl(pic.url, pic.name, $event)"></div>
-            <div class="item iconbl bl-a-clouddownload-line" @click="download(pic.url)"></div>
+            <div class="item iconbl bl-copy-line" @click="copyUrl(pic.path)" @click.right="copyMarkdownUrl(pic.path, pic.name, $event)"></div>
+            <div class="item iconbl bl-a-clouddownload-line" @click="download(pic.path)"></div>
             <div v-if="pic.starStatus == 0" class="item iconbl bl-star-line" @click="starPicture(pic)"></div>
             <div v-else-if="pic.starStatus == 1" class="item iconbl bl-star-fill" @click="starPicture(pic)"></div>
             <div class="item iconbl bl-delete-line" @click="deletePicture(pic)"></div>
@@ -140,7 +140,7 @@
       <div class="picture-status">
         <bl-row width="calc(100% - 240px)" height="100%" class="status-item-container">
           <div>{{ curFolder?.name }}: {{ pictureStat.cur.picCount }} P / {{ pictureStat.cur.picSize }}</div>
-          <div>存储路径: {{ storePath }}</div>
+          <div>存储路径: {{ curFolder?.path }}</div>
         </bl-row>
         <div class="status-item-container">
           <div>文件总览: {{ pictureStat.global.picCount }} P / {{ pictureStat.global.picSize }}</div>
@@ -178,12 +178,10 @@
 <script setup lang="ts">
 // vue
 import { ref, provide, computed, StyleValue } from 'vue'
-import { useUserStore } from '@renderer/stores/user'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
 import { picturePageApi, pictureStarApi, pictureDelApi, pictureStatApi } from '@renderer/api/blossom'
 import { treeToInfo, provideKeyDocInfo } from '@renderer/views/doc/doc'
-import { isEmpty } from 'lodash'
 import { isNotNull, isNull } from '@renderer/assets/utils/obj'
 import { formatFileSize, getFilePrefix, getFileSuffix, isImage } from '@renderer/assets/utils/util'
 import { writeText, download } from '@renderer/assets/utils/electron'
@@ -199,8 +197,7 @@ import PictureBatchDel from './PictureBatchDel.vue'
 import PictureTransfer from './PictureTransfer.vue'
 import errorImg from '@renderer/assets/imgs/img_error.png'
 import Notify from '@renderer/scripts/notify'
-
-const userStore = useUserStore()
+import { pictureListApi } from '@renderer/api/picture'
 
 useLifecycle(
   () => getPictureStat(),
@@ -221,18 +218,10 @@ const cardClass = computed(() => {
 type PageParam = { pageNum: number; pageSize: number; pid: string; name: string; starStatus: number | undefined } // 分页对象类型
 const curFolder = ref<DocInfo>() // 当前选中的文档, 包含文件夹和文章, 如果选中是文件夹, 则不会重置编辑器中的文章
 const picturePageParam = ref<PageParam>({ pageNum: 1, pageSize: 10, pid: '0', name: '', starStatus: undefined }) // 列表参数
-const picturePages = ref<Picture[]>([]) // 图片列表
+const picturePages = ref<DocTree[]>([]) // 图片列表
 const pictureStat = ref<any>({ cur: { picCount: 0, picSize: '0MB' }, global: { picCount: 0, picSize: '0MB' } })
 // 依赖注入
 provide(provideKeyDocInfo, curFolder)
-
-// storePath 拼接服务器配置的根目录
-const storePath = computed(() => {
-  if (curFolder.value && curFolder.value.storePath) {
-    return userStore.userinfo.osRes.defaultPath + '/U' + userStore.userinfo.id + curFolder.value.storePath
-  }
-  return userStore.userinfo.osRes.defaultPath + '/U' + userStore.userinfo.id
-})
 
 const curIsFolder = () => {
   if (isNull(curFolder.value)) {
@@ -269,9 +258,12 @@ const clickCurFolder = (tree: DocTree) => {
   picturePageParam.value.pageNum = 1
   picturePageParam.value.pid = curFolder.value.id
   picturePages.value = [] // 在重新加载前清空，防止因加载慢而残留显示其他文件夹的图片
-  picturePageApi(picturePageParam.value).then((resp) => {
-    picturePages.value = resp.data.datas
+  pictureListApi({ id: curFolder.value.id }).then((resp) => {
+    picturePages.value = resp.data.pictures
   })
+  // picturePageApi(picturePageParam.value).then((resp) => {
+  //   picturePages.value = resp.data.datas
+  // })
   getPictureStat(curFolder.value.id)
 }
 

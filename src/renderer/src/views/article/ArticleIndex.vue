@@ -191,7 +191,7 @@ import { articleInfoApi, saveArticleContentApi, uploadFileApiUrl } from '@render
 // utils
 import { Local } from '@renderer/assets/utils/storage'
 import { isBlank, isNull } from '@renderer/assets/utils/obj'
-import { sleep, isElectron, isBase64Img } from '@renderer/assets/utils/util'
+import { sleep, isElectron, isBase64Img, isHttp } from '@renderer/assets/utils/util'
 import { openExtenal, writeText, readText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 import { formartMarkdownTable } from '@renderer/assets/utils/format-table'
 // component
@@ -707,9 +707,15 @@ const renderer = {
   heading(text: string, level: number, raw: string): string {
     return renderHeading(text, level, raw)
   },
-  image(href: string | null, _title: string | null, text: string): string {
+  image(href: string | null, title: string | null, text: string): string {
+    const imageProtocolPrefix = 'blossom:\\'
+
+    if (!isHttp(href)) {
+      href = imageProtocolPrefix + href + '?blossom_article_id=' + curArticle.value!.id
+    }
+
     articleImg.value.push({ targetId: '0', targetName: text, targetUrl: href as string, type: 10 })
-    return renderImage(href, _title, text)
+    return renderImage(href, title, text)
   },
   link(href: string, title: string | null | undefined, text: string): string {
     let { link, ref } = renderLink(href, title, text, ArticleTreeDocsRef.value.getDocTreeData())
@@ -728,10 +734,7 @@ const parse = () => {
   immediateParse = false
   let mdContent = cmw.getDocString()
   clearTocAndImg()
-  renderAsync.value = {
-    need: 0,
-    done: 0
-  }
+  renderAsync.value = { need: 0, done: 0 }
   marked
     .parse(mdContent, { async: true })
     .then((content: string) => {

@@ -49,16 +49,15 @@
       :indent="14"
       :icon="ArrowRightBold"
       :accordion="false"
-      :default-expanded-keys="Array.from(docTreeCurrentExpandId)"
+      :default-expanded-keys="Array.from(docTreeCurrentExpandIdSet)"
       :filter-node-method="filterNode"
       :draggable="isBlank(treeFilterText)"
-      node-key="i"
+      node-key="id"
       @nodeClick="clickCurDoc"
       @nodeExpand="handleNodeExpand"
       @nodeCollapse="handleNodeCollapse"
       @nodeDrop="handleDrop">
       <template #default="{ node, data }">
-        <div v-if="data.ty !== 11 && isShowSort" class="sort-tag" :style="{ backgroundColor: getColor(node) }">{{ data.s }}</div>
         <div v-if="data.ty === 11" class="menu-divider"></div>
         <div v-else class="menu-item-wrapper" @click.right="handleClickRightMenu($event, data)">
           <div class="doc-title">
@@ -69,17 +68,14 @@
               </svg>
               <el-input
                 v-if="data?.updn"
-                v-model="data.n"
+                v-model="data.formatName"
                 :id="'article-doc-name-' + data.i"
                 @blur="blurArticleNameInput(data)"
                 @keyup.enter="blurArticleNameInput(data)"
                 style="width: 95%"></el-input>
               <div v-else class="name-wrapper" :style="{ maxWidth: isNotBlank(data.icon) ? 'calc(100% - 25px)' : '100%' }">
-                {{ data.n }}
+                {{ data.formatName }}
               </div>
-              <bl-tag v-for="tag in tags(data, viewStyle)" style="margin-top: 4px" :bg-color="tag.bgColor" :icon="tag.icon">
-                {{ tag.content }}
-              </bl-tag>
             </div>
           </div>
         </div>
@@ -90,7 +86,7 @@
   <!-- 右键菜单, 添加到 body 下 -->
   <Teleport to="body">
     <div v-if="rMenu.show" class="tree-menu" :style="{ left: rMenu.clientX + 'px', top: rMenu.clientY + 'px' }">
-      <div class="doc-name">{{ curDoc.n }}</div>
+      <div class="doc-name">{{ curDoc.name }}</div>
       <div class="menu-content">
         <div :class="['menu-item', Number(curDoc.i) <= 0 ? 'disabled' : '']" @click="rename"><span class="iconbl bl-pen"></span>重命名</div>
         <div :class="['menu-item', Number(curDoc.i) <= 0 ? 'disabled' : '']" @click="handleShowDocInfoDialog('upd')">
@@ -137,7 +133,7 @@ import { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNod
 import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 import Node from 'element-plus/es/components/tree/src/model/node'
 // ts
-import { docTreeApi, folderAddApi,folderUpdNameApi } from '@renderer/api/blossom'
+import { docTreeApi, folderAddApi, folderUpdNameApi } from '@renderer/api/blossom'
 import { provideKeyDocTree } from '@renderer/views/doc/doc'
 import { isShowImg, isShowSvg, tags } from '@renderer/views/doc/doc-tree-detail'
 import { getColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
@@ -191,9 +187,10 @@ const refreshDocTree = () => {
  */
 const getDocTree = (callback?: () => void) => {
   startLoading()
-  docTreeApi({ onlyPicture: true })
+  docTreeApi({ type: 'PICTURE' })
     .then((resp) => {
-      addTreeDivider(resp.data)
+      // addTreeDivider(resp.data)
+      docTreeData.value = resp.data!
       endLoading()
       if (callback) callback()
     })
@@ -210,7 +207,16 @@ const getDocTree = (callback?: () => void) => {
  */
 const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: MouseEvent) => {
   closeTreeDocsMenuShow(event)
-  setCurrentKey(tree, node, treeNode, event)
+  setCurrentKey(
+    {
+      id: tree.id,
+      parentId: node.parent.data.id,
+      type: tree.type
+    },
+    node,
+    treeNode,
+    event
+  )
   emits('clickDoc', tree)
 }
 
@@ -279,7 +285,7 @@ const addTreeDivider = (data: any) => {
 // 文档的最后选中项, 用于外部跳转后选中菜单
 const docTreeCurrentId = ref('')
 // 所有展开的节点
-const docTreeCurrentExpandId = ref<Set<string>>(new Set())
+const docTreeCurrentExpandIdSet = ref<Set<string>>(new Set())
 // 搜索内容
 const treeFilterText = ref('')
 const isShowTreeFilter = ref(false)
@@ -300,15 +306,15 @@ watch(treeFilterText, (val) => DocTreeRef.value!.filter(val))
  *
  * @param tree 当前选中的文档
  */
-const setCurrentKey = (tree: { i: string; p: string; ty: DocType }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
+const setCurrentKey = (tree: { id: string; parentId: string; type: DocType }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
   if (tree.ty === 1 || tree.ty === 2) {
     docTreeCurrentId.value = tree.i
     if (node && node.expanded) {
-      docTreeCurrentExpandId.value.add(tree.i)
+      docTreeCurrentExpandIdSet.value.add(tree.i)
     }
   } else if (tree.ty === 3) {
     docTreeCurrentId.value = tree.i
-    docTreeCurrentExpandId.value.add(tree.p)
+    docTreeCurrentExpandIdSet.value.add(tree.p)
   }
   DocTreeRef.value.setCurrentKey(tree.i)
 }
@@ -331,7 +337,7 @@ const showTreeFilter = () => {
  */
 const filterNode = (value: string, data: DocTree): boolean => {
   if (!value) return true
-  return data.n.includes(value) || data.t.toString().includes(value)
+  return data.name.includes(value)
 }
 
 /**
@@ -368,7 +374,7 @@ const handleAllowDrop = (_draggingNode: Node, dropNode: Node, _type: NodeDropTyp
  * 折叠全部, 清空当前选中状态, 并刷新列表
  */
 const collapseAll = () => {
-  docTreeCurrentExpandId.value.clear()
+  docTreeCurrentExpandIdSet.value.clear()
   getDocTree()
 }
 
@@ -392,7 +398,7 @@ const collapseNoChild = () => {
 const collapseChild = (doc: DocTree) => {
   if (doc.ty === 1 || doc.ty === 2) {
     if (isEmpty(doc.children)) {
-      docTreeCurrentExpandId.value.delete(doc.i)
+      docTreeCurrentExpandIdSet.value.delete(doc.i)
     } else {
       for (let i = 0; i < doc.children!.length; i++) {
         const cdoc = doc.children![i]
@@ -406,14 +412,14 @@ const collapseChild = (doc: DocTree) => {
  * 处理节点展开
  */
 const handleNodeExpand = (tree: DocTree, _node: Node) => {
-  docTreeCurrentExpandId.value.add(tree.i)
+  docTreeCurrentExpandIdSet.value.add(tree.id)
 }
 
 /**
  * 处理节点缩起, 同时清除所有子节点的展开状态
  */
 const handleNodeCollapse = (tree: DocTree, node: Node) => {
-  docTreeCurrentExpandId.value.delete(tree.i)
+  docTreeCurrentExpandIdSet.value.delete(tree.id)
   collapseChilds(node)
 }
 
@@ -426,7 +432,7 @@ const collapseChilds = (node: Node) => {
     if (child.isLeaf) {
     } else {
       child.expanded = false
-      docTreeCurrentExpandId.value.delete(child.data.i)
+      docTreeCurrentExpandIdSet.value.delete(child.data.i)
       collapseChilds(child)
     }
   }
@@ -439,7 +445,7 @@ const collapseChilds = (node: Node) => {
 const closeParentIfNoChild = (pid: string) => {
   let node: Node = DocTreeRef.value.getNode(pid)
   if (node && isEmpty(node.childNodes)) {
-    docTreeCurrentExpandId.value.delete(pid)
+    docTreeCurrentExpandIdSet.value.delete(pid)
   }
 }
 
@@ -460,7 +466,7 @@ const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: Dra
 //#endregion
 
 //#region ----------------------------------------< 右键菜单 >--------------------------------------
-const curDoc = ref<DocTree>({ i: '0', p: '0', n: '选择菜单', o: 0, t: [], s: 0, icon: '', ty: 1, star: 0 })
+const curDoc = ref<DocTree>({ id: '0', path: '0', name: '选择菜单', formatName: '', type: 'PICTURE', updn: false, size: 0n })
 const rMenu = ref<RightMenu>({ show: false, clientX: 0, clientY: 0 })
 const rMenuHeight = 151 // 固定的菜单高度, 每次增加右键菜单项时需要修改该值
 
@@ -473,9 +479,9 @@ const rMenuHeight = 151 // 固定的菜单高度, 每次增加右键菜单项时
  */
 const handleClickRightMenu = (event: MouseEvent, doc: DocTree) => {
   event.preventDefault()
-  docTreeCurrentExpandId.value.add(doc.p)
+  docTreeCurrentExpandIdSet.value.add(doc.id)
   if (!doc) return
-  if (doc.ty !== 2) return
+  if (doc.type !== 'PICTURE') return
 
   curDoc.value = doc
   rMenu.value = { show: false, clientX: 0, clientY: 0 }
@@ -530,9 +536,9 @@ const delDoc = () => {
  */
 const rename = () => {
   curDoc.value.updn = true
-  notAllowDragKey = curDoc.value.i
+  notAllowDragKey = curDoc.value.id
   nextTick(() => {
-    let ele = document.getElementById('article-doc-name-' + curDoc.value.i)
+    let ele = document.getElementById('article-doc-name-' + curDoc.value.id)
     if (ele) ele.focus()
   })
 }
@@ -541,10 +547,10 @@ const rename = () => {
  * 重命名文章失去焦点
  */
 const blurArticleNameInput = (doc: DocTree) => {
-  folderUpdNameApi({ id: doc.i, name: doc.n }).then((_resp) => {
-    doc.updn = false
-    notAllowDragKey = ''
-  })
+  // folderUpdNameApi({ id: doc.i, name: doc.n }).then((_resp) => {
+  //   doc.updn = false
+  //   notAllowDragKey = ''
+  // })
 }
 
 /**
@@ -589,7 +595,7 @@ const addDocToTail = (doc: DocTree) => {
   if (doc.p !== '0') {
     // 插入到根目录
     DocTreeRef.value.append(doc, DocTreeRef.value.getNode(doc.p))
-    docTreeCurrentExpandId.value.add(doc.p)
+    docTreeCurrentExpandIdSet.value.add(doc.p)
   } else {
     const picRootFolder: DocTree[] = docTreeData.value.filter((n) => n.ty === 2)
     const lastFolder = picRootFolder[picRootFolder.length - 1]

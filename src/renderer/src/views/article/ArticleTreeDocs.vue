@@ -764,7 +764,7 @@ const delDoc = () => {
   let type = curDoc.value.type === 'ARTICLE' ? '文章' : '文件夹'
   ElMessageBox.confirm(
     `<strong>注意：</strong><br/>
-    删除的文件可在系统回收站中找回<br/>
+    删除的文件可在系统回收站中找回, 包括文件夹下的所有文件.<br/>
     是否继续删除${type}: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.formatName}</span>？`,
     {
       confirmButtonText: '确定删除',
