@@ -192,7 +192,7 @@ import type { shortcutFunc } from '@renderer/scripts/shortcut-register'
 import { treeToInfo, provideKeyDocInfo, provideKeyCurArticleInfo, isArticle } from '@renderer/views/doc/doc'
 import { TempTextareaKey, ArticleReference, parseTocAsync, countWords } from './scripts/article'
 import type { Toc } from './scripts/article'
-import { picCacheWrapper, picCacheRefresh, uploadForm, DefaultPicture } from '@renderer/views/picture/scripts/picture'
+import { picCacheWrapper, picCacheRefresh, uploadForm, DefaultPicture, protocolWrapper } from '@renderer/views/picture/scripts/picture'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
 // codemirror
 import { CmWrapper } from './scripts/codemirror'
@@ -263,10 +263,7 @@ const ResizeEditorDividerRef = ref() // editor&preview resize dom
 const EditorOperatorRef = ref()
 const EditorStatusRef = ref() // 底部状态栏
 const PreviewRef = ref() // html 预览
-const editorOperator = ref({
-  syncParse: true,
-  sycnScroll: true
-})
+const editorOperator = ref({ syncParse: true, sycnScroll: true })
 /**
  * 文档列表的展开和收起
  */
@@ -704,11 +701,9 @@ const renderer = {
     return renderHeading(text, level, raw)
   },
   image(href: string | null, title: string | null, text: string): string {
-    const imageProtocolPrefix = 'blossom:\\'
-    if (!isHttp(href)) {
-      href = imageProtocolPrefix + href + '?blossom_article_id=' + curArticle.value!.id
-    }
-    articleImg.value.push({ targetId: curArticle.value!.id, targetName: text, targetUrl: href as string, type: 10 })
+    if (!isHttp(href)) href = protocolWrapper(href as string) + '?blossom_article_id=' + curArticle.value!.id
+
+    articleImg.value.push({ targetId: curArticle.value!.id, targetName: curArticle.value!.name, targetUrl: href as string, type: 10 })
     return renderImage(href, title, text)
   },
   link(href: string, title: string | null | undefined, text: string): string {

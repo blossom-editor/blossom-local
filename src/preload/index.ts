@@ -1,9 +1,14 @@
 // @ts-ignore (define in dts)
 import { contextBridge, ipcRenderer, clipboard, shell, OpenExternalOptions, NativeImage } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import { BLOSSOM_PROTOCOL } from '../main/customProtocol'
 
 // Custom APIs for renderer
 const api = {}
+
+const constants = {
+  BLOSSOM_PROTOCOL
+}
 
 /**
  * 主进程调用渲染进程方法
@@ -130,7 +135,10 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electronAPI', {
       ...rednerToIpc,
-      ...ipcToRender
+      ...ipcToRender,
+      constants: {
+        ...constants
+      }
     })
     // contextBridge.exposeInMainWorld('electron', electronAPI)
     // contextBridge.exposeInMainWorld('api', api)

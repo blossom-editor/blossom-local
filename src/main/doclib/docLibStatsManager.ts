@@ -5,7 +5,7 @@ import { BigIntStats } from 'fs'
 import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
-import { getUniqueId } from '../utils'
+import { extractFileName, getUniqueId } from '../utils'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -289,37 +289,6 @@ export class DocLibStatsManager {
   }
 }
 
-/**
- * 从本地路径或网络地址中提取文件名（包含扩展名）
- * @param pathOrUrl - 待解析的字符串，支持：
- *   - Windows 路径（如 F:\folder\file.jpg）
- *   - Unix 路径（如 /home/user/file.png）
- *   - 相对路径（如 ./file.txt、../file.gif）
- *   - URL（如 https://example.com/img/photo.jpg?t=123）
- * @returns 文件名，如果没有有效文件名则返回空字符串
- */
-function extractFileName(pathOrUrl: string): string {
-  if (!pathOrUrl) return ''
-
-  // 1. 将反斜杠统一替换为正斜杠，便于处理
-  let normalized = pathOrUrl.replace(/\\/g, '/')
-
-  // 2. 找到最后一个斜杠的位置，提取后面的部分
-  const lastSlashIndex = normalized.lastIndexOf('/')
-  let fileName = lastSlashIndex !== -1 ? normalized.substring(lastSlashIndex + 1) : normalized
-
-  // 3. 去掉 URL 中的查询参数（?...）和锚点（#...）
-  const queryIndex = fileName.indexOf('?')
-  if (queryIndex !== -1) {
-    fileName = fileName.substring(0, queryIndex)
-  }
-  const hashIndex = fileName.indexOf('#')
-  if (hashIndex !== -1) {
-    fileName = fileName.substring(0, hashIndex)
-  }
-
-  return fileName
-}
 
 /**
  * 提取图片和链接

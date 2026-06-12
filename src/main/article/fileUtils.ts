@@ -72,7 +72,7 @@ export function countWords(text: string) {
  * Windows风格的自然排序（忽略大小写、数字按数值比较）
  * 例如：["文章5", "文章41"] → ["文章5", "文章41"]
  */
-function naturalCompare(a: string, b: string): number {
+export const naturalCompare = (a: string, b: string): number => {
   // 正则：将字符串分割为字母/非数字部分 和 数字部分
   const partsA = a.toLowerCase().match(/(\d+|\D+)/g) || []
   const partsB = b.toLowerCase().match(/(\d+|\D+)/g) || []
@@ -99,7 +99,7 @@ function naturalCompare(a: string, b: string): number {
 /**
  * 比较两个 DocTree 节点
  */
-function compareDocTree(a: DocTree, b: DocTree): number {
+const compareDocTree = (a: DocTree, b: DocTree): number => {
   // 1. 类型优先：FOLDER < ARTICLE
   if (a.type !== b.type) {
     return a.type === 'FOLDER' ? -1 : 1
@@ -111,7 +111,7 @@ function compareDocTree(a: DocTree, b: DocTree): number {
 /**
  * 递归排序整个文档树（原地修改）
  */
-function sortDocTree(node: DocTree): DocTree {
+const sortDocTree = (node: DocTree): DocTree => {
   if (node.children && node.children.length > 0) {
     // 先递归排序子节点
     node.children.forEach((child) => sortDocTree(child))

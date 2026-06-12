@@ -2,7 +2,7 @@
   <div class="about-root">
     <div class="project-name">
       <div>Blossom</div>
-      <div class="version">Client {{ CONFIG.SYS.VERSION + getServerVersion() }}</div>
+      <div class="version">Client {{ CONFIG.SYS.VERSION }}</div>
     </div>
 
     <bl-col height="fit-content">
@@ -95,9 +95,6 @@
 import CONFIG from '@renderer/assets/constants/system'
 import { openExtenal } from '@renderer/assets/utils/electron'
 import { toView } from '@renderer/assets/utils/util'
-import { useUserStore } from '@renderer/stores/user'
-
-const userStore = useUserStore()
 
 const references = [
   { name: '基础icon(作者:宗伟)', url: 'https://www.iconfont.cn/collections/detail?cid=35578' },
@@ -119,13 +116,6 @@ const developer = [
     avatar: 'https://www.wangyunf.com/bl/pic/home/bl/img/U1/pic/blosteam/T1anjiu.jpg'
   }
 ]
-
-const getServerVersion = () => {
-  if (userStore.sysParams && userStore.sysParams.SERVER_VERSION) {
-    return ' | Server v' + userStore.sysParams.SERVER_VERSION.replaceAll('-SNAPSHOT', '')
-  }
-  return ''
-}
 </script>
 
 <style scoped lang="scss">

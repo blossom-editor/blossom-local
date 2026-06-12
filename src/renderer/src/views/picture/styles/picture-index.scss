@@ -85,40 +85,32 @@
         width: 100%;
         height: 50px;
         padding-bottom: 5px;
-      }
-
-      .workbench-level2 {
-        @include flex(row, flex-start, center);
-        width: 100%;
-        transition:
-          height 0.1s,
-          opacity 0.1s;
-      }
-
-      .btn-wrapper {
-        margin-left: 15px;
-      }
-
-      .radio {
-        min-width: 70px;
-      }
-
-      .btn-wrapper,
-      .statistic {
-        @include themeColor(#a7a7a7, #6d6d6d);
-
-        & > div {
-          font-size: 11px;
-          text-align: center;
-        }
-
         .bl-admonish-line {
           font-size: 12px;
           margin-left: 3px;
         }
       }
 
+      .workbench-level2 {
+        @include flex(row, flex-start, center);
+        width: 100%;
+        padding-left: 15px;
+        transition:
+          height 0.1s,
+          opacity 0.1s;
+      }
+
+      .btn-wrapper {
+        @include themeColor(#a7a7a7, #6d6d6d);
+        margin-right: 12px;
+        .btn-wrapper-desc {
+          font-size: 11px;
+          text-align: center;
+        }
+      }
+
       .statistic {
+        @include themeColor(#a7a7a7, #6d6d6d);
         height: 100%;
         width: max-content;
       }
@@ -268,7 +260,9 @@
       }
 
       .picuter-card-next {
-        @include box(100%, 50px);
+        @include box(100%, 30px);
+        @include flex(row, flex-start, center);
+        padding: 0 10px;
         text-align: center;
       }
     }

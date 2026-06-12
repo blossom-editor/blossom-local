@@ -5,7 +5,7 @@
       移动文件
     </div>
     <div class="content">
-      <div class="tips" style="margin-bottom: 10px">只修改文件的逻辑路径，不改变文件的物理路径。</div>
+      <div class="tips" style="margin-bottom: 10px">移动后, 同名文件将会重命名</div>
       <el-tree
         class="pic-transfer-tree"
         node-key="i"
@@ -32,7 +32,7 @@
       <bl-row class="target" just="space-between">
         <bl-row width="fit-content">
           <span class="file-count">{{ props.ids.size }}</span>
-          <span class="folder">个文件移动至：{{ targetDoc?.n }}</span>
+          <span class="folder">个文件移动至：{{ targetDoc?.name }}</span>
         </bl-row>
         <el-button class="transfer-btn" size="default" type="primary" :loading="isLoading" @click="transfer"> 确认 </el-button>
       </bl-row>
@@ -45,11 +45,11 @@ import { onMounted, ref } from 'vue'
 import { docTreeApi, pictureTransferApi } from '@renderer/api/blossom'
 import { isNotBlank, isNull } from '@renderer/assets/utils/obj'
 
-const defaultProps = { children: 'children', label: 'n' }
+const defaultProps = { children: 'children', label: 'formatName' }
 
 onMounted(() => {
-  docTreeApi({ onlyFolder: true }).then((resp) => {
-    docTreeData.value = resp.data
+  docTreeApi({ type: 'FOLDER' }).then((resp) => {
+    if (resp.data) docTreeData.value = resp.data
   })
 })
 

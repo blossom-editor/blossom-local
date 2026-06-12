@@ -45,7 +45,6 @@
       :highlight-current="true"
       :indent="14"
       :icon="ArrowRightBold"
-      :accordion="false"
       :default-expanded-keys="Array.from(docTreeCurrentExpandIdSet)"
       :filter-node-method="filterNode"
       :draggable="isBlank(treeFilterText)"
@@ -55,16 +54,17 @@
       @nodeCollapse="handleNodeCollapse"
       @nodeDrop="handleDrop">
       <template #default="{ node, data }">
-        <div v-if="isShowChildFileCount" class="sort-tag" :style="getChildFileCountColor(node)">
+        <div v-if="viewStyle.isShowFolderFileCount" class="sort-tag" :style="getChildFileCountColor(node)">
           {{ data.childrenFileCount }}
         </div>
-        <div v-if="data.ty === 11" class="menu-divider"></div>
+        <div v-if="data.id === '-1'" class="menu-divider"></div>
         <div v-else class="menu-item-wrapper" @click.right="handleClickRightMenu($event, data)">
           <div class="doc-title">
             <div class="doc-name">
               <svg v-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
                 <use :xlink:href="'#' + data.icon"></use>
               </svg>
+              <img class="menu-icon-img" v-else-if="isShowImg(data, viewStyle)" :src="data.icon" />
               <el-input
                 v-if="data?.updn"
                 v-model="data.name"
@@ -122,7 +122,7 @@ import Node from 'element-plus/es/components/tree/src/model/node'
 // ts
 import { docTreeApi } from '@renderer/api/blossom'
 import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
-import { isShowSvg } from '@renderer/views/doc/doc-tree-detail'
+import { isShowImg, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { getChildFileCountColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
@@ -135,8 +135,10 @@ import Workbench from './PictureTreeWorkbench.vue'
 import { inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
 import { openFileLocation } from '@renderer/api/docLib'
 import { pictureUpdNameApi } from '@renderer/api/picture'
+import { protocolWrapper } from './scripts/picture.js'
 
 const docLibStore = useDocLibStore()
+const configStore = useConfigStore()
 const { viewStyle } = useConfigStore()
 
 useLifecycle(
@@ -156,9 +158,47 @@ watch(
 let editorLoadingTimeout: NodeJS.Timeout
 const DocTreeRef = ref()
 const docTreeLoading = ref(true) // 文档菜单的加载动画
-const isShowChildFileCount = ref(true) // 是否显示文档排序
 const docTreeData = ref<DocTree[]>([]) // 文档菜单
 provide(provideKeyDocTree, docTreeData)
+
+const buildRootDocTree = (rootFils: DocTree[]): DocTree[] => {
+  let fileCount: number = 0
+  for (const file of rootFils) {
+    if (file.type === 'PICTURE') {
+      fileCount += 1
+    }
+  }
+
+  return [
+    {
+      id: '-2',
+      type: 'FOLDER',
+      name: '文档库根目录',
+      formatName: '文档库根目录',
+      // 完整的路径, 包含路径和文件名
+      path: docLibStore.cur!.path,
+      // 文件或文件夹所在的文件夹, 路径中不包含自身
+      folderPath: docLibStore.cur!.path,
+      size: 0,
+      icon: isBlank(docLibStore.cur?.icon) ? 'wl-folder' : docLibStore.cur!.icon!,
+      updn: false,
+      // 子文件数量, 不包含文件夹
+      childrenFileCount: fileCount
+    },
+    {
+      id: '-1',
+      type: 'FOLDER',
+      name: '',
+      formatName: '',
+      path: '',
+      folderPath: '',
+      size: 0,
+      icon: '',
+      updn: false,
+      childrenFileCount: 0
+    }
+  ]
+}
 
 /**
  * 刷新文档, 并在渲染结束后选中最后一次选中项
@@ -218,7 +258,10 @@ const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: Mouse
 /**
  * 是否显示排序
  */
-const handleShowChildFileCount = () => (isShowChildFileCount.value = !isShowChildFileCount.value)
+const handleShowChildFileCount = () => {
+  viewStyle.isShowFolderFileCount = !viewStyle.isShowFolderFileCount
+  configStore.setViewStyle(viewStyle)
+}
 
 /** 开始加载 */
 const startLoading = () => {
@@ -426,6 +469,10 @@ const rMenuHeight = 151 // 固定的菜单高度, 每次增加右键菜单项时
 const handleClickRightMenu = (event: MouseEvent, doc: DocTree) => {
   event.preventDefault()
   if (!doc) return
+
+  if (doc.id === '-2' || doc.id === '-1') {
+    return
+  }
 
   curDoc.value = doc
   rMenu.value = { show: false, clientX: 0, clientY: 0 }

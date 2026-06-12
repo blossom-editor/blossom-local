@@ -12,64 +12,40 @@
       <div class="picutre-workbench" :style="workbencStyle.workbench1">
         <div class="workbenchs">
           <div class="workbench-level1">
-            <div class="star">
-              <div v-if="picturePageParam.starStatus == undefined" class="iconbl bl-star-line" @click="changeStarStatus"></div>
-              <div v-else class="iconbl bl-star-fill" @click="changeStarStatus"></div>
-            </div>
-
             <!-- 显式收藏 -->
+
             <div class="btn-wrapper radio">
-              <div>卡片大小</div>
+              <div class="btn-wrapper-desc">卡片大小</div>
               <el-radio-group v-model="cardSize">
                 <el-radio-button value="mini">小</el-radio-button>
                 <el-radio-button value="large">大</el-radio-button>
               </el-radio-group>
             </div>
 
-            <div class="btn-wrapper radio">
-              <el-tooltip effect="light" placement="top" popper-class="is-small" :offset="8" :hide-after="0">
-                <template #content> 开启重复上传后，重名的图片将会被覆盖 </template>
-                <div>重复上传<span class="iconbl bl-admonish-line"></span></div>
+            <el-button plain @click="lastPage()">上一页</el-button>
+            <el-button plain @click="nextPage()">下一页</el-button>
+            <!-- <el-button plain @click="refresh">刷新</el-button> -->
+
+            <el-button @click="picCacheRefresh()">
+              清空图片缓存
+              <el-tooltip effect="light" placement="top" popper-class="is-small" :hide-after="0">
+                <template #content> 如果替换了图片，可刷新缓存查看 </template>
+                <div><span class="iconbl bl-admonish-line"></span></div>
               </el-tooltip>
-              <el-switch
-                width="70"
-                class="replace-upload-switch"
-                inline-prompt
-                size="large"
-                v-model="isReplaceUpload"
-                active-text="开启"
-                inactive-text="关闭" />
-            </div>
+            </el-button>
 
-            <div class="btn-wrapper">
-              <el-button plain @click="refresh">刷新</el-button>
-            </div>
-
-            <div class="btn-wrapper">
-              <el-button @click="picCacheRefresh">
-                清空图片缓存
-                <el-tooltip effect="light" placement="top" popper-class="is-small" :hide-after="0">
-                  <template #content> 重复上传图片后，如果图片无变化可刷新缓存 </template>
-                  <div><span class="iconbl bl-admonish-line"></span></div>
-                </el-tooltip>
-              </el-button>
-            </div>
-
-            <div class="btn-wrapper">
-              <el-button type="primary" plain @click="handleBenchworkStyle">
-                批量管理
-                <el-tooltip effect="light" placement="top" popper-class="is-small" :hide-after="0">
-                  <template #content> 批量删除，或转移至其他文件夹<br />右键点击卡片可快捷选中 </template>
-                  <div><span class="iconbl bl-admonish-line"></span></div>
-                </el-tooltip>
-              </el-button>
-            </div>
+            <el-button type="primary" plain @click="handleBenchworkStyle()">
+              批量管理
+              <el-tooltip effect="light" placement="top" popper-class="is-small" :hide-after="0">
+                <template #content> 批量删除，或转移至其他文件夹<br />右键点击卡片可快捷选中 </template>
+                <div><span class="iconbl bl-admonish-line"></span></div>
+              </el-tooltip>
+            </el-button>
           </div>
           <div class="workbench-level2" :style="workbencStyle.workbench2 as StyleValue">
             <el-checkbox v-model="checkedAll" @change="handlCheckedAll">全选</el-checkbox>
             <el-button type="primary" text bg @click="transfer" style="margin-left: 11px">移动</el-button>
             <el-button type="primary" text bg @click="delBatch">删除</el-button>
-            <el-button type="danger" text bg @click="delBatchIgnoreCheck">强制删除</el-button>
           </div>
         </div>
 
@@ -81,7 +57,12 @@
       </div>
 
       <div class="picture-card-container" :style="workbencStyle.cards">
-        <div :class="['picture-card', cardClass]" v-for="(pic, _index) in picturePages" :key="pic.id" @click.right="picCheckRightClick(pic, $event)">
+        <!-- <div class="picuter-card-next">
+          <el-button type="info" plain style="width: 100px" @click="lastPage">上一页</el-button>
+          <el-button type="info" plain style="width: 100px" @click="nextPage">下一页</el-button>
+        </div> -->
+
+        <div :class="['picture-card', cardClass]" v-for="(pic, _index) in picPages" :key="pic.id" @click.right="picCheckRightClick(pic, $event)">
           <el-checkbox
             v-show="isExpandWorkbench"
             class="picture-card-check"
@@ -117,26 +98,22 @@
               </template>
               <div class="item iconbl bl-problem-line"></div>
             </el-tooltip>
-            <div class="item iconbl bl-copy-line" @click="copyUrl(pic.path)" @click.right="copyMarkdownUrl(pic.path, pic.name, $event)"></div>
+
+            <el-tooltip content="左键复制 MD 格式, 右键复制文件路径" placement="bottom" :show-after="500">
+              <div class="item iconbl bl-copy-line" @click="copyMarkdownUrl(pic.path, pic.name, $event)" @click.right="copyUrl(pic.path)"></div>
+            </el-tooltip>
             <div class="item iconbl bl-computer-line" @click="openFileLocation(pic.path)"></div>
-            <!-- <div v-if="pic.starStatus == 0" class="item iconbl bl-star-line" @click="starPicture(pic)"></div>
-            <div v-else-if="pic.starStatus == 1" class="item iconbl bl-star-fill" @click="starPicture(pic)"></div> -->
             <div class="item iconbl bl-delete-line" @click="deletePicture(pic)"></div>
           </div>
-        </div>
-
-        <div class="picuter-card-next">
-          <el-button type="info" plain style="width: 100px" @click="nextPage">上一页</el-button>
-          <el-button type="info" plain style="width: 100px" @click="nextPage">下一页</el-button>
         </div>
       </div>
       <div class="picture-status">
         <bl-row width="calc(100% - 240px)" height="100%" class="status-item-container">
-          <div>{{ curFolder?.name }}: {{ pictureStat.cur.picCount }} P / {{ pictureStat.cur.picSize }}</div>
+          <div>{{ curFolder?.name }}: {{ picStat.cur.totalCount }} P / {{ picStat.cur.totalSize }}</div>
           <div>存储路径: {{ curFolder?.path }}</div>
         </bl-row>
         <div class="status-item-container">
-          <div>文件总览: {{ pictureStat.global.picCount }} P / {{ pictureStat.global.picSize }}</div>
+          <div>文件总览: {{ picStat.global.picCount }} P / {{ picStat.global.picSize }}</div>
         </div>
       </div>
     </div>
@@ -165,7 +142,7 @@
     :destroy-on-close="true"
     :close-on-click-modal="false"
     draggable>
-    <PictureBatchDel :ids="picChecks" :ignore-check="delIgnoreCheck" @deleted="deleted"></PictureBatchDel>
+    <PictureBatchDel :ids="picChecks" @deleted="deleted"></PictureBatchDel>
   </el-dialog>
 </template>
 <script setup lang="ts">
@@ -173,7 +150,7 @@
 import { ref, provide, computed, StyleValue } from 'vue'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
-import { picturePageApi, pictureStarApi, pictureDelApi } from '@renderer/api/blossom'
+import { picturePageApi, pictureDelApi } from '@renderer/api/blossom'
 import { treeToInfo, provideKeyDocInfo } from '@renderer/views/doc/doc'
 import { isEmpty, isNotNull, isNull } from '@renderer/assets/utils/obj'
 import { formatFileSize, getFilePrefix, getFileSuffix, isImage } from '@renderer/assets/utils/util'
@@ -192,22 +169,19 @@ import Notify from '@renderer/scripts/notify'
 import { openFileLocation } from '@renderer/api/docLib'
 
 // 是否替换上传
-const isReplaceUpload = ref(false)
 const cardSize = ref('mini')
 
 const cardClass = computed(() => {
-  if (cardSize.value == 'large') {
-    return 'picutre-card-large'
-  }
+  if (cardSize.value == 'large') return 'picutre-card-large'
   return 'picutre-card-mini'
 })
 
 //#region ----------------------------------------< 当前文件当前文件 >----------------------------
-type PageParam = { pageNum: number; pageSize: number; pid: string; name: string; starStatus: number | undefined } // 分页对象类型
+type PageParam = { pageNum: number; pageSize: number; name: string } // 分页对象类型
 const curFolder = ref<DocInfo>() // 当前选中的文档, 包含文件夹和文章, 如果选中是文件夹, 则不会重置编辑器中的文章
-const picturePageParam = ref<PageParam>({ pageNum: 1, pageSize: 10, pid: '0', name: '', starStatus: undefined }) // 列表参数
-const picturePages = ref<Picture[]>([]) // 图片列表
-const pictureStat = ref<any>({ cur: { picCount: 0, picSize: '0MB' }, global: { picCount: 0, picSize: '0MB' } })
+const picPageParam = ref<PageParam>({ pageNum: 1, pageSize: 15, name: '' }) // 列表参数
+const picPages = ref<Picture[]>([]) // 图片列表
+const picStat = ref<any>({ cur: { totalCount: 0, totalSize: '0MB' }, global: { picCount: 0, picSize: '0MB' } })
 // 依赖注入
 provide(provideKeyDocInfo, curFolder)
 
@@ -220,12 +194,8 @@ const curIsFolder = () => {
 
 /**
  * 点击 doc title 的回调, 用于选中某个文档
- *
- * @param tree
  */
 const clickCurDoc = (tree: DocTree) => {
-  console.log('clickCurDoc', tree)
-
   // 点击单个图片时显示图片详情
   if (tree.type === 'PICTURE') {
     if (!PictureViewerInfoRef.value || !isImage(tree.path)) {
@@ -246,13 +216,18 @@ const clickCurDoc = (tree: DocTree) => {
   curFolder.value = clickDoc
   picChecks.value.clear()
   checkedAll.value = false
-  picturePageParam.value.pageNum = 1
-  picturePageParam.value.pid = curFolder.value.id
-  picturePages.value = [] // 在重新加载前清空，防止因加载慢而残留显示其他文件夹的图片
-  pictureListApi({ id: curFolder.value.id }).then((resp) => {
-    picturePages.value = resp.data!.pictures
-    pictureStat.value.cur.picCount = resp.data!.totalCount
-    pictureStat.value.cur.picSize = formatFileSize(resp.data!.totalSize)
+  picPageParam.value.pageNum = 1
+  picPages.value = [] // 在重新加载前清空，防止因加载慢而残留显示其他文件夹的图片
+  pictureListApi({
+    id: curFolder.value.id,
+    pageNum: picPageParam.value.pageNum,
+    pageSize: picPageParam.value.pageSize
+  }).then((resp) => {
+    picPages.value = resp.data!.pictures
+    picStat.value.cur.totalCount = resp.data!.totalCount
+    picStat.value.cur.totalSize = formatFileSize(resp.data!.totalSize)
+
+    console.log(Math.ceil(picStat.value.cur.totalCount / picPageParam.value.pageSize))
   })
 }
 
@@ -263,10 +238,29 @@ const refresh = () => {
   if (!curFolder.value) {
     return
   }
-  picturePageParam.value.pageNum = 1
-  picturePages.value = []
-  picturePageApi(picturePageParam.value).then((resp) => {
-    picturePages.value = resp.data.datas
+  pictureListApi({
+    id: curFolder.value!.id,
+    pageNum: picPageParam.value.pageNum,
+    pageSize: picPageParam.value.pageSize
+  }).then((resp) => {
+    picPages.value = resp.data!.pictures
+  })
+}
+
+/**
+ * 上一页图片
+ */
+const lastPage = () => {
+  if (!curIsFolder()) return
+  if (picPageParam.value.pageNum - 1 === 0) return
+
+  picPageParam.value.pageNum = Math.max(1, picPageParam.value.pageNum - 1)
+  pictureListApi({
+    id: curFolder.value!.id,
+    pageNum: picPageParam.value.pageNum,
+    pageSize: picPageParam.value.pageSize
+  }).then((resp) => {
+    picPages.value = resp.data!.pictures
   })
 }
 
@@ -274,37 +268,17 @@ const refresh = () => {
  * 下一页图片
  */
 const nextPage = () => {
-  if (!curIsFolder()) {
-    return
-  }
-  picturePageParam.value.pageNum += 1
-  picturePageApi(picturePageParam.value).then((resp) => {
-    if (resp.data.pageNum < picturePageParam.value.pageNum) {
-      picturePageParam.value.pageNum = resp.data.pageNum
-      return
-    }
-    resp.data.datas.forEach((pic: Picture) => {
-      picturePages.value.push(pic)
-    })
-  })
-}
+  if (!curIsFolder()) return
+  if (picPageParam.value.pageNum + 1 > Math.ceil(picStat.value.cur.totalCount / picPageParam.value.pageSize)) return
 
-/**
- * 只查询星标图片
- */
-const changeStarStatus = () => {
-  if (picturePageParam.value.starStatus == undefined) {
-    picturePageParam.value.starStatus = 1
-  } else if (picturePageParam.value.starStatus == 1) {
-    picturePageParam.value.starStatus = undefined
-  }
-  if (curIsFolder()) {
-    picturePageParam.value.pageNum = 1
-    picturePageParam.value.pid = curFolder.value!.id
-    picturePageApi(picturePageParam.value).then((resp) => {
-      picturePages.value = resp.data.datas
-    })
-  }
+  picPageParam.value.pageNum += 1
+  pictureListApi({
+    id: curFolder.value!.id,
+    pageNum: picPageParam.value.pageNum,
+    pageSize: picPageParam.value.pageSize
+  }).then((resp) => {
+    picPages.value = resp.data!.pictures
+  })
 }
 
 //#endregion
@@ -316,7 +290,7 @@ const showPicInfo = (pic: Picture) => {
   if (!PictureViewerInfoRef.value || !isImage(pic.path)) {
     return
   }
-  const imageList = picturePages.value.filter((item) => isImage(item.path))
+  const imageList = picPages.value.filter((item) => isImage(item.path))
   PictureViewerInfoRef.value.showPicInfo(imageList, pic.id)
 }
 
@@ -344,7 +318,7 @@ const onErrorImg = (a: Event) => {
  */
 const copyUrl = (path: string) => {
   writeText(path)
-  ElMessage.info({ message: '已复制链接', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
+  ElMessage.info({ message: '已复制文件路径', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
 }
 
 /**
@@ -355,22 +329,8 @@ const copyUrl = (path: string) => {
  */
 const copyMarkdownUrl = (path: string, picName: string, event: MouseEvent) => {
   event.preventDefault()
-  writeText(`![${picName}](${path})`)
+  writeText(`![${picName}](${picName})`)
   ElMessage.info({ message: '已复制 MD 格式链接', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
-}
-
-/**
- * 星标或取消星标
- * @param pic 当前选中图片
- */
-const starPicture = (pic: Picture) => {
-  let param = {
-    id: pic.id,
-    starStatus: pic.starStatus == 1 ? 0 : 1
-  }
-  pictureStarApi(param).then((_resp) => {
-    pic.starStatus = param.starStatus
-  })
 }
 
 /**
@@ -441,18 +401,17 @@ const handleBenchworkStyle = () => {
 
 // 图片多选
 const picChecks = ref<Set<string>>(new Set())
-const delIgnoreCheck = ref(false)
 
 /** 选中全部图片 */
 const checkedAll = ref(false)
 const handlCheckedAll = (checked: boolean) => {
   if (checked) {
-    picturePages.value.forEach((ele) => {
+    picPages.value.forEach((ele) => {
       ele.checked = true
       picChecks.value.add(ele.id)
     })
   } else {
-    picturePages.value.forEach((ele) => {
+    picPages.value.forEach((ele) => {
       ele.checked = false
       picChecks.value.delete(ele.id)
     })
@@ -492,24 +451,14 @@ const delBatch = () => {
     Notify.info('请先选中图片', '提示')
     return
   }
-  delIgnoreCheck.value = false
-  isShowBatchDelDialog.value = true
-}
-
-const delBatchIgnoreCheck = () => {
-  if (picChecks.value.size == 0) {
-    Notify.info('请先选中图片', '提示')
-    return
-  }
-  delIgnoreCheck.value = true
   isShowBatchDelDialog.value = true
 }
 
 const deleted = (ids: Array<string>) => {
   picChecks.value.clear()
   checkedAll.value = false
-  for (let i = 0; i < picturePages.value.length; i++) {
-    const pic = picturePages.value[i]
+  for (let i = 0; i < picPages.value.length; i++) {
+    const pic = picPages.value[i]
     if (ids.includes(pic.id)) {
       pic.folderPath = '1'
       pic.delTime = 2
@@ -535,10 +484,10 @@ const transfer = () => {
 const transferred = () => {
   picChecks.value.clear()
   checkedAll.value = false
-  picturePageParam.value.pageNum = 1
-  picturePageParam.value.pid = curFolder.value!.id
-  picturePageApi(picturePageParam.value).then((resp) => {
-    picturePages.value = resp.data.datas
+  picPageParam.value.pageNum = 1
+  picPageParam.value.pid = curFolder.value!.id
+  picturePageApi(picPageParam.value).then((resp) => {
+    picPages.value = resp.data.datas
   })
   isShowTransferDialog.value = false
 }

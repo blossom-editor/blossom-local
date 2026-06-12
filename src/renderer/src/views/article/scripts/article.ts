@@ -126,8 +126,10 @@ export const downloadTextPlain = (resp: any) => {
   a.remove()
 }
 
-// 简单的字数统计
-// 一个英文单词（如 “hello”）算 1 字，一个汉字（如 “你”）也算 1 字
+/**
+ * 简单的字数统计
+ * 一个英文单词（如 “hello”）算 1 字，一个汉字（如 “你”）也算 1 字
+ */
 export function countWords(text: string) {
   let count = 0
   let i = 0

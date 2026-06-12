@@ -8,7 +8,6 @@ import Home from '@renderer/views/home/Home.vue'
 import ArticleIndex from '@renderer/views/article/ArticleIndex.vue'
 import PictureIndex from '@renderer/views/picture/PictureIndex.vue'
 import TodoIndex from '@renderer/views/todo/TodoIndex.vue'
-import NoteIndex from '@renderer/views/note/NoteIndex.vue'
 import PlanIndex from '@renderer/views/plan/PlanIndex.vue'
 import IconListIndex from '@renderer/components/IconList.vue'
 
@@ -33,7 +32,6 @@ router.addRoute({
     { path: '/articleIndex', name: 'ArticleIndex', component: ArticleIndex, meta: { keepAlive: true, title: 'Blossom 文章编辑' } },
     { path: '/pictureIndex', name: 'PictureIndex', component: PictureIndex, meta: { keepAlive: true, title: 'Blossom 资源库' } },
     { path: '/todoIndex', name: 'TodoIndex', component: TodoIndex, meta: { keepAlive: true, title: 'Blossom 待办事项' } },
-    { path: '/noteIndex', name: 'NoteIndex', component: NoteIndex, meta: { keepAlive: false, title: 'Blossom 便签' } },
     { path: '/planIndex', name: 'PlanIndex', component: PlanIndex, meta: { keepAlive: false, title: 'Blossom 日历计划' } },
     {
       path: '/iconListIndex',

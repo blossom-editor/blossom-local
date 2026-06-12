@@ -4,7 +4,7 @@
       <div v-for="docLib in sortDocLib(docLibStore.items)" :key="docLib.path" class="doclib-item" @click="toEditor(docLib)">
         <img :class="['pin', docLib.isTop ? '' : 'pin-hidden']" src="@renderer/assets/imgs/note/pin.png" />
         <div class="avatar-wrapper">
-          <img v-if="docLib.icon != ''" class="avatar" :src="docLib.icon" />
+          <img v-if="docLib.icon != ''" class="avatar" :src="docLib.icon + '&blossom_pic_ignore=true'" />
           <img v-else class="avatar" src="@renderer/assets/imgs/default_user_avatar.jpg" style="scale: 110%" />
         </div>
         <el-tooltip :content="docLib.name" transition="none" effect="light" placement="top" :show-after="300" :hide-after="0">
@@ -38,9 +38,6 @@
             </template>
           </el-dropdown>
         </div>
-        <!-- <el-button text bg style="margin-left: 5px"">
-          <span class="iconbl bl-folder-download-line"></span>
-        </el-button> -->
       </div>
       <div class="doclib-item-empty">
         <!-- <div class="item" @click="createDocLib"><span class="iconbl bl-fileadd-line"></span>新建文档库</div> -->
@@ -57,6 +54,7 @@ import { selectDocLibFolderDialog, selectFileAndMoveDialog } from '@renderer/api
 import { isNotBlank, isNotNull, isNull } from '@renderer/assets/utils/obj'
 import { openFileLocation } from '@renderer/api/docLib'
 import { ElMessageBox } from 'element-plus'
+import { picCacheWrapper, protocolWrapper } from '../picture/scripts/picture'
 
 const docLibStore = useDocLibStore()
 
@@ -91,7 +89,7 @@ const selectIcon = (docLib: DocLibItem) => {
     if (isNull(resp.data)) {
       return
     }
-    docLib.icon = 'blossom:\\' + resp.data?.filePath + '?t=' + new Date().getTime()
+    docLib.icon = protocolWrapper(picCacheWrapper(resp.data?.filePath as string))
     docLibStore.updItem(docLib)
   })
 }

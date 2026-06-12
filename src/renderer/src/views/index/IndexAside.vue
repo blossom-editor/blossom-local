@@ -68,7 +68,6 @@ const menus = ref<AsideMenu[]>([
   { login: true, name: 'Pic', path: '/pictureIndex', icon: 'bl-picture-line' }
   // { login: true, name: 'Todo', path: '/todoIndex', icon: 'bl-a-labellist-line' },
   // { login: true, name: 'Plan', path: '/planIndex', icon: 'bl-calendar-line' },
-  // { login: true, name: 'Note', path: '/noteIndex', icon: 'bl-note-line' }
 ])
 
 const activeMenuPath = ref<string>('home')

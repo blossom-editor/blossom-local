@@ -92,8 +92,8 @@ export const useDocLibStore = defineStore('docLibStore', {
         return
       }
       let has = false
-      for (const item in this.items) {
-        const doc = this.items[item]
+      for (const i in this.items) {
+        const doc = this.items[i]
         if (doc.path === docItem.path) {
           doc.name = docItem.name
           doc.icon = docItem.icon
@@ -137,8 +137,8 @@ export const useDocLibStore = defineStore('docLibStore', {
       if (isNull(docItem) || isNull(docItem.name) || isNull(docItem.path)) {
         return
       }
-      for (const item in this.items) {
-        const doc = this.items[item]
+      for (const i in this.items) {
+        const doc = this.items[i]
         if (doc.path === docItem.path) {
           doc.isTop = !doc.isTop
         }

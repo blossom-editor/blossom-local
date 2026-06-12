@@ -52,7 +52,7 @@
                 </div>
               </bl-row>
             </template>
-            <el-upload
+            <!-- <el-upload
               :action="serverStore.serverUrl + uploadFileApiUrl"
               name="file"
               :data="{ pid: picInfo!.pid, filename: picInfo!.name, repeatUpload: true }"
@@ -67,7 +67,7 @@
                 </svg>
                 替换图片
               </el-button>
-            </el-upload>
+            </el-upload> -->
           </el-tooltip>
         </div>
       </div>
@@ -79,17 +79,12 @@
 import { computed, ref } from 'vue'
 import { ElMessageBox, UploadProps } from 'element-plus'
 import { ArrowLeftBold, ArrowRightBold, WarnTriangleFilled } from '@element-plus/icons-vue'
-import { useUserStore } from '@renderer/stores/user'
-import { useServerStore } from '@renderer/stores/server'
-import { pictureDelApi, uploadFileApiUrl } from '@renderer/api/blossom'
-import { DefaultPicture, onError, beforeUpload, picCacheWrapper, picCacheRefresh } from './scripts/picture'
+import { pictureDelApi } from '@renderer/api/blossom'
+import { DefaultPicture, picCacheWrapper, picCacheRefresh } from './scripts/picture'
 import { formatFileSize, isHttp } from '@renderer/assets/utils/util'
 import { writeText } from '@renderer/assets/utils/electron'
 import Notify from '@renderer/scripts/notify'
 import { isEmpty } from '@renderer/assets/utils/obj'
-
-const userStore = useUserStore()
-const serverStore = useServerStore()
 
 // 是否显示图片 viewer
 const isShowPicInfo = ref(false)
@@ -101,7 +96,6 @@ const picInfo = ref<Picture | null>(new DefaultPicture())
 const pictureList = ref<Picture[]>([])
 // 当前索引
 const activeIndex = ref(0)
-let lastInfoUrl = ''
 
 const hasPrev = computed(() => activeIndex.value > 0)
 const hasNext = computed(() => activeIndex.value < pictureList.value.length - 1)
@@ -109,7 +103,6 @@ const hasNext = computed(() => activeIndex.value < pictureList.value.length - 1)
 const loadPicInfo = (pic: Picture) => {
   picInfo.value = pic
   picUrl.value = pic.localProtocolPath
-  lastInfoUrl = pic.localProtocolPath
 }
 
 const setActiveIndex = (index: number) => {

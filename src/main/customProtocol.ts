@@ -1,8 +1,22 @@
 import { protocol, net } from 'electron'
-import path from 'path'
-
 import { CurDocLibManager } from './doclib/curDocLibManager'
+import { PicItem, PicNameMapping } from './doclib/picNameMapping'
+import { extractFileName } from './utils'
+
 const curDocLibManager = CurDocLibManager.getInstance()
+const picNameMapping = PicNameMapping.getInstance()
+
+// 唯一声明协议格式的位置
+export const BLOSSOM_PROTOCOL = 'blossom:\\'
+
+/**
+ *
+ * @param str
+ * @returns
+ */
+export const protocolWrapper = (str: string): string => {
+  return BLOSSOM_PROTOCOL + str
+}
 
 /**
  * 由于在渲染进程无法直接读取本地文件, 需要自定义协议 blossom:\ ,并进行拦截
@@ -16,39 +30,51 @@ const curDocLibManager = CurDocLibManager.getInstance()
  */
 export const initProtocol = () => {
   console.log('2. 自定义图片协议 initProtocol')
-  protocol.handle('blossom', (request) => {
+  protocol.handle('blossom', (request): Promise<GlobalResponse> => {
+    console.log(`${request.url}`)
+
     const docLibPath = curDocLibManager.getPath()
-    let url = request.url.slice('blossom:\\'.length)
+    let url = request.url.slice(BLOSSOM_PROTOCOL.length)
+
     const params = parseQueryParams(url)
+    const picName = extractFileName(url)
+
     // if (params) {
     //   console.log(`${url}, params: ${Object.entries(params)}`)
     // }
 
-    if (docLibPath) {
-      // 非相对路径, 并且路径不以文档库路径开头, 则认为是相对文档库的绝对路径
-      if (!url.startsWith('./') || !url.startsWith('../')) {
-        if (!url.startsWith(docLibPath)) {
-          url = path.join(docLibPath, url)
-        }
-      }
-      // 相对路径, 需向上遍历路径, 但不能获取文档库外的路径
-      else {
-        if (params) {
-          const articleId = params['blossom_article_id']
-        }
-      }
+    // 忽略文档库校验, 可以访问全部图片
+    if (params && params['blossom_pic_ignore']) {
+      return fetch(url)
     }
 
-    try {
-      console.log(`${request.url}`)
-      console.log(url)
-      console.log('============================================================================')
-      return net.fetch(url)
-    } catch (error) {
-      console.log('error', error)
-      throw error
+    if (docLibPath) {
+      // 如果链接是绝对路径, 则直接访问图片
+      if (url.startsWith(docLibPath)) {
+        return fetch(url)
+      }
+
+      // 从图片管理中获取图片
+      const pic: PicItem | undefined = picNameMapping.get(picName)
+      if (pic === undefined || !pic.path.startsWith(docLibPath)) {
+        return Promise.reject()
+      }
+      return fetch(pic.path)
     }
+
+    return fetch(url)
   })
+}
+
+const fetch = (url: string): Promise<GlobalResponse> => {
+  try {
+    console.log(url)
+    console.log('============================================================================')
+    return net.fetch(url)
+  } catch (error) {
+    console.log('error', error)
+    throw error
+  }
 }
 
 /**

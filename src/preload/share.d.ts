@@ -172,6 +172,8 @@ declare interface ArticleLink {
 declare interface PictureListReq extends Base {
   // 文件夹或文件的ID
   id: string
+  pageNum: number
+  pageSize: number
 }
 
 declare interface PictureListRes extends Base {

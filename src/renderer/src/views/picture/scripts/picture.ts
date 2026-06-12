@@ -1,7 +1,6 @@
 import pinia from '@renderer/stores/store-config'
 import { useConfigStore } from '@renderer/stores/config'
 import type { UploadProps, UploadRawFile } from 'element-plus'
-import { isBlank, isNotBlank, isNull } from '@renderer/assets/utils/obj'
 import Notify from '@renderer/scripts/notify'
 import { getFilePrefix, getFileSuffix, getNowTime, isHttp, parseQueryParams, randomInt } from '@renderer/assets/utils/util'
 import { fileBuffSave } from '@renderer/api/picture'
@@ -149,8 +148,6 @@ export const handleUploadError = (error: Error) => {
   }
 }
 
-//#region 图片缓存控制
-
 // 图片缓存
 let picCache = new Date().getTime()
 
@@ -179,8 +176,12 @@ export const picCacheWrapper = (url: string): string => {
 }
 
 export const protocolWrapper = (path: string) => {
+  if (path === null || path === undefined || path === '') {
+    return ''
+  }
   if (!isHttp(path)) {
-    return 'blossom:\\' + path
+    //@ts-ignore
+    return window.electronAPI.constants.BLOSSOM_PROTOCOL + path
   }
   return path
 }

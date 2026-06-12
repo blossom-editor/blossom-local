@@ -3,11 +3,13 @@ import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
 import { IdMapping } from '../doclib/idMapping'
-import { cutSuffix, getUniqueId } from '../utils'
+import { cutSuffix, getUniqueId, images, isImage } from '../utils'
 import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
 import { PicNameMapping } from '../doclib/picNameMapping'
 import { DocLibStatsManager } from '../doclib/docLibStatsManager'
+import { protocolWrapper } from '../customProtocol'
+import { naturalCompare, sortDocTreeList } from '../article/fileUtils'
 
 const idMapping = IdMapping.getInstance()
 const picNameMapping = PicNameMapping.getInstance()
@@ -45,7 +47,7 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
     title: '选择图片或文件',
     // 可选：限制文件类型
     filters: [
-      { name: 'Images', extensions: ['jpg', 'png', 'gif'] },
+      { name: 'Images', extensions: images },
       { name: 'All Files', extensions: ['*'] }
     ]
   })
@@ -123,25 +125,30 @@ const initPictureList = () => {
       return R.fail('文件不存在', '未找到对应的文件')
     }
     const files = await fs.promises.readdir(folder.path, { withFileTypes: true })
+
+    const picFiles = files
+      .filter((file) => {
+        if (isSysFile(file.name)) return false
+        if (!isImage(file.name)) return false
+        return true
+      })
+      .sort((a, b) => naturalCompare(a.name, b.name))
+
+    const pageFiles = picFiles.slice((req.pageNum - 1) * req.pageSize, req.pageNum * req.pageSize)
+
     const nodes: Picture[] = []
     let count: number = 0
     let size: number = 0
 
-    for (const file of files) {
-      // 系统文件不显示在文档列表中
-      if (isSysFile(file.name)) {
-        continue
-      }
-      if (!file.name.endsWith('.jpg')) {
-        continue
-      }
-
-      const fullPath = path.join(file.path, file.name)
-
-      const stats: BigIntStats = await fs.promises.stat(fullPath, { bigint: true })
+    for (const pic of picFiles) {
       count++
+      const stats: BigIntStats = await fs.promises.stat(path.join(pic.path, pic.name), { bigint: true })
       size += Number(stats.size)
+    }
 
+    for (const file of pageFiles) {
+      const fullPath = path.join(file.path, file.name)
+      const stats: BigIntStats = await fs.promises.stat(fullPath, { bigint: true })
       const doc: Picture = {
         id: getUniqueId(stats),
         type: 'PICTURE',
@@ -151,7 +158,7 @@ const initPictureList = () => {
         formatName: cutSuffix(file.name),
         path: fullPath,
         folderPath: file.path,
-        localProtocolPath: 'blossom:\\' + fullPath,
+        localProtocolPath: protocolWrapper(fullPath),
         creTime: timeToYMD(stats.birthtime.toString()), // 创建时间
         updTime: timeToYMD(stats.mtime.toString()), // 修改时间
         delTime: 0,
@@ -168,7 +175,7 @@ const initPictureList = () => {
     }
 
     const res: PictureListRes = {
-      totalCount: nodes.length,
+      totalCount: count,
       totalSize: size,
       pictures: nodes
     }
@@ -198,7 +205,7 @@ const initPictureInfoByName = () => {
       formatName: cutSuffix(pic!.name),
       path: pic!.path,
       folderPath: pic!.folderPath,
-      localProtocolPath: 'blossom:\\' + pic!.path,
+      localProtocolPath: protocolWrapper(pic!.path),
       checked: false,
       creTime: timeToYMD(stats.birthtime.toString()),
       delTime: 0,
@@ -233,7 +240,7 @@ const initPictureInfoByNameSync = () => {
       formatName: cutSuffix(pic!.name),
       path: pic!.path,
       folderPath: pic!.folderPath,
-      localProtocolPath: 'blossom:\\' + pic!.path,
+      localProtocolPath: protocolWrapper(pic!.path),
       checked: false,
       delTime: 0,
       articleLinks: docLibStatsManager.getMdsByPic(pic.name).map((item) => {

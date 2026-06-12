@@ -55,7 +55,6 @@
       :highlight-current="true"
       :indent="14"
       :icon="ArrowRightBold"
-      :accordion="false"
       :default-expanded-keys="Array.from(docTreeCurrentExpandIdSet)"
       :filter-node-method="filterNode"
       :draggable="isBlank(treeFilterText)"
@@ -65,14 +64,13 @@
       @nodeCollapse="handleNodeCollapse"
       @nodeDrop="handleDrop">
       <template #default="{ node, data }">
-        <div v-if="isShowChildFileCount" class="sort-tag" :style="getChildFileCountColor(node)">
+        <div v-if="viewStyle.isShowFolderFileCount" class="sort-tag" :style="getChildFileCountColor(node)">
           {{ data.childrenFileCount }}
         </div>
         <div class="menu-item-wrapper" :id="'article-doc-wrapper-' + data.id" @click.right="handleClickRightMenu($event, data)">
           <div :class="[viewStyle.isShowSubjectStyle ? (data.t?.includes('subject') ? 'subject-title' : 'doc-title') : 'doc-title']">
             <div class="doc-name">
-              <img class="menu-icon-img" v-if="isShowImg(data, viewStyle)" :src="data.icon" />
-              <svg v-else-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
+              <svg v-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
                 <use :xlink:href="'#' + data.icon"></use>
               </svg>
               <el-input
@@ -190,7 +188,7 @@ import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
 // util
 import { isEmpty } from 'lodash'
-import { getParentDirPath, joinPath, platformText, inValidateFileName } from '@renderer/assets/utils/util'
+import { joinPath, platformText, inValidateFileName } from '@renderer/assets/utils/util'
 import { isNotNull, isNotBlank, isBlank, isNull } from '@renderer/assets/utils/obj'
 import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
@@ -200,6 +198,7 @@ import { openFileLocation } from '@renderer/api/docLib'
 const route = useRoute()
 const user = useUserStore()
 const docLibStore = useDocLibStore()
+const configStore = useConfigStore()
 const { viewStyle } = useConfigStore()
 
 useLifecycle(
@@ -349,7 +348,6 @@ const articleCurrnetChoiseId = ref('')
 const docTreeCurrentChoiseId = ref('')
 // 所有展开的节点
 const docTreeCurrentExpandIdSet = ref<Set<string>>(new Set())
-const isShowChildFileCount = ref(true) // 是否显示文档排序
 // 搜索内容
 const treeFilterText = ref('')
 const isShowTreeFilter = ref(false)
@@ -520,7 +518,10 @@ const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: Dra
   })
 }
 
-const handleShowChildFileCount = () => (isShowChildFileCount.value = !isShowChildFileCount.value)
+const handleShowChildFileCount = () => {
+  viewStyle.isShowFolderFileCount = !viewStyle.isShowFolderFileCount
+  configStore.setViewStyle(viewStyle)
+}
 //#endregion
 
 //#region ----------------------------------------< 右键菜单 >--------------------------------------
@@ -528,7 +529,6 @@ const curDoc = ref<DocTree>(new DefaultDocTree())
 const rMenu = ref<RightMenu>({ show: false, clientX: 0, clientY: 0 })
 const rMenuLevel2 = ref<RightMenuLevel2>({ top: '0px' })
 const ArticleDocTreeRightMenuRef = ref()
-const ArticleTreeWorkbenchRef = ref()
 const curDocType = computed(() => {
   if (curDoc.value.type === 'FOLDER') {
     return '文件夹'

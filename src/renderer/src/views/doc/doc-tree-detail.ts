@@ -69,7 +69,7 @@ export const tagLins = (doc: DocTree) => {
  * @returns
  */
 export const isShowImg = (doc: DocTree, viewStyle: { isShowArticleIcon: boolean }) => {
-  return viewStyle.isShowArticleIcon && isNotBlank(doc.icon) && (doc.icon.startsWith('http') || doc.icon.startsWith('https')) && !doc?.updn
+  return viewStyle.isShowArticleIcon && isNotBlank(doc.icon) && !doc?.updn
 }
 
 /**
@@ -79,5 +79,5 @@ export const isShowImg = (doc: DocTree, viewStyle: { isShowArticleIcon: boolean 
  * @returns
  */
 export const isShowSvg = (doc: DocTree, viewStyle: { isShowArticleIcon: boolean }) => {
-  return viewStyle.isShowArticleIcon && isNotBlank(doc.icon) && !doc?.updn
+  return viewStyle.isShowArticleIcon && !doc?.updn && doc.icon === 'wl-folder'
 }

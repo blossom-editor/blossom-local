@@ -230,12 +230,11 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
   }
 
   fs.copyFileSync(choiseFile.filePaths[0], targetFilePath)
-
   const res: SelectFileAndMoveRes = {
     filePath: targetFilePath,
     fileName: path.basename(targetFilePath)
   }
-
+  console.log(res)
   return R.ok(res)
 }
 
