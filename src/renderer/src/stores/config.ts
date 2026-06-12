@@ -76,6 +76,13 @@ export interface PicStyle {
   maxSize: number
   // 是否自动添加文件后缀
   isAddSuffix: boolean
+  /**
+   * 图片链接样式
+   * NAME: 使用图片名称
+   * ABSOLUTE_PATH: 使用绝对路径
+   * ABSOLUTE_PATH_DOCLIB: 相对于文档库的绝对路径
+   */
+  picLinkStyle: 'NAME' | 'ABSOLUTE_PATH' | 'ABSOLUTE_PATH_DOCLIB'
 }
 
 /**
@@ -113,7 +120,8 @@ export const useConfigStore = defineStore('configStore', {
     // 图片配置
     picStyle: {
       ...{
-        maxSize: 50
+        maxSize: 50,
+        picLinkStyle: 'NAME'
       },
       ...Local.get(PIC_STYLE_KEY)
     },

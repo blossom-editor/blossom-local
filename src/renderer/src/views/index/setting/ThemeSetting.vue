@@ -15,9 +15,9 @@
       <div class="iconbl bl-a-closeline-line" @click="themeStore.close()"></div>
     </div>
 
-    <bl-col class="content" align="flex-start">
-      <el-tabs tab-position="right" class="tabs" v-model="activeTab">
-        <el-tab-pane label="主题" name="theme">
+    <div class="content" align="flex-start">
+      <el-tabs class="tabs" tab-position="right" v-model="activeTab">
+        <el-tab-pane name="theme" label="主题">
           <bl-row class="prop-name">日间</bl-row>
           <bl-row class="colors" align="flex-start">
             <el-color-picker
@@ -55,37 +55,30 @@
 
           <bl-row class="prop-row" just="space-between">
             <div class="prop">
-              <div class="prop-name">增强阴影效果</div>
+              <div class="prop-name">页面立体效果</div>
             </div>
-            <el-switch v-model="viewStyle.isGlobalShadow" size="default" @change="changeGlobalShadow" />
-          </bl-row>
-
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">显示试用按钮</div>
-            </div>
-            <el-switch v-model="viewStyle.isShowTryuseBtn" size="default" @change="changeViewStype" />
+            <el-switch v-model="configViewStyleForm.isGlobalShadow" size="default" @change="changeGlobalShadow" />
           </bl-row>
 
           <bl-row class="prop-row" just="space-between">
             <div class="prop">
               <div class="prop-name">显示左上角 LOGO</div>
             </div>
-            <el-switch v-model="viewStyle.isShowAsideLogo" size="default" @change="changeViewStype" />
+            <el-switch v-model="configViewStyleForm.isShowAsideLogo" size="default" @change="changeViewStyle" />
           </bl-row>
 
           <bl-row class="prop-row" just="space-between">
             <div class="prop">
               <div class="prop-name">显示左下角上传入口</div>
             </div>
-            <el-switch v-model="viewStyle.isShowAsideUpload" size="default" @change="changeViewStype" />
+            <el-switch v-model="configViewStyleForm.isShowAsideUpload" size="default" @change="changeViewStyle" />
           </bl-row>
 
           <bl-row class="prop-row" just="space-between">
             <div class="prop">
               <div class="prop-name">简约的左侧菜单</div>
             </div>
-            <el-switch v-model="viewStyle.isShowAsideSimple" size="default" @change="changeViewStype" />
+            <el-switch v-model="configViewStyleForm.isShowAsideSimple" size="default" @change="changeViewStyle" />
           </bl-row>
 
           <bl-row v-if="isElectron()" class="prop-row" just="space-between">
@@ -99,102 +92,145 @@
             </el-button-group>
           </bl-row>
 
-          <bl-col class="desc" align="flex-end"><div>修改主题后, 再次切换日间/夜间模式可查看完整效果。</div></bl-col>
+          <bl-row class="prop-row">
+            <div class="conf-tip" style="font-size: 15px">修改主题后, 再次切换日间/夜间模式可查看完整效果。</div>
+          </bl-row>
         </el-tab-pane>
-        <!--  
+        <!--
 
 
 
         -->
-        <el-tab-pane label="文章" name="article">
-          <bl-row class="prop-row" just="flex-end">
-            <div class="prop-name" style="width: 80px; text-align: center">日间</div>
-            <el-divider direction="vertical" />
-            <div class="prop-name" style="width: 80px; text-align: center">夜间</div>
-          </bl-row>
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">公开标签</div>
-              <bl-tag bg-color="var(--bl-tag-color-open)" icon="bl-cloud-line"></bl-tag>
-            </div>
-            <el-input v-model="themeLight['--bl-tag-color-open']" @input="(v: string) => setStyle('--bl-tag-color-open', v, false)"></el-input>
-            <el-divider direction="vertical" />
-            <el-input v-model="themeDark['--bl-tag-color-open']" @input="(v: string) => setStyle('--bl-tag-color-open', v, true)"></el-input>
-          </bl-row>
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <span class="prop-name">专题标签</span>
-              <bl-tag bg-color="var(--bl-tag-color-subject)" icon="bl-a-lowerrightpage-line">专题</bl-tag>
-            </div>
-            <el-input v-model="themeLight['--bl-tag-color-subject']" @input="(v: string) => setStyle('--bl-tag-color-subject', v, false)"></el-input>
-            <el-divider direction="vertical" />
-            <el-input v-model="themeDark['--bl-tag-color-subject']" @input="(v: string) => setStyle('--bl-tag-color-subject', v, true)"></el-input>
-          </bl-row>
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">目录标签</div>
-              <bl-tag bg-color="var(--bl-tag-color-toc)">TOC</bl-tag>
-            </div>
-            <el-input v-model="themeLight['--bl-tag-color-toc']" @input="(v: string) => setStyle('--bl-tag-color-toc', v, false)"></el-input>
-            <el-divider direction="vertical" />
-            <el-input v-model="themeDark['--bl-tag-color-toc']" @input="(v: string) => setStyle('--bl-tag-color-toc', v, true)"></el-input>
-          </bl-row>
+        <el-tab-pane name="article" label="编辑器">
+          <div class="tab-pane-content">
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">编辑器字体</div>
+              </div>
+              <bl-col>
+                <el-input v-model="configEditorStyleForm.fontFamily" size="default" @input="changeEditorStyle"></el-input>
+                <div class="conf-tip">文章的字体样式。中英文等宽字体在表格中会有更好的样式表现</div>
+              </bl-col>
+            </bl-row>
 
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">开启专题特殊样式</div>
-            </div>
-            <el-switch v-model="viewStyle.isShowSubjectStyle" size="default" @change="changeViewStype" />
-          </bl-row>
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">编辑器字体大小</div>
+              </div>
+              <bl-col style="width: 100%">
+                <el-input v-model="configEditorStyleForm.fontSize" size="default" @input="changeEditorStyle">
+                  <template #append>单位 px</template>
+                </el-input>
+                <bl-row class="conf-tip">文章的字体大小。</bl-row>
+              </bl-col>
+            </bl-row>
 
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">显示文件夹收藏标签</div>
-            </div>
-            <el-switch v-model="viewStyle.isShowFolderStarTag" size="default" @change="changeViewStype" />
-          </bl-row>
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">文档菜单字体大小</div>
+              </div>
+              <bl-col style="width: 100%">
+                <el-input v-model="configViewStyleForm.treeDocsFontSize" size="default" @input="changeViewStyle">
+                  <template #append>单位 px</template>
+                </el-input>
+                <bl-row class="conf-tip">左侧树状菜单的字体大小。</bl-row>
+              </bl-col>
+            </bl-row>
 
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">显示专题目录标签</div>
-            </div>
-            <el-switch v-model="viewStyle.isShowArticleTocTag" size="default" @change="changeViewStype" />
-          </bl-row>
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">代码块默认语言</div>
+              </div>
+              <bl-col>
+                <el-input v-model="configEditorStyleForm.defaultPreLanguage" size="default" @input="changeEditorStyle"> </el-input>
+                <div class="conf-tip">通过快捷键和工具栏按钮生成多行代码块<code>```</code>时的默认语言。</div>
+              </bl-col>
+            </bl-row>
 
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">显示公开文件夹标签</div>
-            </div>
-            <el-switch v-model="viewStyle.isShowFolderOpenTag" size="default" @change="changeViewStype" />
-          </bl-row>
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">最大渲染字数</div>
+              </div>
 
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">显示自定义标签</div>
-            </div>
-            <el-switch v-model="viewStyle.isShowArticleCustomTag" size="default" @change="changeViewStype" />
-          </bl-row>
+              <bl-col>
+                <el-input v-model="configEditorStyleForm.defaultPreLanguage" size="default" @input="changeEditorStyle"> </el-input>
+                <div class="conf-tip">为防止渲染时卡顿, 文章正文超过该字数后将禁止自动渲染.</div>
+              </bl-col>
+            </bl-row>
 
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop" style="width: 200px">
-              <div class="prop-name">显示文章名前的竖型状态标识</div>
-            </div>
-            <el-switch v-model="viewStyle.isShowArticleType" size="default" @change="changeViewStype" />
-          </bl-row>
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">显示代码块行数</div>
+              </div>
+              <el-switch v-model="configEditorStyleForm.isShowPreLineNumber" size="default" style="margin-right: 10px" @change="changeEditorStyle" />
+            </bl-row>
 
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">显示文章图标</div>
-            </div>
-            <el-switch v-model="viewStyle.isShowArticleIcon" size="default" @change="changeViewStype" />
-          </bl-row>
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">只展开一项子菜单</div>
+              </div>
+              <el-switch v-model="configViewStyleForm.isMenuUniqueOpened" size="default" style="margin-right: 10px" @change="changeViewStyle" />
+            </bl-row>
+
+            <!-- ========================================================================================================================= -->
+            <el-divider><span class="iconbl bl-picture-line"></span>图片管理</el-divider>
+
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">图片上传后重命名</div>
+              </div>
+              <bl-col>
+                <bl-row just="flex-end">
+                  <el-switch v-model="configPicStyleForm.isAddSuffix" size="default" style="margin-right: 10px" @change="changePicStyle" />
+                </bl-row>
+                <div class="conf-tip">开启后，会自动为上传的图片增加后缀，如:image_20230101_123015_000.png。</div>
+              </bl-col>
+            </bl-row>
+
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">图片链接格式</div>
+              </div>
+
+              <bl-col>
+                <bl-row just="flex-end">
+                  <el-radio-group v-model="configPicStyleForm.picLinkStyle" size="small">
+                    <el-radio-button label="文件名(推荐)" value="NAME" />
+                    <el-radio-button label="绝对路径" value="ABSOLUTE_PATH" />
+                  </el-radio-group>
+                </bl-row>
+                <div class="conf-tip">
+                  <div v-if="configPicStyleForm.picLinkStyle === 'NAME'">
+                    <span class="blod">推荐方式</span>, 图片链接只包含文件名, 由 Blossom 自动寻找图片.
+                  </div>
+                  <div v-else-if="configPicStyleForm.picLinkStyle === 'ABSOLUTE_PATH'">文件的绝对路径, 文件移动后可能导致图片读取错误.</div>
+                </div>
+              </bl-col>
+            </bl-row>
+
+            <el-divider><span class="iconbl bl-apps-line"></span>其他功能</el-divider>
+
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">登录后进入首页</div>
+              </div>
+              <el-switch v-model="configViewStyleForm.isLoginToHomePage" size="default" style="margin-right: 10px" @change="changeViewStyle" />
+            </bl-row>
+
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">开发者工具</div>
+              </div>
+              <el-button @click="openDevTools" style="margin-right: 10px"><span class="iconbl bl-bug-line" @click="openDevTools"></span></el-button>
+            </bl-row>
+          </div>
         </el-tab-pane>
-        <!--  
+        <!--
 
 
 
         -->
-        <el-tab-pane label="待办" name="todo">
+        <el-tab-pane label="待办" name="todo" v-if="false">
           <bl-row class="prop-row" just="flex-end">
             <div class="prop-name" style="width: 80px; text-align: center">日间</div>
             <el-divider direction="vertical" />
@@ -236,7 +272,7 @@
         </el-tab-pane>
       </el-tabs>
       <!--  -->
-    </bl-col>
+    </div>
   </div>
 </template>
 
@@ -246,12 +282,17 @@ import { useConfigStore } from '@renderer/stores/config'
 import { Sunny, Moon } from '@element-plus/icons-vue'
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useThemeStore } from '@renderer/stores/theme'
+import type { EditorStyle, ViewStyle, PicStyle } from '@renderer/stores/config'
 import { isDark, getTheme, changeTheme, setPrimaryColor, setStyleItem, setStyleItemObj, resetStyleItems } from '@renderer/scripts/global-theme'
-import { setZoomLevel, resetZoomLevel } from '@renderer/assets/utils/electron'
+import { setZoomLevel, resetZoomLevel, openDevTools } from '@renderer/assets/utils/electron'
 import { isElectron } from '@renderer/assets/utils/util'
 
-const config = useConfigStore()
-const { viewStyle } = config
+const configStore = useConfigStore()
+// const { viewStyle } = configStore
+
+const configEditorStyleForm = ref<EditorStyle>(configStore.editorStyle)
+const configViewStyleForm = ref<ViewStyle>(configStore.viewStyle)
+const configPicStyleForm = ref<PicStyle>(configStore.picStyle)
 
 //#region 主题设置
 
@@ -310,11 +351,23 @@ const changeGlobalShadow = (open: boolean) => {
     setStyleItemObj(style, true)
     setStyleItemObj(style, false)
   }
-  config.setViewStyle(viewStyle)
+  configStore.setViewStyle(configViewStyleForm.value)
 }
 
-const changeViewStype = () => {
-  config.setViewStyle(viewStyle)
+// const changeViewStyle = () => {
+//   configStore.setViewStyle(viewStyle)
+// }
+
+const changeEditorStyle = () => {
+  configStore.setEditorStyle(configEditorStyleForm.value)
+}
+
+const changeViewStyle = () => {
+  configStore.setViewStyle(configViewStyleForm.value)
+}
+
+const changePicStyle = () => {
+  configStore.setPicStyle(configPicStyleForm.value)
 }
 
 //#endregion
@@ -348,8 +401,9 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
 </script>
 
 <style lang="scss">
+// @import '../styles/config-root.scss';
 .theme-setting-root {
-  @include box(440px, auto);
+  @include box(460px, auto);
   background-color: var(--bl-dialog-bg-color);
   box-shadow: var(--bl-dialog-box-shadow);
   border-radius: 8px;
@@ -361,6 +415,7 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
 
   .title {
     @include flex(row, space-between, center);
+    height: 52px;
     padding: 10px 10px;
     border-bottom: 1px solid var(--el-border-color);
     color: var(--bl-text-title-color);
@@ -376,9 +431,42 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
 
   .content {
     padding: 10px 0 10px 10px;
+    height: calc(100% - 52px);
+    max-height: 70vh;
 
     .tabs {
+      height: 100%;
       width: 100%;
+      max-height: calc(70vh - 20px);
+
+      .el-tabs__content {
+        max-height: 100%;
+        .el-tab-pane {
+          max-height: 100%;
+          padding-right: 10px;
+          overflow-y: auto;
+        }
+      }
+
+      .el-tabs__item {
+        padding: 0 10px;
+      }
+
+      .el-tabs__header-vertical {
+        margin-left: 4px;
+      }
+    }
+
+    .config-module-titile {
+      font-size: 20px;
+      padding-bottom: 5px;
+      margin-bottom: 10px;
+      color: var(--bl-text-color);
+      border-bottom: 1px solid var(--el-border-color);
+      .iconbl {
+        font-size: 25px;
+        margin-right: 10px;
+      }
     }
 
     .prop-name {
@@ -424,29 +512,41 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
         }
       }
     }
-
-    .desc {
-      @include font(13px, 300);
-      color: var(--bl-text-color);
-      margin-top: 30px;
-      div {
-        margin-bottom: 3px;
-      }
-
-      a {
-        color: var(--el-color-primary);
-      }
-    }
   }
 
   .prop-row {
+    align-items: flex-start;
     margin-bottom: 10px;
+
     .prop {
-      @include flex(row, flex-start, center);
-      width: 180px;
+      @include flex(column, flex-start, flex-start);
+      width: 130px;
+      min-width: 130px;
+      margin-top: 5px;
     }
+
+    code {
+      @include themeColor(#909399, #909399);
+      background-color: var(--bl-preview-code-bg-color);
+      border-radius: var(--bl-preview-border-radius);
+      padding: 0px 4px;
+      border-radius: 3px;
+      margin: 0 5px;
+      user-select: text;
+    }
+
+    .conf-tip {
+      @include font(12px, 500);
+      color: var(--bl-text-color-light);
+      .blod {
+        font-weight: 700;
+        color: var(--el-color-primary);
+        font-style: italic;
+      }
+    }
+
     .el-input {
-      width: 80px;
+      width: 100%;
     }
     .el-switch {
       height: 24px;
@@ -457,5 +557,23 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
 .theme-color-picker {
   z-index: 3001 !important;
   margin: 0 10px 10px 0;
+}
+
+// .custom-tabs-label {
+//   @include flex(row, center, center);
+//   font-size: 15px;
+//   .iconbl {
+//     font-size: 20px;
+//     margin-right: 5px;
+//   }
+// }
+
+.el-divider__text {
+  background: var(--bl-dialog-bg-color);
+  @include flex(row, center, center);
+  .iconbl {
+    font-size: 20px;
+    margin-right: 5px;
+  }
 }
 </style>
