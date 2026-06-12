@@ -6,9 +6,6 @@
           <SettingLogin></SettingLogin>
         </div>
       </el-tab-pane>
-      <el-tab-pane label="设置" name="setting">
-        <SettingConfig></SettingConfig>
-      </el-tab-pane>
       <el-tab-pane label="关于" name="about">
         <SettingAboutVue></SettingAboutVue>
       </el-tab-pane>
@@ -22,7 +19,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import SettingLogin from './SettingLogin.vue'
-import SettingConfig from './SettingConfig.vue'
 import SettingAboutVue from './SettingAbout.vue'
 import CONFIG from '@renderer/assets/constants/system'
 

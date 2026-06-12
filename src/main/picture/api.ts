@@ -4,7 +4,7 @@ import path from 'path'
 import R from '../../preload/r'
 import { IdMapping } from '../doclib/idMapping'
 import { cutSuffix, getUniqueId } from '../utils'
-import { nowYMDHMS, timeToYMD } from '../date'
+import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
 import { PicNameMapping } from '../doclib/picNameMapping'
 import { DocLibStatsManager } from '../doclib/docLibStatsManager'
@@ -56,7 +56,7 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
   }
 
   // 有后缀时, 图片名称不会重复
-  const timeSuffix = '_' + nowYMDHMS()
+  const timeSuffix = '_' + picSuffix()
   const extname = path.extname(choiseFile.filePaths[0])
   const nameWithoutExt = path.basename(choiseFile.filePaths[0], extname)
   let targetPicPath = path.join(targetFolder, nameWithoutExt + timeSuffix + extname)
@@ -92,7 +92,7 @@ const fileBuffSave = async (req: FileBuffSaveReq): Promise<R<SelectFileAndMoveRe
     return R.fail('FOLDER_PATH_ERROR', '文件路径错误: ' + targetFolder)
   }
 
-  const timeSuffix = '_' + nowYMDHMS()
+  const timeSuffix = '_' + picSuffix()
   let fileName: string
   if (req.fileName) {
     const extname = path.extname(req.fileName)

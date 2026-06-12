@@ -15,29 +15,26 @@ export const nowYM = (): string => {
  */
 export const nowYMD = () => {
   const date = new Date()
-  // 2. 提取各部分，并保证两位数字（补零）
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0') // 月份从0开始
   const day = String(date.getDate()).padStart(2, '0')
-  // 3. 拼接为标准格式
   return `${year}-${month}-${day}`
 }
 
 /**
- * 获取当前年月日
+ * 获取当前年月日时分秒毫秒, 作为图片的后缀使用, 格式为 YYYYMMDD_HHMMSS_SSS
  * @returns
  */
-export const nowYMDHMS = () => {
+export const picSuffix = () => {
   const date = new Date()
-  // 2. 提取各部分，并保证两位数字（补零）
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0') // 月份从0开始
   const day = String(date.getDate()).padStart(2, '0')
   const hours = String(date.getHours()).padStart(2, '0')
   const minutes = String(date.getMinutes()).padStart(2, '0')
   const seconds = String(date.getSeconds()).padStart(2, '0')
-  // 3. 拼接为标准格式
-  return `${year}${month}${day}${hours}${minutes}${seconds}`
+  const milliseconds = String(date.getMilliseconds()).padStart(3, '0')
+  return `${year}${month}${day}_${hours}${minutes}${seconds}_${milliseconds}`
 }
 
 /**
