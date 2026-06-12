@@ -40,13 +40,18 @@ declare interface DocTree {
   type: DocType
   name: string
   formatName: string // 无后缀名称
+  // 完整的路径, 包含路径和文件名
   path: string
-  size: bigint = 0n
+  // 文件或文件夹所在的文件夹, 路径中不包含自身
+  folderPath: string
+  size: number
   icon?: string
   updn?: boolean
   creTime?: string
   updTime?: string
   children?: DocTree[]
+  // 子文件数量, 不包含文件夹
+  childrenFileCount: number
 }
 
 /**
@@ -126,7 +131,7 @@ declare interface SelectFileAndMoveReq extends Base {
   // 是否覆盖同名文件
   cover: boolean = false,
   // 是否将文件名重命名
-  newFileName: string = '',
+  newFileName: string
 }
 
 /**
@@ -140,6 +145,30 @@ declare interface SelectFileAndMoveRes extends Base {
 
 
 //#region ====================================< 图片 >====================================
+declare interface Picture {
+  id: string
+  type: DocType
+  name: string
+  suffix: string
+  formatName: string // 无后缀名称
+  path: string
+  folderPath: string
+  localProtocolPath: string
+  size: number = 0
+  icon?: string
+  updn?: boolean
+  checked: boolean
+  delTime: 0 | 1 | 2
+  creTime?: string
+  updTime?: string
+  articleLinks: ArticleLink[]
+}
+
+declare interface ArticleLink {
+  id: string
+  name: string
+}
+
 declare interface PictureListReq extends Base {
   // 文件夹或文件的ID
   id: string
@@ -148,7 +177,26 @@ declare interface PictureListReq extends Base {
 declare interface PictureListRes extends Base {
   // 文件夹或文件的ID
   totalCount: number
-  totalSize: bigint
-  pictures: DocTree[]
+  totalSize: number
+  pictures: Picture[]
 }
+
+
+/**
+ * 选择系统中的文件并移动到文档库
+ */
+declare interface SelectPicAndMoveReq extends Base {
+  // 以文章的路径作为上传路径
+  targetDocId: string
+  // 是否覆盖同名文件
+  cover: boolean = false
+}
+
+declare interface FileBuffSaveReq extends Base {
+  // 以文章的路径作为上传路径
+  targetDocId: string
+  fileName?: stirng
+  fileBuffer: ArrayBuffer
+}
+
 //#endregion

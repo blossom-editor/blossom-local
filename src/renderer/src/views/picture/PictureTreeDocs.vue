@@ -4,11 +4,8 @@
     <Workbench></Workbench>
   </div>
   <div class="doc-tree-operator">
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" content="显示排序">
-      <div class="iconbl bl-a-leftdirection-line" @click="handleShowSort"></div>
-    </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" content="根目录下新建图片文件夹">
-      <div class="iconbl bl-folderadd-line" @click="addFolderToRoot()"></div>
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" content="显示子文件数量">
+      <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" :show-after="1000" content="搜索">
       <div class="iconbl bl-search-item" @click="showTreeFilter()"></div>
@@ -58,23 +55,26 @@
       @nodeCollapse="handleNodeCollapse"
       @nodeDrop="handleDrop">
       <template #default="{ node, data }">
+        <div v-if="isShowChildFileCount" class="sort-tag" :style="getChildFileCountColor(node)">
+          {{ data.childrenFileCount }}
+        </div>
         <div v-if="data.ty === 11" class="menu-divider"></div>
         <div v-else class="menu-item-wrapper" @click.right="handleClickRightMenu($event, data)">
           <div class="doc-title">
             <div class="doc-name">
-              <img class="menu-icon-img" v-if="isShowImg(data, viewStyle)" :src="data.icon" />
-              <svg v-else-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
+              <svg v-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
                 <use :xlink:href="'#' + data.icon"></use>
               </svg>
               <el-input
                 v-if="data?.updn"
-                v-model="data.formatName"
-                :id="'article-doc-name-' + data.i"
+                v-model="data.name"
+                :id="'article-doc-name-' + data.id"
+                @input="changeArticleNameInput(data)"
                 @blur="blurArticleNameInput(data)"
                 @keyup.enter="blurArticleNameInput(data)"
                 style="width: 95%"></el-input>
               <div v-else class="name-wrapper" :style="{ maxWidth: isNotBlank(data.icon) ? 'calc(100% - 25px)' : '100%' }">
-                {{ data.formatName }}
+                {{ data.name }}
               </div>
             </div>
           </div>
@@ -88,44 +88,31 @@
     <div v-if="rMenu.show" class="tree-menu" :style="{ left: rMenu.clientX + 'px', top: rMenu.clientY + 'px' }">
       <div class="doc-name">{{ curDoc.name }}</div>
       <div class="menu-content">
-        <div :class="['menu-item', Number(curDoc.i) <= 0 ? 'disabled' : '']" @click="rename"><span class="iconbl bl-pen"></span>重命名</div>
-        <div :class="['menu-item', Number(curDoc.i) <= 0 ? 'disabled' : '']" @click="handleShowDocInfoDialog('upd')">
-          <span class="iconbl bl-a-fileedit-line"></span>编辑详情
+        <div v-if="curDoc.type === 'PICTURE'" :class="['menu-item', Number(curDoc.id) <= 0 ? 'disabled' : '']" @click="rename">
+          <span class="iconbl bl-pen"></span>重命名
         </div>
-        <div :class="['menu-item', Number(curDoc.i) <= 0 ? 'disabled' : '']" @click="addFolderToDoc()">
-          <span class="iconbl bl-folderadd-line"></span>新增文件夹
+        <div @click="openFileLocation(curDoc.path)">
+          <span class="iconbl bl-computer-line"></span>{{ platformText('在资源管理器中查看', '在访达中查看') }}
         </div>
-        <div class="menu-item-divider"></div>
-        <div :class="['menu-item', Number(curDoc.i) <= 0 ? 'disabled' : '']" @click="delDoc()">
-          <span class="iconbl bl-a-fileprohibit-line"></span>删除文件夹
-        </div>
+        <div v-if="curDoc.type === 'PICTURE'" @click="delPicture()"><span class="iconbl bl-delete-line"></span>删除图片</div>
       </div>
     </div>
   </Teleport>
 
-  <!-- 详情的弹框 -->
-  <el-dialog
-    class="bl-dialog-draggable-header"
-    v-model="isShowDocInfoDialog"
-    width="535"
-    :append-to-body="true"
-    :destroy-on-close="true"
-    :close-on-click-modal="false"
-    align-center
-    draggable>
-    <PictureInfo ref="PictureInfoRef" @saved="savedCallback"></PictureInfo>
-  </el-dialog>
-
-  <!-- <div class="doc-tree-debug">
-    <div>所有展开：{{ Array.from(docTreeCurrentExpandId) + '' }}</div>
-    <div>当前选中：{{ docTreeCurrentId }}</div>
-  </div> -->
+  <el-tooltip
+    :visible="renameTooltipVisible"
+    content='名称中不允许包含 <>\/:*?"|.'
+    placement="top"
+    effect="dark"
+    trigger="click"
+    virtual-triggering
+    :virtual-ref="renameTooltipRef" />
 </template>
 
 <script setup lang="ts">
 import { ref, provide, nextTick, watch } from 'vue'
 import { useConfigStore } from '@renderer/stores/config'
-import { useUserStore } from '@renderer/stores/user'
+import { useDocLibStore } from '@renderer/stores/docLib'
 // element plus
 import { ElMessageBox, TreeNode } from 'element-plus'
 import { NodeDropType } from 'element-plus/es/components/tree/src/tree.type'
@@ -133,10 +120,10 @@ import { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNod
 import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 import Node from 'element-plus/es/components/tree/src/model/node'
 // ts
-import { docTreeApi, folderAddApi, folderUpdNameApi } from '@renderer/api/blossom'
-import { provideKeyDocTree } from '@renderer/views/doc/doc'
-import { isShowImg, isShowSvg, tags } from '@renderer/views/doc/doc-tree-detail'
-import { getColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
+import { docTreeApi } from '@renderer/api/blossom'
+import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
+import { isShowSvg } from '@renderer/views/doc/doc-tree-detail'
+import { getChildFileCountColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 // util
@@ -145,9 +132,11 @@ import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
 // components
 import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
-import PictureInfo from '@renderer/views/picture/PictureInfo.vue'
+import { inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
+import { openFileLocation } from '@renderer/api/docLib'
+import { pictureUpdNameApi } from '@renderer/api/picture'
 
-const user = useUserStore()
+const docLibStore = useDocLibStore()
 const { viewStyle } = useConfigStore()
 
 useLifecycle(
@@ -155,15 +144,19 @@ useLifecycle(
   () => getDocTree()
 )
 watch(
-  () => user.currentUserId,
-  (_newVal, _oldVal) => getDocTree()
+  () => docLibStore.cur?.path,
+  (_newVal, _oldVal) => {
+    if (isNotBlank(_newVal)) {
+      getDocTree()
+    }
+  }
 )
 
 //#region ----------------------------------------< 树状列表 >--------------------------------------
 let editorLoadingTimeout: NodeJS.Timeout
 const DocTreeRef = ref()
 const docTreeLoading = ref(true) // 文档菜单的加载动画
-const isShowSort = ref(false) // 是否显示文档排序
+const isShowChildFileCount = ref(true) // 是否显示文档排序
 const docTreeData = ref<DocTree[]>([]) // 文档菜单
 provide(provideKeyDocTree, docTreeData)
 
@@ -173,9 +166,7 @@ provide(provideKeyDocTree, docTreeData)
 const refreshDocTree = () => {
   getDocTree(() => {
     nextTick(() => {
-      if (!isEmpty(docTreeData.value) && isNotBlank(docTreeCurrentId.value)) {
-        DocTreeRef.value.setCurrentKey(docTreeCurrentId.value)
-      }
+      if (!isEmpty(docTreeData.value) && isNotBlank(docTreeCurrentChoiseId.value)) DocTreeRef.value.setCurrentKey(docTreeCurrentChoiseId.value)
     })
   })
 }
@@ -189,9 +180,7 @@ const getDocTree = (callback?: () => void) => {
   startLoading()
   docTreeApi({ type: 'PICTURE' })
     .then((resp) => {
-      // addTreeDivider(resp.data)
       docTreeData.value = resp.data!
-      endLoading()
       if (callback) callback()
     })
     .finally(() => endLoading())
@@ -217,13 +206,19 @@ const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: Mouse
     treeNode,
     event
   )
-  emits('clickDoc', tree)
+
+  // 正在重命名的图片不能点击
+  if (tree.id === notAllowDragId) {
+    return
+  } else {
+    emits('clickDoc', tree)
+  }
 }
 
 /**
  * 是否显示排序
  */
-const handleShowSort = () => (isShowSort.value = !isShowSort.value)
+const handleShowChildFileCount = () => (isShowChildFileCount.value = !isShowChildFileCount.value)
 
 /** 开始加载 */
 const startLoading = () => {
@@ -240,50 +235,12 @@ const endLoading = () => {
   docTreeLoading.value = false
 }
 
-/**
- * 为树状列表插入图片文件夹和文章文件夹的分割线
- */
-const addTreeDivider = (data: any) => {
-  const docTree: DocTree[] = data
-  // 两种类型的交界位置
-  let lastPicIndex: number = -1
-  // 循环一级文件夹，第一个文章文件夹即是最后一个图片文件夹的位置
-  for (let i = 0; i < docTree.length; i++) {
-    let doc = docTree[i]
-    if (doc.ty === 1) {
-      lastPicIndex = i
-      break
-    }
-  }
-
-  console.log(lastPicIndex, docTree.length)
-
-  const divider: DocTree = {
-    i: (Number(docTree[0].i) - 100000).toString(),
-    p: '0',
-    n: '',
-    o: 0,
-    t: [],
-    s: 0,
-    icon: '',
-    ty: 11,
-    star: 0
-  }
-
-  if (lastPicIndex > -1) {
-    // 插入分割符
-    docTree.splice(Math.max(lastPicIndex, 1), 0, divider)
-  } else {
-    // docTree.push(divider)
-  }
-
-  docTreeData.value = docTree
-}
 //#endregion
 
 //#region ----------------------------------------< 树状列表管理 >--------------------------------------
+
 // 文档的最后选中项, 用于外部跳转后选中菜单
-const docTreeCurrentId = ref('')
+const docTreeCurrentChoiseId = ref('')
 // 所有展开的节点
 const docTreeCurrentExpandIdSet = ref<Set<string>>(new Set())
 // 搜索内容
@@ -295,7 +252,7 @@ const DocTreeSearch = ref()
 const DocTreeSearchMove = ref()
 const DocTreeSearchInput = ref()
 // 禁止拖拽的节点, 正在重命名的节点不允许进行拖拽
-let notAllowDragKey: string = ''
+let notAllowDragId: string = ''
 
 useDraggable(DocTreeSearch, DocTreeSearchMove, DocTreeContainer)
 
@@ -307,16 +264,16 @@ watch(treeFilterText, (val) => DocTreeRef.value!.filter(val))
  * @param tree 当前选中的文档
  */
 const setCurrentKey = (tree: { id: string; parentId: string; type: DocType }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
-  if (tree.ty === 1 || tree.ty === 2) {
-    docTreeCurrentId.value = tree.i
+  if (tree.type === 'FOLDER') {
+    docTreeCurrentChoiseId.value = tree.id
     if (node && node.expanded) {
-      docTreeCurrentExpandIdSet.value.add(tree.i)
+      docTreeCurrentExpandIdSet.value.add(tree.id)
     }
-  } else if (tree.ty === 3) {
-    docTreeCurrentId.value = tree.i
-    docTreeCurrentExpandIdSet.value.add(tree.p)
+  } else if (tree.type === 'PICTURE') {
+    docTreeCurrentChoiseId.value = tree.id
+    docTreeCurrentExpandIdSet.value.add(tree.parentId)
   }
-  DocTreeRef.value.setCurrentKey(tree.i)
+  DocTreeRef.value.setCurrentKey(tree.id)
 }
 
 /**
@@ -342,14 +299,14 @@ const filterNode = (value: string, data: DocTree): boolean => {
 
 /**
  * 判断是否允许被拖拽
- * 1. 文章文件夹不允许拖拽
+ * 1. 文件夹不允许拖拽
  * 2. 正在重命名的节点不允许被拖拽
  *
  * @param node 拖动的节点
  * @return boolean 节点是否允许被拖动
  */
 const handleAllowDrag = (node: Node): boolean => {
-  return node.data.ty === 2 && notAllowDragKey !== node.data.i
+  return node.data.type === 'PICTURE' && notAllowDragId !== node.data.id
 }
 
 /**
@@ -361,10 +318,7 @@ const handleAllowDrag = (node: Node): boolean => {
  * @return boolean 是否允许被放置
  */
 const handleAllowDrop = (_draggingNode: Node, dropNode: Node, _type: NodeDropType): boolean => {
-  if (dropNode.data.ty !== 2) {
-    return false
-  }
-  if (dropNode.data.i < 0) {
+  if (dropNode.data.type !== 'FOLDER') {
     return false
   }
   return true
@@ -375,6 +329,7 @@ const handleAllowDrop = (_draggingNode: Node, dropNode: Node, _type: NodeDropTyp
  */
 const collapseAll = () => {
   docTreeCurrentExpandIdSet.value.clear()
+  DocTreeRef.value.setCurrentKey('')
   getDocTree()
 }
 
@@ -396,9 +351,9 @@ const collapseNoChild = () => {
  * @param doc
  */
 const collapseChild = (doc: DocTree) => {
-  if (doc.ty === 1 || doc.ty === 2) {
+  if (doc.type === 'FOLDER' || doc.type === 'PICTURE') {
     if (isEmpty(doc.children)) {
-      docTreeCurrentExpandIdSet.value.delete(doc.i)
+      docTreeCurrentExpandIdSet.value.delete(doc.id)
     } else {
       for (let i = 0; i < doc.children!.length; i++) {
         const cdoc = doc.children![i]
@@ -432,7 +387,7 @@ const collapseChilds = (node: Node) => {
     if (child.isLeaf) {
     } else {
       child.expanded = false
-      docTreeCurrentExpandIdSet.value.delete(child.data.i)
+      docTreeCurrentExpandIdSet.value.delete(child.data.id)
       collapseChilds(child)
     }
   }
@@ -452,21 +407,12 @@ const closeParentIfNoChild = (pid: string) => {
 /**
  * 拖拽后处理各个节点排序
  */
-const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: DragEvents) => {
-  // handleTreeDrop(drag, enter, dropType, _event, DocTreeRef, docTreeData, 2, (needUpd) => {
-  //   docUpdSortApi({ docs: needUpd, folderType: 2, onlyPicture: true })
-  //     .then((resp) => {
-  //       addTreeDivider(resp.data)
-  //       collapseNoChild()
-  //     })
-  //     .catch(() => getDocTree())
-  // })
-}
+const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: DragEvents) => {}
 
 //#endregion
 
 //#region ----------------------------------------< 右键菜单 >--------------------------------------
-const curDoc = ref<DocTree>({ id: '0', path: '0', name: '选择菜单', formatName: '', type: 'PICTURE', updn: false, size: 0n })
+const curDoc = ref<DocTree>(new DefaultDocTree())
 const rMenu = ref<RightMenu>({ show: false, clientX: 0, clientY: 0 })
 const rMenuHeight = 151 // 固定的菜单高度, 每次增加右键菜单项时需要修改该值
 
@@ -479,9 +425,7 @@ const rMenuHeight = 151 // 固定的菜单高度, 每次增加右键菜单项时
  */
 const handleClickRightMenu = (event: MouseEvent, doc: DocTree) => {
   event.preventDefault()
-  docTreeCurrentExpandIdSet.value.add(doc.id)
   if (!doc) return
-  if (doc.type !== 'PICTURE') return
 
   curDoc.value = doc
   rMenu.value = { show: false, clientX: 0, clientY: 0 }
@@ -515,14 +459,17 @@ const closeTreeDocsMenuShow = (event?: MouseEvent) => {
 /**
  * 删除文档, 删除后将文档从树状节点中删除
  */
-const delDoc = () => {
-  ElMessageBox.confirm(`是否确定删除文件夹: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.n}</span>？删除后将不可恢复！`, {
-    confirmButtonText: '确定删除',
-    cancelButtonText: '我再想想',
-    type: 'info',
-    draggable: true,
-    dangerouslyUseHTMLString: true
-  }).then(() => {
+const delPicture = () => {
+  ElMessageBox.confirm(
+    `是否确定删除文件夹: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.name}</span>？删除后将不可恢复！`,
+    {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '我再想想',
+      type: 'info',
+      draggable: true,
+      dangerouslyUseHTMLString: true
+    }
+  ).then(() => {
     // folderDelApi({ id: curDoc.value.i }).then((_resp) => {
     //   Notify.success(`删除文件夹成功`)
     //   DocTreeRef.value.remove(curDoc.value.i)
@@ -531,12 +478,17 @@ const delDoc = () => {
   })
 }
 
+// ======================== 文章重命名 ==============================
+const renameTooltipVisible = ref(false)
+const renameTooltipRef = ref({ getBoundingClientRect: () => position.value })
+const position = ref({ top: 0, left: 0, bottom: 0, right: 0 } as DOMRect)
+
 /**
  * 重命名文章, 重命名时该节点无法拖拽
  */
 const rename = () => {
   curDoc.value.updn = true
-  notAllowDragKey = curDoc.value.id
+  notAllowDragId = curDoc.value.id
   nextTick(() => {
     let ele = document.getElementById('article-doc-name-' + curDoc.value.id)
     if (ele) ele.focus()
@@ -547,110 +499,50 @@ const rename = () => {
  * 重命名文章失去焦点
  */
 const blurArticleNameInput = (doc: DocTree) => {
-  // folderUpdNameApi({ id: doc.i, name: doc.n }).then((_resp) => {
-  //   doc.updn = false
-  //   notAllowDragKey = ''
-  // })
-}
+  const params = { oldPath: doc.path, newPath: '' }
+  if (!changeArticleNameInput(doc)) {
+    getDocTree()
+    notAllowDragId = ''
+    renameTooltipVisible.value = false
+    return
+  }
 
-/**
- * 在文件夹下新增文件夹
- */
-const addFolderToDoc = () => addFolder(curDoc.value.i)
+  const newName = doc.name
+  const parentPath = doc.folderPath
 
-/**
- * 在根目录添加文件夹
- */
-const addFolderToRoot = () => addFolder('0')
+  function resetUpdateState() {
+    doc.updn = false
+    notAllowDragId = ''
+  }
 
-/**
- * 在指定 pid 的末尾新增文件夹
- *
- * @param pid 父ID
- */
-const addFolder = (pid: string) => {
-  // 将文件夹新增至尾部
-  folderAddApi({ pid: pid, name: '新文件夹', storePath: '/', type: 2, icon: 'wl-folder', sort: 0, addToLast: true }).then((resp) => {
-    let newFolder: DocTree = {
-      i: resp.data.id,
-      p: resp.data.pid,
-      n: resp.data.name,
-      updn: true,
-      s: resp.data.sort,
-      icon: resp.data.icon,
-      o: 0,
-      t: [],
-      ty: 2,
-      star: 0,
-      showSort: curDoc.value.showSort
-    }
-    addDocToTail(newFolder)
+  params.newPath = joinPath(parentPath, newName)
+  // 路径相同, 则未重命名
+  if (params.oldPath === params.newPath) {
+    resetUpdateState()
+    return
+  }
+  pictureUpdNameApi(params).then((_resp) => {
+    resetUpdateState()
+    getDocTree()
   })
 }
 
 /**
- * 将文档添加至末尾并选中
+ * 检查文件夹名是否合法
  */
-const addDocToTail = (doc: DocTree) => {
-  if (doc.p !== '0') {
-    // 插入到根目录
-    DocTreeRef.value.append(doc, DocTreeRef.value.getNode(doc.p))
-    docTreeCurrentExpandIdSet.value.add(doc.p)
-  } else {
-    const picRootFolder: DocTree[] = docTreeData.value.filter((n) => n.ty === 2)
-    const lastFolder = picRootFolder[picRootFolder.length - 1]
-    console.log(lastFolder)
-    DocTreeRef.value.insertAfter(doc, lastFolder.i)
-  }
-  nextTick(() => {
-    let ele = document.getElementById('article-doc-name-' + doc.i) as HTMLInputElement
-    setTimeout(() => {
-      if (ele) ele.select()
-    }, 100)
-  })
-}
-
-//#endregion
-
-//#region ----------------------------------------< 新增修改详情弹框 >--------------------------------------
-const PictureInfoRef = ref()
-const isShowDocInfoDialog = ref<boolean>(false)
-
-/**
- * 显示弹框
- * @param dialogType 弹框的类型, 新增, 修改
- * @param pid 父级ID, 新增同级或子集文档时使用
- */
-const handleShowDocInfoDialog = (dialogType: DocDialogType, pid?: number) => {
-  if (Number(curDoc.value.i) < 0) {
-    Notify.info('当前文档为系统默认文档, 无法操作', '操作无效')
-    return
-  }
-  if (dialogType === 'upd' && (curDoc.value == undefined || curDoc.value?.i == undefined)) {
-    Notify.info('请先选则要修改的文件夹或文档')
-    return
-  }
-  isShowDocInfoDialog.value = true
-  if (dialogType === 'add') nextTick(() => PictureInfoRef.value.reload(dialogType, undefined, pid))
-  if (dialogType === 'upd') nextTick(() => PictureInfoRef.value.reload(dialogType, curDoc.value.i))
-}
-
-/**
- * 保存后回调
- *
- * @param dialogType 保存类型
- * @param doc 文档
- */
-const savedCallback = (_dialogType: DocDialogType, doc: DocInfo) => {
-  isShowDocInfoDialog.value = false
-  const oldDoc: DocTree = DocTreeRef.value.getNode(doc.id).data
-  oldDoc.n = doc.name
-  oldDoc.t = doc.tags
-  oldDoc.icon = doc.icon!
-  if (oldDoc.s !== doc.sort || oldDoc.p !== doc.pid) {
-    getDocTree(() => {
-      collapseNoChild()
+const changeArticleNameInput = (data: DocTree): boolean => {
+  if (inValidateFileName(data.name)) {
+    renameTooltipVisible.value = true
+    let ele = document.getElementById('article-doc-name-' + curDoc.value.id) as HTMLInputElement
+    position.value = DOMRect.fromRect({
+      x: ele.getBoundingClientRect().x + ele.getBoundingClientRect().width / 2,
+      y: ele.getBoundingClientRect().y
     })
+    renameTooltipVisible.value = true
+    return false
+  } else {
+    renameTooltipVisible.value = false
+    return true
   }
 }
 

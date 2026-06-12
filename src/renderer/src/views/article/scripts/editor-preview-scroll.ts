@@ -79,8 +79,18 @@ export class EPScroll {
    * 切换同步滚动开启/关闭
    * @returns 是否同步滚动
    */
-  public open(): boolean {
+  public switchOpen(): boolean {
     this._open = !this._open
+    return this._open
+  }
+
+  public open(): boolean {
+    this._open = true
+    return this._open
+  }
+
+  public close(): boolean {
+    this._open = false
     return this._open
   }
 

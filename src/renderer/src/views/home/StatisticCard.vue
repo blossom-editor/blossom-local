@@ -2,8 +2,8 @@
   <div>
     <div class="statistic-article-root">
       <div class="statistic">
-        <div class="main-stat"><span style="font-size: 20px">A</span>{{ formartNumber(article.articleTotal) }}</div>
-        <div class="sub-stat"><span class="iconbl bl-pen-line"></span> {{ formartNumber(article.articleTotalWords) }}</div>
+        <div class="main-stat"><span style="font-size: 20px">A</span>{{ formartNumber(stats.articleTotal) }}</div>
+        <div class="sub-stat"><span class="iconbl bl-pen-line"></span> {{ formartNumber(stats.articleTotalWords) }}</div>
       </div>
       <div class="iconbl bl-a-texteditorhighlightcolor-line icon"></div>
       <div class="iconbl bl-a-texteditorhighlightcolor-line icon-shadow"></div>
@@ -11,8 +11,8 @@
 
     <div class="statistic-picture-root">
       <div class="statistic">
-        <div class="main-stat"><span style="font-size: 20px">P</span>{{ formartNumber(picture.pictureCount) }}</div>
-        <div class="sub-stat"><span class="iconbl bl-a-cloudstorage-line"></span> Size {{ formatFileSize(picture.pictureSize) }}</div>
+        <div class="main-stat"><span style="font-size: 20px">P</span>{{ formartNumber(stats.pictureTotal) }}</div>
+        <div class="sub-stat"><span class="iconbl bl-a-cloudstorage-line"></span> Size {{ formatFileSize(stats.pictureTotalSize) }}</div>
       </div>
       <div class="iconbl bl-image--line icon"></div>
       <div class="iconbl bl-image--line icon-shadow"></div>
@@ -21,34 +21,21 @@
 </template>
 
 <script setup lang="ts">
-import { articleWordsApi, pictureStatApi } from '@renderer/api/blossom'
 import { ref } from 'vue'
 import { formatFileSize, formartNumber } from '@renderer/assets/utils/util'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
+import { doclibStatsApi } from '@renderer/api/docLib'
 
 useLifecycle(
-  () => {
-    getArticleWords()
-    // getPictureStat()
-  },
-  () => {
-    getArticleWords()
-    // getPictureStat()
-  }
+  () => getDocLibStats(),
+  () => getDocLibStats()
 )
 
-let article = ref({ articleTotal: 0, articleTotalWords: 0 })
-let picture = ref({ pictureCount: 0, pictureSize: 0 })
+let stats = ref({ articleTotal: 0, articleTotalWords: 0, pictureTotal: 0, pictureTotalSize: 0 })
 
-const getArticleWords = () => {
-  articleWordsApi().then((resp) => {
-    article.value = resp.data
-  })
-}
-
-const getPictureStat = () => {
-  pictureStatApi().then((resp) => {
-    picture.value = resp.data
+const getDocLibStats = () => {
+  doclibStatsApi().then((resp) => {
+    stats.value = resp.data
   })
 }
 </script>

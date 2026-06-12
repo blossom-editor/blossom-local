@@ -11,6 +11,9 @@
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文件夹">
       <div class="iconbl bl-folderadd-line" @click="addFolderToRoot()"></div>
     </el-tooltip>
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" content="显示子文件数量">
+      <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount"></div>
+    </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="搜索文件名">
       <div class="iconbl bl-search-item" @click="showTreeFilter()"></div>
     </el-tooltip>
@@ -62,6 +65,9 @@
       @nodeCollapse="handleNodeCollapse"
       @nodeDrop="handleDrop">
       <template #default="{ node, data }">
+        <div v-if="isShowChildFileCount" class="sort-tag" :style="getChildFileCountColor(node)">
+          {{ data.childrenFileCount }}
+        </div>
         <div class="menu-item-wrapper" :id="'article-doc-wrapper-' + data.id" @click.right="handleClickRightMenu($event, data)">
           <div :class="[viewStyle.isShowSubjectStyle ? (data.t?.includes('subject') ? 'subject-title' : 'doc-title') : 'doc-title']">
             <div class="doc-name">
@@ -177,8 +183,8 @@ import {
   createMarkdownApi
 } from '@renderer/api/blossom'
 import { grammar } from './scripts/markedjs'
-import { provideKeyDocTree } from '@renderer/views/doc/doc'
-import { handleTreeDrop } from '@renderer/views/doc/doc-tree'
+import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
+import { getChildFileCountColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
 import { tagLins, isShowImg, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
@@ -227,7 +233,7 @@ const getRouteQueryParams = () => {
   let routeArticleId = route.query.articleId
   if (isNotNull(routeArticleId)) {
     const articleId = routeArticleId as string
-    const docTree: DocTree = { id: articleId, type: 'ARTICLE', name: '', formatName: '', path: '', size: 0n }
+    const docTree: DocTree = new DefaultDocTree()
     emits('clickDoc', docTree)
     nextTick(() => {
       docTreeCurrentChoiseId.value = articleId
@@ -343,6 +349,7 @@ const articleCurrnetChoiseId = ref('')
 const docTreeCurrentChoiseId = ref('')
 // 所有展开的节点
 const docTreeCurrentExpandIdSet = ref<Set<string>>(new Set())
+const isShowChildFileCount = ref(true) // 是否显示文档排序
 // 搜索内容
 const treeFilterText = ref('')
 const isShowTreeFilter = ref(false)
@@ -352,7 +359,7 @@ const DocTreeSearch = ref()
 const DocTreeSearchMove = ref()
 const DocTreeSearchInput = ref()
 // 禁止拖拽的节点, 正在重命名的节点不允许进行拖拽
-let notAllowDragKey: string = ''
+let notAllowDragId: string = ''
 
 useDraggable(DocTreeSearch, DocTreeSearchMove, DocTreeContainer)
 
@@ -409,7 +416,7 @@ const filterNode = (value: string, data: DocTree) => {
  * @return boolean 节点是否允许被拖动
  */
 const handleAllowDrag = (node: Node) => {
-  return notAllowDragKey !== node.data.id
+  return notAllowDragId !== node.data.id
 }
 
 /**
@@ -513,18 +520,11 @@ const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: Dra
   })
 }
 
+const handleShowChildFileCount = () => (isShowChildFileCount.value = !isShowChildFileCount.value)
 //#endregion
 
 //#region ----------------------------------------< 右键菜单 >--------------------------------------
-const curDoc = ref<DocTree>({
-  id: '0',
-  path: '0',
-  name: '选择菜单',
-  formatName: '',
-  type: 'ARTICLE',
-  updn: false,
-  size: 0n
-})
+const curDoc = ref<DocTree>(new DefaultDocTree())
 const rMenu = ref<RightMenu>({ show: false, clientX: 0, clientY: 0 })
 const rMenuLevel2 = ref<RightMenuLevel2>({ top: '0px' })
 const ArticleDocTreeRightMenuRef = ref()
@@ -604,7 +604,7 @@ const position = ref({ top: 0, left: 0, bottom: 0, right: 0 } as DOMRect)
  */
 const rename = () => {
   curDoc.value.updn = true
-  notAllowDragKey = curDoc.value.id
+  notAllowDragId = curDoc.value.id
   nextTick(() => {
     let ele = document.getElementById('article-doc-name-' + curDoc.value.id)
     if (ele) ele.focus()
@@ -638,19 +638,20 @@ const blurArticleNameInput = (doc: DocTree) => {
 
   if (!changeArticleNameInput(doc)) {
     getDocTree()
+    notAllowDragId = ''
     renameTooltipVisible.value = false
     return
   }
 
   const newName = doc.formatName
-  const parentPath = getParentDirPath(doc.path)
+  const parentPath = doc.folderPath
 
   function resetUpdateState() {
     doc.updn = false
-    notAllowDragKey = ''
+    notAllowDragId = ''
   }
 
-  params.newPath = parentPath + newName + (doc.type === 'ARTICLE' ? '.md' : '')
+  params.newPath = joinPath(parentPath, newName + (doc.type === 'ARTICLE' ? '.md' : ''))
   if (params.oldPath === params.newPath) {
     resetUpdateState()
     return

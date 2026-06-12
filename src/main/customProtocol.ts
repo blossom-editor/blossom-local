@@ -8,7 +8,7 @@ const curDocLibManager = CurDocLibManager.getInstance()
  * 由于在渲染进程无法直接读取本地文件, 需要自定义协议 blossom:\ ,并进行拦截
  * 主要用在渲染进程读取本地文件
  *
- * 不允许直接链接到文档库外的文件, 
+ * 不允许直接链接到文档库外的文件,
  *
  * const fileUrl = pathToFileURL(decodeURIComponent(url)).href
  * const fileUrl = pathToFileURL(url).href
@@ -20,9 +20,9 @@ export const initProtocol = () => {
     const docLibPath = curDocLibManager.getPath()
     let url = request.url.slice('blossom:\\'.length)
     const params = parseQueryParams(url)
-    if (params) {
-      console.log(`${url}, params: ${Object.entries(params)}`)
-    }
+    // if (params) {
+    //   console.log(`${url}, params: ${Object.entries(params)}`)
+    // }
 
     if (docLibPath) {
       // 非相对路径, 并且路径不以文档库路径开头, 则认为是相对文档库的绝对路径
@@ -40,6 +40,9 @@ export const initProtocol = () => {
     }
 
     try {
+      console.log(`${request.url}`)
+      console.log(url)
+      console.log('============================================================================')
       return net.fetch(url)
     } catch (error) {
       console.log('error', error)

@@ -10,10 +10,12 @@ import { isSysFile } from '../doclib/docLibManager'
 import { sortDocTreeList } from '../article/fileUtils'
 import { getUniqueId, cutSuffix } from '../utils'
 import { IdMapping, FileItem } from '../doclib/idMapping'
+import { PicNameMapping, PicItem } from '../doclib/picNameMapping'
 
 const idMapping = IdMapping.getInstance()
 const docLibStatsManager = DocLibStatsManager.getInstance()
 const curDocLibManager = CurDocLibManager.getInstance()
+const picNameMapping = PicNameMapping.getInstance()
 
 export const initDocLibApi = () => {
   console.log('   4.3 初始化文档库接口 initDocLibApi')
@@ -60,27 +62,19 @@ const readDocTree = async (req: DocTreeReq): Promise<DocTree[]> => {
   const nodes: DocTree[] = []
 
   for (const file of files) {
-    // 根据参数选择显示的文件类型
-    if (!file.isDirectory()) {
-      if (!file.name.endsWith('.md') && req.type === 'ARTICLE') {
-        continue
-      }
-      if (file.name.endsWith('.md') && req.type === 'PICTURE') {
-        continue
-      }
-    }
-
     const fullPath = path.join(req.docLibPath!, file.name)
     const stats: BigIntStats = await fs.promises.stat(fullPath, { bigint: true })
     const doc: DocTree = {
       id: getUniqueId(stats),
       type: req.type,
       name: file.name,
-      size: stats.size,
+      size: Number(stats.size),
       formatName: cutSuffix(file.name),
       path: fullPath,
+      folderPath: file.path,
       creTime: timeToYMD(stats.birthtime.toString()), // 创建时间
-      updTime: timeToYMD(stats.mtime.toString()) // 修改时间
+      updTime: timeToYMD(stats.mtime.toString()), // 修改时间
+      childrenFileCount: 0
     }
 
     if (file.isDirectory()) {
@@ -95,22 +89,46 @@ const readDocTree = async (req: DocTreeReq): Promise<DocTree[]> => {
       const children = await readDocTree({ docLibPath: fullPath, type: req.type })
       doc.type = 'FOLDER'
       doc.icon = 'wl-folder'
-      doc.name = file.name
       doc.formatName = file.name
       doc.children = children
-    } else {
-      const fileItem: FileItem = new FileItem(doc.id, doc.path, 'ARTICLE')
-      docLibStatsManager.increaseArticleUpdToday(timeToYMD(stats.mtime.toString()))
+
+      children.forEach((child) => {
+        if (child.type === req.type) {
+          doc.childrenFileCount++
+        }
+      })
+    }
+    // 非文件夹
+    else {
+      const fileItem: FileItem = new FileItem(doc.id, doc.path, req.type)
+      if (!file.name.endsWith('.md')) {
+        picNameMapping.add(new PicItem(doc.id, doc.name, doc.folderPath, Number(stats.size)))
+        fileItem.type = 'PICTURE'
+      }
+      if (file.name.endsWith('.md')) {
+        docLibStatsManager.increaseArticleUpdToday(timeToYMD(stats.mtime.toString()))
+        fileItem.type = 'ARTICLE'
+      }
       idMapping.add(fileItem)
     }
-    // 文件没有 children 属性
-    nodes.push(doc)
+    // 根据参数选择显示的文件类型
+    if (!file.isDirectory()) {
+      if (file.name.endsWith('.md') && req.type === 'ARTICLE') {
+        nodes.push(doc)
+      }
+      if (!file.name.endsWith('.md') && req.type === 'PICTURE') {
+        nodes.push(doc)
+      }
+    } else {
+      nodes.push(doc)
+    }
   }
   return nodes
 }
 
 //#endregion
 
+//#region ====================================< 文档选择弹窗 >====================================
 /**
  * 打开文件位置
  */
@@ -135,7 +153,7 @@ const initSelectDocLibFolderDialog = () => {
  * @returns
  */
 const selectDocLibFolderDialog = async (): Promise<R<DocLibItem>> => {
-  const result = await dialog.showOpenDialog({
+  const choiseFile = await dialog.showOpenDialog({
     properties: ['openDirectory'],
     title: '选择一个文件夹作为文档库'
   })
@@ -147,8 +165,8 @@ const selectDocLibFolderDialog = async (): Promise<R<DocLibItem>> => {
     icon: '',
     isTop: false
   }
-  if (!result.canceled && result) {
-    const docPath = result.filePaths[0]
+  if (!choiseFile.canceled && choiseFile) {
+    const docPath = choiseFile.filePaths[0]
 
     const stats: BigIntStats = await fs.promises.stat(docPath, { bigint: true })
 
@@ -183,9 +201,9 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
     params.targetFilePath = path.join(params.docLibPath!, params.targetFilePath)
   }
 
-  const result = await dialog.showOpenDialog({
+  const choiseFile = await dialog.showOpenDialog({
     properties: ['openFile'],
-    title: '选择一个文件夹作为文档库',
+    title: '选择文件上传',
     // 可选：限制文件类型
     filters: [
       { name: 'Images', extensions: ['jpg', 'png', 'gif'] },
@@ -193,17 +211,17 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
     ]
   })
 
-  if (result.canceled) {
-    console.log('选中的文件:', result.filePaths)
+  if (choiseFile.canceled) {
+    console.log('选中的文件:', choiseFile.filePaths)
     return R.ok(null)
   }
 
   // 路径为文档库路径 + 原始文件名 + 原始扩展名
-  let targetFilePath = path.join(params.targetFilePath, path.basename(result.filePaths[0]))
+  let targetFilePath = path.join(params.targetFilePath, path.basename(choiseFile.filePaths[0]))
 
   // 如果重命名文件, 路径为文档库路径 + 文件名 + 扩展名
   if (params.newFileName && params.newFileName !== '' && params.newFileName.length > 0) {
-    targetFilePath = path.join(params.targetFilePath, params.newFileName + path.extname(result.filePaths[0]))
+    targetFilePath = path.join(params.targetFilePath, params.newFileName + path.extname(choiseFile.filePaths[0]))
   }
 
   // 如果不覆盖文件, 先检查文件是否存在
@@ -211,7 +229,7 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
     return R.fail('50101', `文件已存在: ${targetFilePath}`)
   }
 
-  fs.copyFileSync(result.filePaths[0], targetFilePath)
+  fs.copyFileSync(choiseFile.filePaths[0], targetFilePath)
 
   const res: SelectFileAndMoveRes = {
     filePath: targetFilePath,
@@ -220,6 +238,8 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
 
   return R.ok(res)
 }
+
+//#endregion
 
 //#region ====================================< 文档库的配置文件 >====================================
 
@@ -233,19 +253,24 @@ const initcheckDocLibConfig = () => {
 }
 
 /**
- * 创建系统文件
+ * 检查并补全系统配置文件
  * @param docLibPath 文档库的根路径
  */
 export const checkDocLibConfig = async (base: Base) => {
   if (base === undefined || base === null || base.docLibPath === undefined || base.docLibPath === null || base.docLibPath === '') {
     return R.fail('DOCLIB_PATH_NOT_EXIST', '文档库不存在')
   }
-  // 1. 创建系统文件夹
+  // 创建系统文件夹
   const systemPath = path.join(base.docLibPath, sysFolder)
+  // 创建文件夹
   await fs.promises.mkdir(systemPath, { recursive: true })
+  // 检查文档库统计文件
   await checkdocLibStatsFileFile(base.docLibPath)
+  // 文章拓展信息文件
   await checkArticleExtensionFileFile(base.docLibPath)
+  // 开始统计
   docLibStatsManager.statsBegin(base.docLibPath)
+  // 变更文档库的路径, curDocLibManager 用于在全局获取当前文档库路径
   curDocLibManager.change(base.docLibPath)
   // 统计所有文章的字数
   return R.ok('')
@@ -265,10 +290,6 @@ const checkArticleExtensionFileFile = async (docLibPath: string) => {
   }
 }
 
-//#endregion
-
-//#region ====================================< 文档库的统计信息 >====================================
-
 /**
  * 创建文章统计数
  */
@@ -281,14 +302,22 @@ const checkdocLibStatsFileFile = async (docLibPath: string) => {
   }
 }
 
+//#endregion
+
+//#region ====================================< 文档库的统计信息接口 >====================================
+
 /**
  * 获取文章数和文章字数
  */
 const initDocLibStatWords = () => {
-  ipcMain.handle('doclib-stats-words', async (_event, base: Base): Promise<R<{ articleTotal: number; articleTotalWords: number }>> => {
+  ipcMain.handle('doclib-stats', async (_event, base: Base): Promise<R<{ articleTotal: number; articleTotalWords: number }>> => {
+    const res = await docLibStatsManager.getStats(base.docLibPath!)
+
     return R.ok({
-      articleTotal: (await docLibStatsManager.getStats(base.docLibPath!)).articleTotal,
-      articleTotalWords: (await docLibStatsManager.getStats(base.docLibPath!)).articleTotalWords
+      articleTotal: res.articleTotal,
+      articleTotalWords: res.articleTotalWords,
+      pictureTotal: res.pictureTotal,
+      pictureTotalSize: res.pictureTotalSize
     })
   })
 }
@@ -299,6 +328,12 @@ const initDocLibStatWords = () => {
 const initDocLibStatWordsChatLine = () => {
   ipcMain.handle(
     'doclib-stats-words-chatline',
+    /**
+     * 获取每月字数
+     * @param _event
+     * @param base
+     * @returns
+     */
     async (_event, base: Base): Promise<R<{ statDates: any[]; statValues: any[]; statValuesMom: any[] }>> => {
       const result = {
         statDates: [] as string[],

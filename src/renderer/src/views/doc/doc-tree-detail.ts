@@ -48,16 +48,16 @@ export const tags = (
  */
 export const tagLins = (doc: DocTree) => {
   let lines: string[] = []
-  if (doc.ty === 3) {
+  if (doc.type === 'ARTICLE') {
     if (doc.star === 1) {
       lines.push('star-line')
     }
-    if (doc.o === 1) {
-      lines.push('open-line')
-    }
-    if (doc.vd === 1) {
-      lines.push('sync-line')
-    }
+    // if (doc.o === 1) {
+    //   lines.push('open-line')
+    // }
+    // if (doc.vd === 1) {
+    //   lines.push('sync-line')
+    // }
   }
   return lines
 }

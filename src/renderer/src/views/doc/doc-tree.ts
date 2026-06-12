@@ -5,7 +5,7 @@ import { getParentDirPath, joinPath } from '@renderer/assets/utils/util'
 import Node from 'element-plus/es/components/tree/src/model/node'
 import { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNode'
 import { NodeDropType } from 'element-plus/es/components/tree/src/tree.type'
-import { Ref } from 'vue'
+import { Ref, StyleValue } from 'vue'
 
 export const getColor = (node: Node) => {
   if (node.level === 1) {
@@ -24,6 +24,19 @@ export const getColor = (node: Node) => {
     return '#19A383AA'
   }
   return
+}
+
+export const getChildFileCountColor = (node: Node): StyleValue => {
+  if (node.data.childrenFileCount > 20) {
+    return { background: '#A33B19AA' }
+  } else if (node.data.childrenFileCount > 10) {
+    return { background: '#A37E19AA' }
+  } else if (node.data.childrenFileCount > 0) {
+    return { background: '#89A319AA' }
+  } else if (node.data.childrenFileCount === 0) {
+    return { background: '#00000000', color: '#00000000' }
+  }
+  return { background: '#D1D1D12C', color: '#B1B1B181' }
 }
 
 export interface NeedUpd {

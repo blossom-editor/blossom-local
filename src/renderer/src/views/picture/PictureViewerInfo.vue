@@ -2,28 +2,16 @@
   <div class="picture-viewer-info-root">
     <el-image-viewer v-if="isShowPicInfo" :url-list="[picCacheWrapper(picUrl)]" @close="closePicInfo" :z-index="2002">
       <template v-if="pictureList.length > 0">
-        <button
-          class="viewer-arrow prev"
-          :class="{ disabled: !hasPrev }"
-          type="button"
-          title="上一张"
-          aria-label="上一张"
-          @click.stop="showPrev">
+        <button class="viewer-arrow prev" :class="{ disabled: !hasPrev }" type="button" title="上一张" aria-label="上一张" @click.stop="showPrev">
           <el-icon size="18"><ArrowLeftBold /></el-icon>
           <span>上一张</span>
         </button>
-        <button
-          class="viewer-arrow next"
-          :class="{ disabled: !hasNext }"
-          type="button"
-          title="下一张"
-          aria-label="下一张"
-          @click.stop="showNext">
+        <button class="viewer-arrow next" :class="{ disabled: !hasNext }" type="button" title="下一张" aria-label="下一张" @click.stop="showNext">
           <span>下一张</span>
           <el-icon size="18"><ArrowRightBold /></el-icon>
         </button>
       </template>
-      <div class="bl-image-viewer-infos" v-if="isNotNull(picInfo)">
+      <div class="bl-image-viewer-infos" v-if="picInfo?.id && picInfo?.id! !== '0'">
         <div class="container">
           <bl-row align="flex-start">
             <strong>图片名称：</strong>
@@ -31,15 +19,16 @@
           </bl-row>
           <bl-row align="flex-start"><strong>图片大小：</strong>{{ formatFileSize(picInfo!.size) }}</bl-row>
           <bl-row align="flex-start"><strong>上传时间：</strong>{{ picInfo!.creTime }}</bl-row>
-          <bl-row align="flex-start"><strong>图片路径：</strong>{{ picInfo!.pathName }}</bl-row>
+          <bl-row align="flex-start"><strong>图片路径：</strong>{{ picInfo!.path }}</bl-row>
         </div>
         <el-divider></el-divider>
         <div class="container">
           <div><strong>使用该图片的文章：</strong></div>
-          <bl-row v-if="!isEmpty(picInfo!.articleNames)" align="flex-start">
-            <div>
-              <div v-for="aname in articleNamesToArray(picInfo!.articleNames)">《{{ aname }}》</div>
-            </div>
+          <bl-col v-if="!isEmpty(picInfo!.articleLinks)" align="flex-start">
+            <div v-for="article in picInfo!.articleLinks">《{{ article.name }}》</div>
+          </bl-col>
+          <bl-row v-else>
+            <div>无</div>
           </bl-row>
         </div>
         <el-divider></el-divider>
@@ -80,10 +69,6 @@
               </el-button>
             </el-upload>
           </el-tooltip>
-
-          <el-button type="primary" text style="--el-fill-color: #535353; --el-fill-color-light: #414141" @click="download(picInfo!.url)"
-          >下载图片</el-button
-          >
         </div>
       </div>
     </el-image-viewer>
@@ -96,13 +81,12 @@ import { ElMessageBox, UploadProps } from 'element-plus'
 import { ArrowLeftBold, ArrowRightBold, WarnTriangleFilled } from '@element-plus/icons-vue'
 import { useUserStore } from '@renderer/stores/user'
 import { useServerStore } from '@renderer/stores/server'
-import { pictureDelApi, pictureInfoApi, uploadFileApiUrl } from '@renderer/api/blossom'
-import { articleNamesToArray, Picture, buildDefaultPicture, onError, beforeUpload, picCacheWrapper, picCacheRefresh } from './scripts/picture'
+import { pictureDelApi, uploadFileApiUrl } from '@renderer/api/blossom'
+import { DefaultPicture, onError, beforeUpload, picCacheWrapper, picCacheRefresh } from './scripts/picture'
 import { formatFileSize, isHttp } from '@renderer/assets/utils/util'
-import { isNotNull } from '@renderer/assets/utils/obj'
-import { isEmpty } from 'lodash'
-import { download, writeText } from '@renderer/assets/utils/electron'
+import { writeText } from '@renderer/assets/utils/electron'
 import Notify from '@renderer/scripts/notify'
+import { isEmpty } from '@renderer/assets/utils/obj'
 
 const userStore = useUserStore()
 const serverStore = useServerStore()
@@ -112,7 +96,7 @@ const isShowPicInfo = ref(false)
 // 图片地址
 const picUrl = ref('')
 // 图片信息
-const picInfo = ref<Picture | null>(buildDefaultPicture())
+const picInfo = ref<Picture | null>(new DefaultPicture())
 // 当前可预览的图片列表
 const pictureList = ref<Picture[]>([])
 // 当前索引
@@ -122,18 +106,10 @@ let lastInfoUrl = ''
 const hasPrev = computed(() => activeIndex.value > 0)
 const hasNext = computed(() => activeIndex.value < pictureList.value.length - 1)
 
-const loadPicInfo = (url: string) => {
-  picUrl.value = url
-  if (!isHttp(url)) {
-    picInfo.value = null
-    return
-  }
-  lastInfoUrl = url
-  pictureInfoApi({ url: url }).then((resp) => {
-    if (lastInfoUrl === url) {
-      picInfo.value = resp.data
-    }
-  })
+const loadPicInfo = (pic: Picture) => {
+  picInfo.value = pic
+  picUrl.value = pic.localProtocolPath
+  lastInfoUrl = pic.localProtocolPath
 }
 
 const setActiveIndex = (index: number) => {
@@ -141,7 +117,7 @@ const setActiveIndex = (index: number) => {
     return
   }
   activeIndex.value = index
-  loadPicInfo(pictureList.value[activeIndex.value].url)
+  loadPicInfo(pictureList.value[activeIndex.value])
 }
 
 const showPicInfo = (pictures: Picture[], picId: string) => {
@@ -149,10 +125,10 @@ const showPicInfo = (pictures: Picture[], picId: string) => {
     return
   }
   pictureList.value = pictures
-  const idx = pictureList.value.findIndex((pic) => pic.id === picId)
+  const idx = pictureList.value.findIndex((pic: { id: string }) => pic.id === picId)
   activeIndex.value = idx === -1 ? 0 : idx
   isShowPicInfo.value = true
-  loadPicInfo(pictureList.value[activeIndex.value].url)
+  loadPicInfo(pictureList.value[activeIndex.value])
 }
 
 const showPrev = () => {
@@ -171,7 +147,7 @@ const showNext = () => {
 
 const closePicInfo = () => {
   isShowPicInfo.value = false
-  picInfo.value = buildDefaultPicture()
+  picInfo.value = new DefaultPicture()
   pictureList.value = []
   activeIndex.value = 0
 }
@@ -233,7 +209,9 @@ const emits = defineEmits(['saved'])
     gap: 6px;
     cursor: pointer;
     font-size: 14px;
-    transition: background-color 0.2s ease, opacity 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      opacity 0.2s ease;
 
     &:hover {
       background-color: rgba(0, 0, 0, 0.65);

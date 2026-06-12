@@ -13,3 +13,10 @@ export const checkDocLibConfig = (params?: Base): Promise<R<DocTree[]>> => {
 export const openFileLocation = (filePath: string): Promise<R<void>> => {
   return window.electronAPI.openFileLocation(filePath)
 }
+
+/**
+ * 文章数和文章字数统计
+ */
+export const doclibStatsApi = (params?: Base): Promise<R<any>> => {
+  return invoke('doclib-stats', params)
+}

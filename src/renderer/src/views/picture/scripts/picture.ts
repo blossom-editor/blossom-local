@@ -1,52 +1,34 @@
 import pinia from '@renderer/stores/store-config'
-import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
 import type { UploadProps, UploadRawFile } from 'element-plus'
-import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
+import { isBlank, isNotBlank, isNull } from '@renderer/assets/utils/obj'
 import Notify from '@renderer/scripts/notify'
-import { uploadFileApi } from '@renderer/api/blossom'
-import { getFilePrefix, getFileSuffix, getNowTime, parseQueryParams, randomInt } from '@renderer/assets/utils/util'
+import { getFilePrefix, getFileSuffix, getNowTime, isHttp, parseQueryParams, randomInt } from '@renderer/assets/utils/util'
+import { fileBuffSave } from '@renderer/api/picture'
 
 const { picStyle } = useConfigStore(pinia)
-const userStore = useUserStore(pinia)
-
-/**
- * Picture Object
- */
-export interface Picture {
-  creTime: string
-  id: string
-  name: string
-  pathName: string
-  pid: string
-  size: number
-  sourceName: string
-  starStatus: number
-  url: string
-  articleNames: string
-  delTime: number
-  checked: boolean
-}
 
 /**
  * 获取一个默认的图片实现
  * @returns
  */
-export const buildDefaultPicture = (): Picture => {
-  return {
-    id: '0',
-    pid: '0',
-    sourceName: '',
-    starStatus: 0,
-    name: '',
-    size: 0,
-    pathName: '',
-    creTime: '',
-    url: '',
-    articleNames: '',
-    delTime: 0,
-    checked: false
-  }
+export class DefaultPicture implements Picture {
+  id = ''
+  type: DocType = 'PICTURE'
+  name = ''
+  suffix = ''
+  formatName = '' // 无后缀名称
+  path = ''
+  folderPath = ''
+  localProtocolPath = ''
+  size = 0
+  icon = ''
+  updn = false
+  checked = false
+  delTime: 0 | 1 | 2 = 0
+  creTime = ''
+  updTime = ''
+  articleLinks = []
 }
 
 /**
@@ -75,18 +57,18 @@ export const wrapperFilename = (name: string): string => {
  * @param callback 上传回调
  * @returns 返回文件路径
  */
-export const uploadForm = (file: File, pid: string, callback: UploadCallback) => {
-  if (file.size / 1024 / 1024 > picStyle.maxSize) {
-    Notify.error(`文件大小不能超过 ${picStyle.maxSize}MB!`, '上传失败')
-  } else {
-    const form = new FormData()
-    form.append('file', file)
-    form.append('filename', wrapperFilename(file.name))
-    form.append('pid', pid)
-    uploadFileApi(form).then((resp) => {
-      callback(resp.data)
+export const uploadForm = (articleId: string, file: File, callback: UploadCallback) => {
+  file.arrayBuffer().then((buffer) => {
+    const req: FileBuffSaveReq = {
+      targetDocId: articleId,
+      fileBuffer: buffer,
+      fileName: file.name
+    }
+
+    fileBuffSave(req).then((resp) => {
+      callback(resp.data!.filePath!)
     })
-  }
+  })
 }
 
 /**
@@ -109,10 +91,6 @@ export const uploadDate = (rawFile: UploadRawFile, pid: string, repeatUpload: bo
  * @returns
  */
 export const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
-  if (rawFile.size / 1024 / 1024 > picStyle.maxSize) {
-    Notify.error(`文件大小不能超过 ${picStyle.maxSize}MB!`, '上传失败')
-    return false
-  }
   return true
 }
 
@@ -170,19 +148,6 @@ export const handleUploadError = (error: Error) => {
     }
   }
 }
-/**
- * 图片引用文章转为数组拼接转
- *
- * @param names 文章名称拼接的字符串
- * @returns
- */
-export const articleNamesToArray = (names: string): string[] => {
-  if (isBlank(names)) {
-    return []
-  }
-  let result = names.split(',').filter((name) => isNotBlank(name))
-  return result
-}
 
 //#region 图片缓存控制
 
@@ -198,7 +163,7 @@ export const picCacheRefresh = () => {
  * 图片路径包装
  * 如果是 blossom 存储的图片, 会增加 picCache 参数, 用来清理缓存
  */
-export const picCacheWrapper = (url: string) => {
+export const picCacheWrapper = (url: string): string => {
   const params: Record<string, string> | null = parseQueryParams(url)
 
   if (params) {
@@ -213,4 +178,9 @@ export const picCacheWrapper = (url: string) => {
   // }
 }
 
-//#endregion
+export const protocolWrapper = (path: string) => {
+  if (!isHttp(path)) {
+    return 'blossom:\\' + path
+  }
+  return path
+}

@@ -8,6 +8,7 @@ import icon from '../../resources/imgs/icon.ico?asset'
 import printScreen from './printScreen'
 import ShortcutRegistrant from './shortcut'
 import { initProtocol } from './customProtocol'
+import { initPictureApi } from './picture/api'
 
 // 主窗口
 let mainWindow: BrowserWindow | undefined
@@ -160,6 +161,7 @@ function createMainWindow(): void {
   // 注册各类业务接口
   initDocLibApi()
   initArticleApi()
+  initPictureApi()
   // 注册全局快捷键 printScreen:截屏快捷键
   new ShortcutRegistrant(mainWindow).printScreen()
   console.log('============================================================')

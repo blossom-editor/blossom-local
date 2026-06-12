@@ -134,21 +134,9 @@
         class="editor-right-menu"
         :style="{ left: editorRightMenu.clientX + 'px', top: editorRightMenu.clientY + 'px' }">
         <div class="menu-content">
-          <div v-if="isElectron()" class="menu-item" @click="rightMenuCopy"><span class="iconbl bl-copy-line"></span>复制</div>
-          <div v-if="isElectron()" class="menu-item" @click="rightMenuPaste"><span class="iconbl bl-a-texteditorpastetext-line"></span>黏贴</div>
-          <div class="menu-item">
-            <el-upload
-              name="file"
-              :action="serverStore.serverUrl + uploadFileApiUrl"
-              :data="(f: UploadRawFile) => uploadDate(f, curArticle!.pid)"
-              :headers="{ Authorization: 'Bearer ' + userStore.auth.token }"
-              :show-file-list="false"
-              :before-upload="beforeUpload"
-              :on-success="onUploadSeccess"
-              :on-error="onError">
-              <bl-row><span class="iconbl bl-image--line"></span>插入图片</bl-row>
-            </el-upload>
-          </div>
+          <div class="menu-item" @click="rightMenuCopy"><span class="iconbl bl-copy-line"></span>复制</div>
+          <div class="menu-item" @click="rightMenuPaste"><span class="iconbl bl-a-texteditorpastetext-line"></span>黏贴</div>
+          <div class="menu-item" @click="selectPicAndMove"><span class="iconbl bl-image--line"></span>插入图片</div>
           <div class="menu-item" @click="upper"><span class="iconbl bl-daxie"></span>大写</div>
           <div class="menu-item" @click="lower"><span class="iconbl bl-xiaoxie"></span>小写</div>
           <div class="menu-item" @click="formatTable"><span class="iconbl bl-transcript-line"></span>格式化选中表格</div>
@@ -183,11 +171,9 @@
 // vue
 import { ref, computed, provide, onMounted, onBeforeUnmount, onActivated, onDeactivated, defineAsyncComponent, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import type { UploadProps, UploadRawFile } from 'element-plus'
 import { useUserStore } from '@renderer/stores/user'
-import { useServerStore } from '@renderer/stores/server'
 import { useConfigStore } from '@renderer/stores/config'
-import { articleInfoApi, saveArticleContentApi, uploadFileApiUrl } from '@renderer/api/blossom'
+import { articleInfoApi, saveArticleContentApi } from '@renderer/api/blossom'
 // utils
 import { Local } from '@renderer/assets/utils/storage'
 import { isBlank, isNull } from '@renderer/assets/utils/obj'
@@ -206,7 +192,7 @@ import type { shortcutFunc } from '@renderer/scripts/shortcut-register'
 import { treeToInfo, provideKeyDocInfo, provideKeyCurArticleInfo, isArticle } from '@renderer/views/doc/doc'
 import { TempTextareaKey, ArticleReference, parseTocAsync, countWords } from './scripts/article'
 import type { Toc } from './scripts/article'
-import { beforeUpload, onError, picCacheWrapper, picCacheRefresh, uploadForm, uploadDate } from '@renderer/views/picture/scripts/picture'
+import { picCacheWrapper, picCacheRefresh, uploadForm, DefaultPicture } from '@renderer/views/picture/scripts/picture'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
 // codemirror
 import { CmWrapper } from './scripts/codemirror'
@@ -216,11 +202,12 @@ import { EPScroll } from './scripts/editor-preview-scroll'
 import { useArticleHtmlEvent } from './scripts/article-html-event'
 import { shallowRef } from 'vue'
 import { keymaps } from './scripts/editor-tools'
+import { selectPicAndMoveDialog } from '@renderer/api/picture.js'
+import { noRanderTemplate } from './scripts/noRanderTemplate.js'
 
 //#region -- mounted
 
 const PictureViewerInfo = defineAsyncComponent(() => import('@renderer/views/picture/PictureViewerInfo.vue'))
-// const EditorTools = defineAsyncComponent(() => import('./EditorTools.vue'))
 const EditorStatus = defineAsyncComponent(() => import('./EditorStatus.vue'))
 let isMounted = false
 
@@ -253,7 +240,6 @@ onDeactivated(() => {
 })
 
 const userStore = useUserStore()
-const serverStore = useServerStore()
 const { editorStyle } = useConfigStore()
 
 watch(
@@ -369,8 +355,10 @@ useResizeVertical(EditorRef, PreviewRef, ResizeEditorDividerRef, EditorOperatorR
 
 //#region ----------------------------------------< 图片管理 >--------------------------------------
 const PictureViewerInfoRef = ref()
-const showPicInfo = (url: string) => {
-  PictureViewerInfoRef.value.showPicInfo(url)
+const showPicInfo = (path: string) => {
+  const picList = [new DefaultPicture()]
+  picList[0].localProtocolPath = path
+  PictureViewerInfoRef.value.showPicInfo(picList, path)
 }
 const refreshCache = () => {
   picCacheRefresh()
@@ -378,16 +366,15 @@ const refreshCache = () => {
 }
 
 /**
- * 右键菜单的上传回调
- * @param resp
- * @param file
+ * 右键选择图片上传
  */
-const onUploadSeccess: UploadProps['onSuccess'] = (resp, file) => {
-  if (resp.code === '20000') {
-    cmw.insertBlockCommand(`\n![${file.name}](${resp.data})\n`)
-  } else {
-    Notify.error(resp.msg, '上传失败')
-  }
+const selectPicAndMove = () => {
+  const req: SelectPicAndMoveReq = { targetDocId: curArticle.value!.id, cover: true }
+  selectPicAndMoveDialog(req).then((resp) => {
+    if (resp.code === '20000' && resp.data) {
+      cmw.insertBlockCommand(`\n![${resp.data.fileName}](${resp.data.fileName})\n`)
+    }
+  })
 }
 
 /**
@@ -395,7 +382,7 @@ const onUploadSeccess: UploadProps['onSuccess'] = (resp, file) => {
  * @param file 文件
  */
 const uploadFile = (file: File) => {
-  uploadForm(file, curArticle.value!.pid, (url: string) => {
+  uploadForm(curArticle.value!.id, file, (url: string) => {
     cmw.insertBlockCommand(`\n![${file.name}](${url})\n`)
   })
 }
@@ -504,7 +491,7 @@ const clickCurDoc = async (tree: DocTree) => {
         setNewState('')
       } else {
         curArticle.value!.words = countWords(resp.data!.markdown!)
-        setNewState(resp.data!.markdown!)
+        setNewState(resp.data!.markdown!, curArticle.value!.words)
       }
     })
     .finally(() => {
@@ -636,7 +623,7 @@ const initEditor = (_doc?: string) => {
  * 将 markdown 原文设置到编辑器中, 并且会重置编辑器状态
  * @param md markdown
  */
-const setNewState = (md: string): void => {
+const setNewState = (md: string, words: number = 0): void => {
   cmw.setState(
     CmWrapper.newState(
       () => {
@@ -650,7 +637,16 @@ const setNewState = (md: string): void => {
       md
     )
   )
-  parse()
+  if (words < 200000) {
+    parse()
+    openSyncScroll()
+  } else {
+    clearTocAndImg()
+    closeSyncScroll()
+    articleToc.value = []
+    renderAsync.value = { need: 0, done: 0 }
+    articleHtml.value = noRanderTemplate
+  }
 }
 
 /**
@@ -709,12 +705,10 @@ const renderer = {
   },
   image(href: string | null, title: string | null, text: string): string {
     const imageProtocolPrefix = 'blossom:\\'
-
     if (!isHttp(href)) {
       href = imageProtocolPrefix + href + '?blossom_article_id=' + curArticle.value!.id
     }
-
-    articleImg.value.push({ targetId: '0', targetName: text, targetUrl: href as string, type: 10 })
+    articleImg.value.push({ targetId: curArticle.value!.id, targetName: text, targetUrl: href as string, type: 10 })
     return renderImage(href, title, text)
   },
   link(href: string, title: string | null | undefined, text: string): string {
@@ -821,7 +815,17 @@ const removeListenerScroll = () => EditorRef.value.removeEventListener('scroll',
 const scrollTop = () => scrollWrapper.toTop()
 const scrollBottom = () => scrollWrapper.toBottom()
 const handleSyncScroll = () => {
-  editorOperator.value.sycnScroll = scrollWrapper.open()
+  editorOperator.value.sycnScroll = scrollWrapper.switchOpen()
+}
+
+const openSyncScroll = () => {
+  editorOperator.value.sycnScroll = true
+  scrollWrapper.open()
+}
+
+const closeSyncScroll = () => {
+  editorOperator.value.sycnScroll = false
+  scrollWrapper.close()
 }
 
 //#endregion

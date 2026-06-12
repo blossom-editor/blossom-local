@@ -5,6 +5,7 @@ export class FileItem {
 
   constructor(id: string, path: string, type: 'ARTICLE' | 'FOLDER' | 'PICTURE') {
     this.id = id
+    // 包含文件名的路径
     this.path = path
     this.type = type
   }

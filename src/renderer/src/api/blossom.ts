@@ -13,14 +13,6 @@ export const selectDocLibFolderDialog = (): Promise<R<DocLibItem>> => {
   return window.electronAPI.selectDocLibFolderDialog()
 }
 
-/**
- * 文章数和文章字数统计
- * @param params
- * @returns
- */
-export const articleWordsApi = (params?: object): Promise<R<any>> => {
-  return invoke('doclib-stats-words')
-}
 
 /**
  * 文章字数折线图
@@ -41,7 +33,7 @@ export const articleHeatmapApi = (params?: object): Promise<R<any>> => {
 }
 
 /**
- * 通用文件选择框, 用于选择图片等
+ * 通用文件选择框
  * 通常会默认填充 docLibPath, 但设置文档库的图标时, 需要手动添加文档库路径
  */
 export const selectFileAndMoveDialog = (params: SelectFileAndMoveReq): Promise<R<SelectFileAndMoveRes>> => {
@@ -452,14 +444,14 @@ export const picturePageApi = (params?: object): Promise<R<any>> => {
   return rq.get<R<any>>('/picture/page', { params })
 }
 
-/**
- * 图片详情
- * @param params
- * @returns
- */
-export const pictureInfoApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/picture/info', { params })
-}
+// /**
+//  * 图片详情
+//  * @param params
+//  * @returns
+//  */
+// export const pictureInfoApi = (params?: object): Promise<R<any>> => {
+//   return rq.get<R<any>>('/picture/info', { params })
+// }
 
 /**
  * 星标图片

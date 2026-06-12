@@ -10,6 +10,25 @@ export const provideKeyDocTree = Symbol() as InjectionKey<Ref<DocTree[]>>
 export const provideKeyDocInfo = Symbol() as InjectionKey<Ref<DocInfo | undefined>>
 export const provideKeyCurArticleInfo = Symbol() as InjectionKey<Ref<DocInfo | undefined>>
 
+export class DefaultDocTree implements DocTree {
+  id = ''
+  type: DocType = 'PICTURE'
+  name = ''
+  formatName = '' // 无后缀名称
+  // 完整的路径, 包含路径和文件名
+  path = ''
+  // 文件或文件夹所在的文件夹, 路径中不包含自身
+  folderPath = ''
+  size = 0
+  icon = ''
+  updn = false
+  creTime = ''
+  updTime = ''
+  children = []
+  // 子文件数量, 不包含文件夹
+  childrenFileCount = 0
+}
+
 /**
  * 将 docTree 对象转换为 docInfo
  * @param tree DocTree

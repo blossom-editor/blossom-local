@@ -10,15 +10,6 @@
     transition: height 0.1s;
     left: 0;
     top: 0;
-
-    .doc-tree-menu-container {
-      @include box(100%, calc(100% - 239px));
-    }
-
-    .doc-upload {
-      @include box(100%, 239px);
-      border-top: 1px solid var(--el-border-color);
-    }
   }
 
   .picture-container {

@@ -2,6 +2,7 @@
  * 保存全局文档库路径
  */
 export class CurDocLibManager {
+  /** 文档库路径 */
   private path: string | undefined
   private static instance: CurDocLibManager
 
@@ -17,6 +18,7 @@ export class CurDocLibManager {
   }
 
   public change(path: string): void {
+    console.log('变更文档库:', path)
     this.path = path
   }
 }

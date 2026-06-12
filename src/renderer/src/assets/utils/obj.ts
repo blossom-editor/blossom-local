@@ -49,3 +49,7 @@ export const isBlank = (str: string | undefined | null): boolean => {
 export const isNotBlank = (str: string | undefined | null): boolean => {
   return !isBlank(str)
 }
+
+export const isEmpty = (arr: any[] | null | undefined): boolean => {
+  return !arr || arr.length === 0
+}
