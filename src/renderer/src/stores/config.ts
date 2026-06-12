@@ -50,6 +50,8 @@ export interface ViewStyle {
   isShowAsideLogo: boolean
   // 显示简易左侧菜单
   isShowAsideSimple: boolean
+  // 显示文件夹下的文件数量
+  isShowFolderFileCount: boolean
 }
 
 /**
@@ -66,6 +68,8 @@ export interface EditorStyle {
   isAutoBreakLine: boolean
   // 是否显示代码块行数
   isShowPreLineNumber: boolean
+  // 最大渲染字数
+  maxWordsCount: number
 }
 
 /**
@@ -113,7 +117,8 @@ export const useConfigStore = defineStore('configStore', {
         fontSize: '14px',
         defaultPreLanguage: '',
         isAutoBreakLine: true,
-        isShowPreLineNumber: false
+        isShowPreLineNumber: false,
+        maxWordsCount: 200000
       },
       ...Local.get(EDITOR_STYLE_KEY)
     },
@@ -121,6 +126,7 @@ export const useConfigStore = defineStore('configStore', {
     picStyle: {
       ...{
         maxSize: 50,
+        isAddSuffix: true,
         picLinkStyle: 'NAME'
       },
       ...Local.get(PIC_STYLE_KEY)
@@ -147,7 +153,8 @@ export const useConfigStore = defineStore('configStore', {
         isShowFolderOpenTag: true,
         isShowAsideUpload: true,
         isShowAsideLogo: true,
-        isShowAsideSimple: false
+        isShowAsideSimple: false,
+        isShowFolderFileCount: false
       },
       ...Local.get(VIEW_STYLE_KEY)
     },

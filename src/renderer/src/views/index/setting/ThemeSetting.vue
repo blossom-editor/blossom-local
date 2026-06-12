@@ -92,71 +92,65 @@
             </el-button-group>
           </bl-row>
 
-          <bl-row class="prop-row">
-            <div class="conf-tip" style="font-size: 15px">修改主题后, 再次切换日间/夜间模式可查看完整效果。</div>
-          </bl-row>
+          <div class="conf-tip" style="font-size: 13px; border: none; margin: 10px 0 0 0">修改主题后, 再次切换日间/夜间模式可查看完整效果。</div>
         </el-tab-pane>
         <!--
 
-
+        ==========================================================================================
 
         -->
         <el-tab-pane name="article" label="编辑器">
           <div class="tab-pane-content">
             <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">编辑器字体</div>
-              </div>
-              <bl-col>
-                <el-input v-model="configEditorStyleForm.fontFamily" size="default" @input="changeEditorStyle"></el-input>
-                <div class="conf-tip">文章的字体样式。中英文等宽字体在表格中会有更好的样式表现</div>
-              </bl-col>
+              <div class="prop"><div class="prop-name">编辑器字体</div></div>
+              <el-input v-model="configEditorStyleForm.fontFamily" size="default" @input="changeEditorStyle"></el-input>
             </bl-row>
+            <div class="conf-tip">文章的字体样式。中英文等宽字体在表格中会有更好的样式表现</div>
+
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop"><div class="prop-name">编辑器字体大小</div></div>
+              <el-input v-model="configEditorStyleForm.fontSize" size="default" @input="changeEditorStyle">
+                <template #append>单位 px</template>
+              </el-input>
+            </bl-row>
+            <div class="conf-tip">文章的字体大小。</div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
-                <div class="prop-name">编辑器字体大小</div>
+                <div class="prop-name">文档列表字体大小</div>
               </div>
-              <bl-col style="width: 100%">
-                <el-input v-model="configEditorStyleForm.fontSize" size="default" @input="changeEditorStyle">
-                  <template #append>单位 px</template>
-                </el-input>
-                <bl-row class="conf-tip">文章的字体大小。</bl-row>
-              </bl-col>
+              <el-input v-model="configViewStyleForm.treeDocsFontSize" size="default" @input="changeViewStyle">
+                <template #append>单位 px</template>
+              </el-input>
             </bl-row>
-
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">文档菜单字体大小</div>
-              </div>
-              <bl-col style="width: 100%">
-                <el-input v-model="configViewStyleForm.treeDocsFontSize" size="default" @input="changeViewStyle">
-                  <template #append>单位 px</template>
-                </el-input>
-                <bl-row class="conf-tip">左侧树状菜单的字体大小。</bl-row>
-              </bl-col>
-            </bl-row>
+            <div class="conf-tip">左侧树状列表的字体大小。</div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
                 <div class="prop-name">代码块默认语言</div>
               </div>
-              <bl-col>
-                <el-input v-model="configEditorStyleForm.defaultPreLanguage" size="default" @input="changeEditorStyle"> </el-input>
-                <div class="conf-tip">通过快捷键和工具栏按钮生成多行代码块<code>```</code>时的默认语言。</div>
-              </bl-col>
+              <el-input v-model="configEditorStyleForm.defaultPreLanguage" size="default" @input="changeEditorStyle"> </el-input>
             </bl-row>
+            <div class="conf-tip">通过快捷键和工具栏按钮生成多行代码块<code>```</code>时的默认语言。</div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
                 <div class="prop-name">最大渲染字数</div>
               </div>
-
-              <bl-col>
-                <el-input v-model="configEditorStyleForm.defaultPreLanguage" size="default" @input="changeEditorStyle"> </el-input>
-                <div class="conf-tip">为防止渲染时卡顿, 文章正文超过该字数后将禁止自动渲染.</div>
-              </bl-col>
+              <el-input-number
+                v-model="configEditorStyleForm.maxWordsCount"
+                :min="0"
+                :max="200000"
+                :step="5000"
+                size="default"
+                style="width: 100%"
+                @change="changeEditorStyle">
+                <template #suffix>
+                  <span>字数</span>
+                </template>
+              </el-input-number>
             </bl-row>
+            <div class="conf-tip">为防止渲染时卡顿, 文章正文超过该字数后将禁止自动渲染, 最大200,000字</div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
@@ -164,6 +158,7 @@
               </div>
               <el-switch v-model="configEditorStyleForm.isShowPreLineNumber" size="default" style="margin-right: 10px" @change="changeEditorStyle" />
             </bl-row>
+            <div class="conf-tip"></div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
@@ -171,44 +166,47 @@
               </div>
               <el-switch v-model="configViewStyleForm.isMenuUniqueOpened" size="default" style="margin-right: 10px" @change="changeViewStyle" />
             </bl-row>
+            <div class="conf-tip"></div>
 
-            <!-- ========================================================================================================================= -->
-            <el-divider><span class="iconbl bl-picture-line"></span>图片管理</el-divider>
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">显示文件数量</div>
+              </div>
+              <el-switch v-model="configViewStyleForm.isShowFolderFileCount" size="default" style="margin-right: 10px" @change="changeViewStyle" />
+            </bl-row>
+            <div class="conf-tip">开启后，文件列表会显示文件夹下的文章或图片数量。</div>
+
+            <!--
+            =========================================================================================================================
+            -->
+            <div class="config-module-titile"><span class="iconbl bl-picture-line"></span>图片管理</div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
                 <div class="prop-name">图片上传后重命名</div>
               </div>
-              <bl-col>
-                <bl-row just="flex-end">
-                  <el-switch v-model="configPicStyleForm.isAddSuffix" size="default" style="margin-right: 10px" @change="changePicStyle" />
-                </bl-row>
-                <div class="conf-tip">开启后，会自动为上传的图片增加后缀，如:image_20230101_123015_000.png。</div>
-              </bl-col>
+              <el-switch v-model="configPicStyleForm.isAddSuffix" size="default" style="margin-right: 10px" @change="changePicStyle" />
             </bl-row>
+            <div class="conf-tip">开启后，会自动为上传的图片增加后缀，如:<code>image_20230101_123015_000.png.</code></div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
                 <div class="prop-name">图片链接格式</div>
               </div>
-
-              <bl-col>
-                <bl-row just="flex-end">
-                  <el-radio-group v-model="configPicStyleForm.picLinkStyle" size="small">
-                    <el-radio-button label="文件名(推荐)" value="NAME" />
-                    <el-radio-button label="绝对路径" value="ABSOLUTE_PATH" />
-                  </el-radio-group>
-                </bl-row>
-                <div class="conf-tip">
-                  <div v-if="configPicStyleForm.picLinkStyle === 'NAME'">
-                    <span class="blod">推荐方式</span>, 图片链接只包含文件名, 由 Blossom 自动寻找图片.
-                  </div>
-                  <div v-else-if="configPicStyleForm.picLinkStyle === 'ABSOLUTE_PATH'">文件的绝对路径, 文件移动后可能导致图片读取错误.</div>
-                </div>
-              </bl-col>
+              <el-radio-group v-model="configPicStyleForm.picLinkStyle" size="small" @change="changePicStyle">
+                <el-radio-button label="文件名" value="NAME" />
+                <el-radio-button label="绝对路径" value="ABSOLUTE_PATH" />
+                <el-radio-button label="相对路径" value="ABSOLUTE_PATH" disabled />
+              </el-radio-group>
             </bl-row>
+            <div class="conf-tip">
+              <div v-if="configPicStyleForm.picLinkStyle === 'NAME'">
+                <span class="blod">推荐方式</span>, 图片链接只包含文件名, 由 Blossom 自动寻找图片.
+              </div>
+              <div v-else-if="configPicStyleForm.picLinkStyle === 'ABSOLUTE_PATH'">文件的绝对路径, 文件移动后可能导致图片读取错误.</div>
+            </div>
 
-            <el-divider><span class="iconbl bl-apps-line"></span>其他功能</el-divider>
+            <div class="config-module-titile"><span class="iconbl bl-apps-line"></span>其他功能</div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
@@ -230,6 +228,9 @@
 
 
         -->
+
+        <el-tab-pane name="keys" label="钥匙串"></el-tab-pane>
+
         <el-tab-pane label="待办" name="todo" v-if="false">
           <bl-row class="prop-row" just="flex-end">
             <div class="prop-name" style="width: 80px; text-align: center">日间</div>
@@ -458,11 +459,13 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
     }
 
     .config-module-titile {
+      @include flex(row, center, center);
       font-size: 20px;
+      text-align: center;
       padding-bottom: 5px;
+      margin-top: 40px;
       margin-bottom: 10px;
       color: var(--bl-text-color);
-      border-bottom: 1px solid var(--el-border-color);
       .iconbl {
         font-size: 25px;
         margin-right: 10px;
@@ -516,13 +519,39 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
 
   .prop-row {
     align-items: flex-start;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 
     .prop {
       @include flex(column, flex-start, flex-start);
       width: 130px;
       min-width: 130px;
       margin-top: 5px;
+    }
+
+    .el-input {
+      width: 100%;
+      .el-input-group__append {
+        padding: 0 5px;
+      }
+    }
+    .el-switch {
+      height: 24px;
+    }
+  }
+
+  .conf-tip {
+    @include font(12px, 500);
+    min-height: 26px;
+    color: var(--bl-text-color-light);
+    border-bottom: 1px solid var(--el-border-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+    word-break: break-all;
+
+    .blod {
+      font-weight: 700;
+      color: var(--el-color-primary);
+      font-style: italic;
     }
 
     code {
@@ -533,23 +562,6 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
       border-radius: 3px;
       margin: 0 5px;
       user-select: text;
-    }
-
-    .conf-tip {
-      @include font(12px, 500);
-      color: var(--bl-text-color-light);
-      .blod {
-        font-weight: 700;
-        color: var(--el-color-primary);
-        font-style: italic;
-      }
-    }
-
-    .el-input {
-      width: 100%;
-    }
-    .el-switch {
-      height: 24px;
     }
   }
 }
