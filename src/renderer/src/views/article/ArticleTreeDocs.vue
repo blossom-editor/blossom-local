@@ -183,7 +183,7 @@ import {
 import { grammar } from './scripts/markedjs'
 import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
 import { getChildFileCountColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
-import { tagLins, isShowImg, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
+import { tagLins, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
 // util

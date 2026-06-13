@@ -3,7 +3,7 @@
     <AppHeader simple></AppHeader>
   </div>
   <div class="article-view-window-root">
-    <div class="preview bl-preview" :style="editorStyle" v-html="article?.html" ref="WindowPreviewRef" style="margin-right: 5px"></div>
+    <div class="preview bl-preview" :style="editorStyle" v-html="articleHtml" ref="WindowPreviewRef" style="margin-right: 5px"></div>
     <el-backtop target=".preview" :right="350" :bottom="50">
       <div class="iconbl bl-a-doubleonline-line backtop"></div>
     </el-backtop>
@@ -30,7 +30,10 @@ import { useRoute } from 'vue-router'
 import { articleInfoApi } from '@renderer/api/blossom'
 import { useConfigStore } from '@renderer/stores/config'
 import { parseTocAsync } from './scripts/article'
+import { isHttp } from '@renderer/assets/utils/util'
+import { protocolWrapper } from '../picture/scripts/picture'
 import type { Toc } from './scripts/article'
+import marked, { renderBlockquote, renderCode, renderCodespan, renderHeading, renderImage, renderTable, renderLink } from './scripts/markedjs'
 import AppHeader from '@renderer/components/AppHeader.vue'
 
 const configStore = useConfigStore()
@@ -52,18 +55,70 @@ const toScroll = (id: string) => {
 }
 
 const initPreview = (articleId: string) => {
-  articleInfoApi({ id: articleId, showToc: false, showMarkdown: false, showHtml: true }).then((resp) => {
+  articleInfoApi({ id: articleId }).then((resp) => {
     article.value = resp.data
-    document.title = `《${resp.data.name}》`
-    nextTick(() => initToc())
+    document.title = `《${resp.data!.name}》`
+    nextTick(() => {
+      parse(article.value!.markdown!)
+    })
   })
 }
 
-const initToc = () => {
-  parseTocAsync(WindowPreviewRef.value).then((toc) => {
-    tocs.value = toc
-  })
+//#region ----------------------------------------< marked/preview >-------------------------------
+const articleHtml = ref('') // 解析后的 html 内容
+const renderAsync = ref({ need: 0, done: 0 })
+/**
+ * 自定义渲染
+ */
+const renderer = {
+  table(header: string, body: string): string {
+    return renderTable(header, body)
+  },
+  blockquote(quote: string): string {
+    return renderBlockquote(quote)
+  },
+  codespan(src: string): string {
+    return renderCodespan(src)
+  },
+  code(code: string, language: string | undefined, _isEscaped: boolean): string {
+    return renderCode(code, language, _isEscaped, renderAsync.value)
+  },
+  heading(text: string, level: number, raw: string): string {
+    return renderHeading(text, level, raw)
+  },
+  image(href: string | null, title: string | null, text: string): string {
+    if (!isHttp(href)) href = protocolWrapper(href as string)
+    return renderImage(href, title, text)
+  },
+  link(href: string, title: string | null | undefined, text: string): string {
+    let { link, ref } = renderLink(href, title, text, [])
+    return link
+  }
 }
+
+marked.use({ renderer: renderer })
+
+/**
+ * 解析 markdown 为 html, 并将 html 赋值给 articleHtml
+ */
+const parse = (markdown: string) => {
+  let mdContent = markdown
+  renderAsync.value = { need: 0, done: 0 }
+  marked
+    .parse(mdContent, { async: true })
+    .then((content: string) => {
+      articleHtml.value = content
+    })
+    .then(() => {
+      nextTick(() => {
+        parseTocAsync(WindowPreviewRef.value).then((toc) => {
+          tocs.value = toc
+        })
+      }).then(() => {})
+    })
+}
+
+//#endregion
 
 onMounted(() => {
   initPreview(route.query.articleId as string)

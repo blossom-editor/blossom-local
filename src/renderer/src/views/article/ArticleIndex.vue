@@ -2,19 +2,10 @@
   <div class="index-article-root">
     <!-- folder menu -->
     <div class="doc-container" ref="DocsRef" v-show="docsExpand">
-      <div class="doc-tree-menu-container" :style="tempTextareaStyle.docTree">
+      <div class="doc-tree-menu-container">
         <ArticleTreeDocs @click-doc="clickCurDoc" @clear-cur-doc="clearCurDoc" ref="ArticleTreeDocsRef"></ArticleTreeDocs>
       </div>
-
-      <div class="doc-temp-textarea">
-        <bl-row just="space-between" height="28px" class="doc-temp-textarea-workbench">
-          <!-- <bl-row><img src="@renderer/assets/imgs/note/cd.png" />临时内容(可从便签快速设置)</bl-row> -->
-          <!-- <div class="iconbl bl-subtract-line" @click="tempTextareaExpand = !tempTextareaExpand"></div> -->
-        </bl-row>
-        <bl-row class="doc-temp-textarea-input" :style="tempTextareaStyle.tempTextarea">
-          <el-input v-model="tempTextarea" type="textarea" resize="none" @input="tempInput"></el-input>
-        </bl-row>
-      </div>
+      <div class="doc-tree-bottom"></div>
     </div>
     <div class="resize-divider-vertical" ref="ResizeDocsDividerRef"></div>
     <!-- editor -->
@@ -169,13 +160,12 @@
 
 <script setup lang="ts">
 // vue
-import { ref, computed, provide, onMounted, onBeforeUnmount, onActivated, onDeactivated, defineAsyncComponent, watch, nextTick } from 'vue'
+import { ref, provide, onMounted, onBeforeUnmount, onActivated, onDeactivated, defineAsyncComponent, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
 import { articleInfoApi, saveArticleContentApi } from '@renderer/api/blossom'
 // utils
-import { Local } from '@renderer/assets/utils/storage'
 import { isBlank, isNull } from '@renderer/assets/utils/obj'
 import { sleep, isElectron, isBase64Img, isHttp } from '@renderer/assets/utils/util'
 import { openExtenal, writeText, readText, openNewArticleWindow } from '@renderer/assets/utils/electron'
@@ -190,7 +180,7 @@ import Notify from '@renderer/scripts/notify'
 import { useDraggable } from '@renderer/scripts/draggable'
 import type { shortcutFunc } from '@renderer/scripts/shortcut-register'
 import { treeToInfo, provideKeyDocInfo, provideKeyCurArticleInfo, isArticle } from '@renderer/views/doc/doc'
-import { TempTextareaKey, ArticleReference, parseTocAsync, countWords } from './scripts/article'
+import { ArticleReference, parseTocAsync, countWords } from './scripts/article'
 import type { Toc } from './scripts/article'
 import { picCacheWrapper, picCacheRefresh, uploadForm, DefaultPicture, protocolWrapper } from '@renderer/views/picture/scripts/picture'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
@@ -299,44 +289,18 @@ const changeEditorPreviewStyle = () => {
   EditorOperatorRef.value.style.display = 'block'
   EditorOperatorRef.value.style.left = 'calc(50% - 0.5px)'
 }
-/**
- * 临时文本框
- */
-const tempTextarea = ref('')
-const tempTextareaExpand = ref(false)
-const tempTextareaStyle = computed<any>(() => {
-  if (tempTextareaExpand.value) {
-    return {
-      docTree: { height: 'calc(100% - 178px)' },
-      tempTextarea: { height: '150px', padding: '10px' }
-    }
-  }
-  return {
-    docTree: { height: 'calc(100% - 28px)' },
-    tempTextarea: { height: '0', padding: '' }
-  }
-})
-const initTempTextarea = () => {
-  tempTextarea.value = Local.get('editor_temp_textarea_value')
-}
-const tempInput = (value: string) => {
-  Local.set(TempTextareaKey, value)
-}
 
 /**
  * 进入页面时, 保存文章
  */
 const enterView = () => {
   autoSave()
-  initTempTextarea()
   scrollTopLast()
 }
 /**
  * 退出页面时, 保存文章
  */
-const exitView = () => {
-  autoSave()
-}
+const exitView = () => autoSave()
 
 const { hideOne, resotreOne } = useResizeVertical(DocsRef, EditorContainerRef, ResizeDocsDividerRef, undefined, {
   persistent: true,
@@ -382,11 +346,7 @@ const selectPicAndMove = () => {
  * 拖拽和黏贴上传
  * @param file 文件
  */
-const uploadFile = (file: File) => {
-  uploadForm(curArticle.value!.id, file, (url: string) => {
-    cmw.insertBlockCommand(`\n![${file.name}](${url})\n`)
-  })
-}
+const uploadFile = (file: File) => uploadForm(curArticle.value!.id, file, (url: string) => cmw.insertBlockCommand(`\n![${file.name}](${url})\n`))
 
 /**
  * 文件上传回调
@@ -394,10 +354,7 @@ const uploadFile = (file: File) => {
  */
 const uploadFileCallback = async (event: DragEvent | ClipboardEvent) => {
   if (!isArticle(curArticle.value)) return
-
-  /**
-   * 拖拽上传
-   */
+  // 拖拽上传
   if (event instanceof DragEvent) {
     let data: DataTransfer | null = event.dataTransfer
     if (data && data.files.length && data.files.length > 0) {
@@ -406,10 +363,7 @@ const uploadFileCallback = async (event: DragEvent | ClipboardEvent) => {
       }
     }
   }
-
-  /**
-   * 黏贴上传
-   */
+  // 黏贴上传
   if (event instanceof ClipboardEvent) {
     if (!event.clipboardData) return
     if (event.clipboardData.items.length === 0) return
@@ -434,7 +388,7 @@ const openArticleWindow = (id: string) => {
 //#endregion
 
 //#region ----------------------------------------< 文档列表与当前文章 >----------------------------
-const editorLoading = ref(false) // eidtor loading
+const editorLoading = ref(false)
 const ArticleTreeDocsRef = ref()
 const curDoc = ref<DocInfo>() // 当前选中的文档, 包含文件夹和文章, 如果选中是文件夹, 则不会重置编辑器中的文章
 const curArticle = ref<DocInfo>() // 当前选中的文章, 用于在编辑器中展示
@@ -705,8 +659,7 @@ const renderer = {
     return renderHeading(text, level, raw)
   },
   image(href: string | null, title: string | null, text: string): string {
-    if (!isHttp(href)) href = protocolWrapper(href as string) + '?blossom_article_id=' + curArticle.value!.id
-
+    if (!isHttp(href)) href = protocolWrapper(href as string)
     articleImg.value.push({ targetId: curArticle.value!.id, targetName: curArticle.value!.name, targetUrl: href as string, type: 10 })
     return renderImage(href, title, text)
   },
@@ -896,6 +849,7 @@ const formatTable = () => {
 //#endregion
 
 //#region ----------------------------------------< 快捷键注册 >-------------------------------------
+/** 收起文档列表 */
 const alt_1: shortcutFunc = (): void => {
   docsExpand.value = !docsExpand.value
   if (!docsExpand.value) {

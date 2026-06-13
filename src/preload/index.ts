@@ -34,7 +34,6 @@ const rednerToIpc = {
   renameFile: (params: RenameFileReq): Promise<R<any>> => ipcRenderer.invoke('rename-file', params),
   selectDocLibFolderDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('select-doclib-folder-dialog'),
   openFileLocation: (filePath: string): Promise<R<void>> => ipcRenderer.invoke('open-file-location', filePath),
-  pictureInfoByNameSync: (req: { filename: string }): R<Picture> => ipcRenderer.sendSync('picture-info', req),
   //#region
 
   /**

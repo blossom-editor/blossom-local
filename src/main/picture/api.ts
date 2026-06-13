@@ -1,15 +1,15 @@
-import { ipcMain, dialog, shell } from 'electron'
+import { ipcMain, dialog } from 'electron'
 import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
 import { IdMapping } from '../doclib/idMapping'
-import { cutSuffix, getUniqueId, images, imagesSuffix, isImage, normalizeMarkdownImage } from '../utils'
+import { cutSuffix, getUniqueId, imagesSuffix, isImage, normalizeMarkdownImage } from '../utils'
 import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
 import { PicNameMapping } from '../doclib/picNameMapping'
 import { DocLibStatsManager } from '../doclib/docLibStatsManager'
 import { protocolWrapper } from '../customProtocol'
-import { naturalCompare, sortDocTreeList } from '../article/fileUtils'
+import { naturalCompare } from '../article/fileUtils'
 
 const idMapping = IdMapping.getInstance()
 const picNameMapping = PicNameMapping.getInstance()
@@ -63,20 +63,6 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
     console.log('选中的文件:', choiseFile.filePaths)
     return R.ok(null)
   }
-
-  // // 有后缀时, 图片名称不会重复
-  // const timeSuffix = '_' + picSuffix()
-  // const extname = path.extname(choiseFile.filePaths[0])
-  // const nameWithoutExt = path.basename(choiseFile.filePaths[0], extname)
-  // let targetPicPath = path.join(targetFolder, nameWithoutExt + timeSuffix + extname)
-
-  // fs.copyFileSync(choiseFile.filePaths[0], targetPicPath)
-  // picNameMapping.addPath(targetPicPath)
-
-  // const res: SelectFileAndMoveRes = {
-  //   filePath: targetPicPath,
-  //   fileName: path.basename(targetPicPath)
-  // }
   const res = moveFile(choiseFile.filePaths[0], targetFolder)
 
   return R.ok(res)
@@ -236,6 +222,9 @@ const initPictureList = () => {
   })
 }
 
+/**
+ * 获取图片信息
+ */
 const initPictureInfoByName = () => {
   ipcMain.handle('picture-info', async (_event, req: { filename: string }): Promise<R<Picture>> => {
     const basename = path.basename(req.filename)
@@ -273,6 +262,9 @@ const initPictureInfoByName = () => {
   })
 }
 
+/**
+ * @deprecated
+ */
 const initPictureInfoByNameSync = () => {
   ipcMain.on('picture-info', (_event, req: { filename: string }): R<Picture> => {
     const basename = path.basename(req.filename)
