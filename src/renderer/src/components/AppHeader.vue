@@ -1,7 +1,7 @@
 <template>
   <div class="app-header-root">
     <div class="cur-doclib">文档库：{{ docLibStore.cur?.name }}</div>
-    <div class="drag">{{ tryuseComment }}</div>
+    <div class="drag"></div>
     <div class="window-workbench">
       <el-popover
         popper-class="caution-popover"
@@ -28,9 +28,9 @@
         <div v-if="!props.simple" class="iconbl bl-a-colorpalette-line" @click="themeStrore.show()"></div>
       </el-tooltip>
 
-      <!-- <el-tooltip content="所有图标" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
+      <el-tooltip content="所有图标" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
         <div v-if="!props.simple" class="iconbl bl-a-radiochoose-line" @click="toRoute('/iconListIndex')"></div>
-      </el-tooltip> -->
+      </el-tooltip>
 
       <el-tooltip content="网页收藏" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
         <div v-if="!props.simple" class="iconbl bl-folding-line" @click="isShowWebDrawer = !isShowWebDrawer"></div>
@@ -55,17 +55,13 @@
 import { computed, onMounted, onUnmounted, ref, unref } from 'vue'
 import { ClickOutside as vClickOutside } from 'element-plus'
 import { toRoute } from '@renderer/router'
-import { useUserStore } from '@renderer/stores/user'
 import { useThemeStore } from '@renderer/stores/theme'
 import { useDocLibStore } from '@renderer/stores/docLib'
 import { windowMin, windowMax, windowHide, setBestSize } from '@renderer/assets/utils/electron'
 import { isWindows, isElectron } from '@renderer/assets/utils/util'
-import { isTryuse } from '@renderer/scripts/env'
-import SYSTEM from '@renderer/assets/constants/system'
 import WebCollect from './WebCollect.vue'
 
 const themeStrore = useThemeStore()
-const userStore = useUserStore()
 const docLibStore = useDocLibStore()
 
 onMounted(() => {
@@ -81,13 +77,6 @@ const props = defineProps({
     default: false,
     type: Boolean
   }
-})
-
-const tryuseComment = computed(() => {
-  if (isTryuse()) {
-    return `试用版本(${SYSTEM.SYS.VERSION})为最新的开发版本，包含当前正式版中没有的功能。`
-  }
-  return ``
 })
 
 /**

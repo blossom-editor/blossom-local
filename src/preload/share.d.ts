@@ -6,6 +6,14 @@ declare interface R<T> {
 }
 
 declare type DocType = 'FOLDER' | 'ARTICLE' | 'PICTURE'
+/**
+ * 文档状态
+ * NORMAL: 正常
+ * PICTURE_REPEAT: 图片重复
+ * ARTICLE_PIC_ERROR: 文章图片错误
+ * ARTICLE_LINK_ERROR: 文章链接错误
+ */
+declare type DocStatus = 'NORMAL' | 'PICTURE_REPEAT' | 'ARTICLE_PIC_ERROR' | 'ARTICLE_LINK_ERROR'
 
 /**
  * 基础接口
@@ -50,6 +58,7 @@ declare interface DocTree {
   creTime?: string
   updTime?: string
   children?: DocTree[]
+  status: DocStatus
   // 子文件数量, 不包含文件夹
   childrenFileCount: number
 }

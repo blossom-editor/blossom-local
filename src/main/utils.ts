@@ -86,3 +86,21 @@ export const isImage = (name: string): boolean => {
   }
   return result
 }
+
+export const traceLog = (msg: any) => {
+  console.log(`\x1b[36m${msg}\x1b[0m`)
+}
+export const infoLog = (msg: any) => {
+  console.log(`${msg}`)
+}
+
+export const succLog = (msg: any) => {
+  console.log(`\x1b[32m${msg}\x1b[0m`)
+}
+export const errorLog = (msg: any) => {
+  console.log(`\x1b[31m${msg}\x1b[0m`)
+}
+export const warnLog = (msg: any) => {
+  console.log(`\x1b[33m${msg}\x1b[0m`)
+}
+

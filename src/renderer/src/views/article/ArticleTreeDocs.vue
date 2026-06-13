@@ -287,7 +287,6 @@ const getDocTree = (callback?: () => void) => {
   startLoading()
   docTreeApi({ type: 'ARTICLE' })
     .then((resp) => {
-      console.log(resp)
       docTreeData.value = resp.data!
       if (callback) callback()
     })

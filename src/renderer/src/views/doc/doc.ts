@@ -25,6 +25,7 @@ export class DefaultDocTree implements DocTree {
   creTime = ''
   updTime = ''
   children = []
+  status: DocStatus = 'NORMAL'
   // 子文件数量, 不包含文件夹
   childrenFileCount = 0
 }

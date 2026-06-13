@@ -1,3 +1,5 @@
+import { succLog } from '../utils'
+
 /**
  * 保存全局文档库路径
  */
@@ -18,7 +20,7 @@ export class CurDocLibManager {
   }
 
   public change(path: string): void {
-    console.log('变更文档库:', path)
+    succLog(`变更文档库: ${path}`)
     this.path = path
   }
 }

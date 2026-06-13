@@ -4,6 +4,9 @@
     <Workbench></Workbench>
   </div>
   <div class="doc-tree-operator">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="显示重复文件">
+      <div class="iconbl bl-tier-line" @click="handleShowPictureRepeat"></div>
+    </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="显示子文件数量">
       <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount"></div>
     </el-tooltip>
@@ -57,8 +60,7 @@
         <div v-if="viewStyle.isShowFolderFileCount" class="sort-tag" :style="getChildFileCountColor(node)">
           {{ data.childrenFileCount }}
         </div>
-        <div v-if="data.id === '-1'" class="menu-divider"></div>
-        <div v-else class="menu-item-wrapper" @click.right="handleClickRightMenu($event, data)">
+        <div class="menu-item-wrapper" @click.right="handleClickRightMenu($event, data)">
           <div class="doc-title">
             <div class="doc-name">
               <svg v-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
@@ -76,6 +78,15 @@
               <div v-else class="name-wrapper" :style="{ maxWidth: isNotBlank(data.icon) ? 'calc(100% - 25px)' : '100%' }">
                 {{ data.name }}
               </div>
+              <el-tooltip
+                v-if="data.status === 'PICTURE_REPEAT'"
+                effect="light"
+                popper-class="is-small"
+                placement="right"
+                :hide-after="0"
+                content="文件名重复">
+                <bl-tag v-if="data.status === 'PICTURE_REPEAT'" style="margin-top: 4px" icon="bl-tier-line"></bl-tag>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -132,10 +143,9 @@ import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
 // components
 import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
-import { inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
+import { getFilePrefix, inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
 import { openFileLocation } from '@renderer/api/docLib'
 import { pictureUpdNameApi } from '@renderer/api/picture'
-import { protocolWrapper } from './scripts/picture.js'
 
 const docLibStore = useDocLibStore()
 const configStore = useConfigStore()
@@ -159,46 +169,8 @@ let editorLoadingTimeout: NodeJS.Timeout
 const DocTreeRef = ref()
 const docTreeLoading = ref(true) // 文档菜单的加载动画
 const docTreeData = ref<DocTree[]>([]) // 文档菜单
+
 provide(provideKeyDocTree, docTreeData)
-
-const buildRootDocTree = (rootFils: DocTree[]): DocTree[] => {
-  let fileCount: number = 0
-  for (const file of rootFils) {
-    if (file.type === 'PICTURE') {
-      fileCount += 1
-    }
-  }
-
-  return [
-    {
-      id: '-2',
-      type: 'FOLDER',
-      name: '文档库根目录',
-      formatName: '文档库根目录',
-      // 完整的路径, 包含路径和文件名
-      path: docLibStore.cur!.path,
-      // 文件或文件夹所在的文件夹, 路径中不包含自身
-      folderPath: docLibStore.cur!.path,
-      size: 0,
-      icon: isBlank(docLibStore.cur?.icon) ? 'wl-folder' : docLibStore.cur!.icon!,
-      updn: false,
-      // 子文件数量, 不包含文件夹
-      childrenFileCount: fileCount
-    },
-    {
-      id: '-1',
-      type: 'FOLDER',
-      name: '',
-      formatName: '',
-      path: '',
-      folderPath: '',
-      size: 0,
-      icon: '',
-      updn: false,
-      childrenFileCount: 0
-    }
-  ]
-}
 
 /**
  * 刷新文档, 并在渲染结束后选中最后一次选中项
@@ -206,14 +178,16 @@ const buildRootDocTree = (rootFils: DocTree[]): DocTree[] => {
 const refreshDocTree = () => {
   getDocTree(() => {
     nextTick(() => {
-      if (!isEmpty(docTreeData.value) && isNotBlank(docTreeCurrentChoiseId.value)) DocTreeRef.value.setCurrentKey(docTreeCurrentChoiseId.value)
+      isShowPictureRepeat.value = false
+      if (!isEmpty(docTreeData.value) && isNotBlank(docTreeCurrentChoiseId.value)) {
+        DocTreeRef.value.setCurrentKey(docTreeCurrentChoiseId.value)
+      }
     })
   })
 }
 
 /**
  * 获取文档树状列表
- *
  * @param callback 获取文档后的自定义回调
  */
 const getDocTree = (callback?: () => void) => {
@@ -228,7 +202,6 @@ const getDocTree = (callback?: () => void) => {
 
 /**
  * 点击菜单
- *
  * @param tree 点击的菜单节点数据
  * @param node 树状菜单 node
  * @param treeNode TreeNode
@@ -294,12 +267,18 @@ const DocTreeContainer = ref()
 const DocTreeSearch = ref()
 const DocTreeSearchMove = ref()
 const DocTreeSearchInput = ref()
+const isShowPictureRepeat = ref(false)
 // 禁止拖拽的节点, 正在重命名的节点不允许进行拖拽
 let notAllowDragId: string = ''
 
 useDraggable(DocTreeSearch, DocTreeSearchMove, DocTreeContainer)
 
 watch(treeFilterText, (val) => DocTreeRef.value!.filter(val))
+watch(isShowPictureRepeat, (val) => DocTreeRef.value!.filter(val))
+
+const handleShowPictureRepeat = () => {
+  isShowPictureRepeat.value = !isShowPictureRepeat.value
+}
 
 /**
  * 设置选中项, 并展开所有上级
@@ -335,9 +314,15 @@ const showTreeFilter = () => {
  * @param data 列表
  * @return 返回节点是否保留
  */
-const filterNode = (value: string, data: DocTree): boolean => {
-  if (!value) return true
-  return data.name.includes(value)
+const filterNode = (value: string | boolean, data: DocTree): boolean => {
+  if (typeof value === 'boolean') {
+    if (!value) return true
+    return data.status === 'PICTURE_REPEAT'
+  } else if (typeof value === 'string') {
+    if (!value) return true
+    return data.name.includes(value)
+  }
+  return true
 }
 
 /**
@@ -578,7 +563,7 @@ const blurArticleNameInput = (doc: DocTree) => {
  * 检查文件夹名是否合法
  */
 const changeArticleNameInput = (data: DocTree): boolean => {
-  if (inValidateFileName(data.name)) {
+  if (inValidateFileName(getFilePrefix(data.name))) {
     renameTooltipVisible.value = true
     let ele = document.getElementById('article-doc-name-' + curDoc.value.id) as HTMLInputElement
     position.value = DOMRect.fromRect({

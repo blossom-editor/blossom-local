@@ -26,13 +26,10 @@ export const protocolWrapper = (str: string): string => {
  *
  * const fileUrl = pathToFileURL(decodeURIComponent(url)).href
  * const fileUrl = pathToFileURL(url).href
- * console.log('fileUrl', fileUrl)
  */
 export const initProtocol = () => {
   console.log('2. 自定义图片协议 initProtocol')
   protocol.handle('blossom', (request): Promise<GlobalResponse> => {
-    console.log(`${request.url}`)
-
     const docLibPath = curDocLibManager.getPath()
     let url = request.url.slice(BLOSSOM_PROTOCOL.length)
 
@@ -45,31 +42,32 @@ export const initProtocol = () => {
 
     // 忽略文档库校验, 可以访问全部图片
     if (params && params['blossom_pic_ignore']) {
-      return fetch(url)
+      return fetch(request, url)
     }
 
     if (docLibPath) {
       // 如果链接是绝对路径, 则直接访问图片
       if (url.startsWith(docLibPath)) {
-        return fetch(url)
+        return fetch(request, url)
       }
 
       // 从图片管理中获取图片
-      const pic: PicItem | undefined = picNameMapping.get(picName)
-      if (pic === undefined || !pic.path.startsWith(docLibPath)) {
+      const pic: PicItem[] | undefined = picNameMapping.get(picName)
+      if (pic === undefined || !pic[0].path.startsWith(docLibPath)) {
         return Promise.reject()
       }
-      return fetch(pic.path)
+      return fetch(request, pic[0].path)
     }
 
-    return fetch(url)
+    return fetch(request, url)
   })
 }
 
-const fetch = (url: string): Promise<GlobalResponse> => {
+const fetch = (_request: Request, url: string): Promise<GlobalResponse> => {
   try {
-    console.log(url)
-    console.log('============================================================================')
+    // console.log(`${_request.url}`)
+    // console.log(url)
+    // console.log('============================================================================')
     return net.fetch(url)
   } catch (error) {
     console.log('error', error)

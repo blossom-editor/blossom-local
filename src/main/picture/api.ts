@@ -6,10 +6,10 @@ import { IdMapping } from '../doclib/idMapping'
 import { cutSuffix, getUniqueId, imagesSuffix, isImage, normalizeMarkdownImage } from '../utils'
 import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
-import { PicNameMapping } from '../doclib/picNameMapping'
+import { PicItem, PicNameMapping } from '../doclib/picNameMapping'
 import { DocLibStatsManager } from '../doclib/docLibStatsManager'
 import { protocolWrapper } from '../customProtocol'
-import { naturalCompare } from '../article/fileUtils'
+import { naturalCompare } from '../doclib/docLibUtil'
 
 const idMapping = IdMapping.getInstance()
 const picNameMapping = PicNameMapping.getInstance()
@@ -22,7 +22,7 @@ export const initPictureApi = () => {
   initFileBuffSave()
   initPictureList()
   initPictureInfoByName()
-  initPictureInfoByNameSync()
+  initRenameFile()
 }
 
 const initSelectPicAndMoveDialog = () => {
@@ -229,14 +229,11 @@ const initPictureInfoByName = () => {
   ipcMain.handle('picture-info', async (_event, req: { filename: string }): Promise<R<Picture>> => {
     const basename = path.basename(req.filename)
 
-    const pic = picNameMapping.get(basename)
-
-    if (!pic) {
-      return R.fail('FILE_NOT_FOUND', '未找到文件:' + basename)
-    }
+    const pics: PicItem[] | undefined = picNameMapping.get(basename)
+    if (!pics) return R.fail('FILE_NOT_FOUND', '未找到文件:' + basename)
+    const pic = pics[0]
 
     const stats: BigIntStats = await fs.promises.stat(pic!.path, { bigint: true })
-
     const picInfo: Picture = {
       id: pic!.id,
       type: 'PICTURE',
@@ -262,39 +259,36 @@ const initPictureInfoByName = () => {
   })
 }
 
-/**
- * @deprecated
- */
-const initPictureInfoByNameSync = () => {
-  ipcMain.on('picture-info', (_event, req: { filename: string }): R<Picture> => {
-    const basename = path.basename(req.filename)
-
-    const pic = picNameMapping.get(basename)
-
-    if (!pic) {
-      return R.fail('FILE_NOT_FOUND', '未找到文件:' + basename)
-    }
-
-    const picInfo: Picture = {
-      id: pic!.id,
-      type: 'PICTURE',
-      name: pic!.name,
-      size: pic.size,
-      suffix: path.extname(pic!.name),
-      formatName: cutSuffix(pic!.name),
-      path: pic!.path,
-      folderPath: pic!.folderPath,
-      localProtocolPath: protocolWrapper(pic!.path),
-      checked: false,
-      delTime: 0,
-      articleLinks: docLibStatsManager.getMdsByPic(pic.name).map((item) => {
-        return {
-          id: item.id,
-          name: item.mdName
-        }
-      })
-    }
-
-    return R.ok(picInfo)
+const initRenameFile = () => {
+  ipcMain.handle('picture-rename-file', async (_event, params: RenameFileReq) => {
+    console.log('重命名图片', params)
+    return renameFile(params.oldPath, params.newPath)
   })
+}
+
+/**
+ * 重命名文件
+ *
+ * @param oldPath - 旧文件路径
+ * @param newPath - 新文件路径
+ */
+const renameFile = async (oldPath: string, newPath: string): Promise<R<any>> => {
+  try {
+    if (fs.existsSync(newPath)) return R.fail('文件名重复', '已存在相同名称的文件')
+    if (!fs.existsSync(oldPath)) return R.fail('文件不存在', '被重命名的文件不存在')
+
+    const oldName = path.basename(oldPath)
+    const newName = path.basename(newPath)
+
+    if (picNameMapping.exist(newName)) {
+      return R.fail('文件名重复', '文档库中不允许图片名称重复')
+    }
+
+    await fs.promises.rename(oldPath, newPath)
+    picNameMapping.updatePath(oldName, oldPath, newName, newPath)
+    picNameMapping.log()
+    return R.ok({})
+  } catch (err) {
+    return R.fail('文件重命名失败', err)
+  }
 }

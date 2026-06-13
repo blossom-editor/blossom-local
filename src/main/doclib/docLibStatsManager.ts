@@ -5,7 +5,7 @@ import { BigIntStats } from 'fs'
 import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
-import { extractFileName, getUniqueId } from '../utils'
+import { extractFileName, getUniqueId, traceLog } from '../utils'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -35,6 +35,30 @@ export class DocLibStatsManager {
   public async getStats(docLibPath: string): Promise<DocLibStats> {
     await this.checkInit(docLibPath)
     return this.stats!
+  }
+
+  public log() {
+    traceLog('**********************************************************************')
+    traceLog('* 文档库文档对图片 / 图片对文档统计')
+    traceLog('**********************************************************************')
+    this.mdToPicMap.forEach((m2p, key) => {
+      console.log(`文档: ${key}`)
+      console.log(`包含 ${m2p.pics.length} 张图片:`)
+      // 遍历当前文档下的所有图片项
+      m2p.pics.forEach((pic) => {
+        console.log(`  - 图片名称: ${pic.picName}, 路径: ${pic.picPath}, 结构: ${pic.picMdRaw}`)
+      })
+      traceLog('------------------------------------------------------------------------------')
+    })
+    this.picToMdMap.forEach((p2m, key) => {
+      console.log(`图片: ${key}`)
+      console.log(`包含 ${p2m.mds.length} 个文章:`)
+      // 遍历当前文档下的所有图片项
+      p2m.mds.forEach((md) => {
+        console.log(`  - 文章: ${md.mdPath}`)
+      })
+      traceLog('------------------------------------------------------------------------------')
+    })
   }
 
   public getMdsByPic(picName: string): PicToMdItem[] {
@@ -118,30 +142,6 @@ export class DocLibStatsManager {
       this.stats!.pictureTotalSize = temp.pictureTotalSize
       this.stats!.wordsByMonth[nowYM()] = temp.articleTotalWords
       this.save(docLibPath)
-
-      this.mdToPicMap.forEach((m2p, key) => {
-        console.log(`文档: ${key}`)
-        console.log(`包含 ${m2p.pics.length} 张图片:`)
-
-        // 遍历当前文档下的所有图片项
-        m2p.pics.forEach((pic) => {
-          console.log(`  - 图片名称: ${pic.picName}, 路径: ${pic.picPath}, 结构: ${pic.picMdRaw}`)
-        })
-
-        console.log('------------------------------------------------------------------------------')
-      })
-
-      this.picToMdMap.forEach((p2m, key) => {
-        console.log(`图片: ${key}`)
-        console.log(`包含 ${p2m.mds.length} 个文章:`)
-
-        // 遍历当前文档下的所有图片项
-        p2m.mds.forEach((md) => {
-          console.log(`  - 文章: ${md.mdPath}`)
-        })
-
-        console.log('------------------------------------------------------------------------------')
-      })
     })
   }
 
@@ -288,7 +288,6 @@ export class DocLibStatsManager {
     this.picToMdMap.set(picName, picToMd)
   }
 }
-
 
 /**
  * 提取图片和链接

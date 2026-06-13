@@ -677,7 +677,6 @@ const dragStart = (doms: any, e: DragEvent) => {
 
   // 松开事件
   const onDragend = () => {
-    console.log('onDragend')
     ele.removeEventListener('drag', onDrag)
     ele.removeEventListener('dragend', onDragend)
     ele.classList.remove('moving')
@@ -686,7 +685,7 @@ const dragStart = (doms: any, e: DragEvent) => {
 
   ele.addEventListener('drag', onDrag)
   ele.addEventListener('dragend', onDragend)
-  
+
   ele.classList.add('moving') // 原始元素隐藏
 
   for (let i = 0; i < doms.length; i++) {

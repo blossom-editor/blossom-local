@@ -225,8 +225,6 @@ const clickCurDoc = (tree: DocTree) => {
     picPages.value = resp.data!.pictures
     picStat.value.cur.totalCount = resp.data!.totalCount
     picStat.value.cur.totalSize = formatFileSize(resp.data!.totalSize)
-
-    console.log(Math.ceil(picStat.value.cur.totalCount / picPageParam.value.pageSize))
   })
 }
 

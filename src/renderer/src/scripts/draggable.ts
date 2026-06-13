@@ -35,7 +35,6 @@ export const useDraggable = (
     let minTop = -targetTop + offsetY
 
     if (regionRef) {
-      console.log(regionRef.value!.getBoundingClientRect())
       const rect = regionRef.value!.getBoundingClientRect()
       clientWidth = rect.width + rect.x
       clientHeight = rect.height + rect.y

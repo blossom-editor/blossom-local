@@ -59,7 +59,7 @@
       <div class="developer">
         <bl-row class="item" v-for="dever in developer" width="250px" height="70px" @click="toView(dever.github)">
           <div>
-            <!-- <img :src="dever.avatar" /> -->
+            <img :src="dever.avatar" />
           </div>
           <bl-col just="flex-start" align="flex-start">
             <div class="name">
@@ -101,19 +101,23 @@ const references = [
   { name: 'Microsoft Fluentui Emoji', url: 'https://github.com/microsoft/fluentui-emoji' },
   { name: 'JetBrains Mono', url: 'https://www.jetbrains.com/lp/mono/' }
 ]
+const getImg = (img: string): string => {
+  return new URL(`../../assets/imgs/members/${img}`, import.meta.url).href
+  // return new URL(`../../${img}`, import.meta.url).href
+}
 
 const developer = [
   {
     name: '小贼贼子',
     desc: '创建者',
     github: 'https://github.com/xiaozzzi',
-    avatar: 'https://www.wangyunf.com/bl/pic/home/bl/img/U1/head/luban.png'
+    avatar: getImg('xiaozzzi.jpg')
   },
   {
     name: 'Tianjiu',
     desc: '项目成员、英文译者',
     github: 'https://github.com/T1anjiu',
-    avatar: 'https://www.wangyunf.com/bl/pic/home/bl/img/U1/pic/blosteam/T1anjiu.jpg'
+    avatar: getImg('Tianjiu.jpg')
   }
 ]
 </script>

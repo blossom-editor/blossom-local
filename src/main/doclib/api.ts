@@ -7,10 +7,10 @@ import { CurDocLibManager } from './curDocLibManager'
 import { DocLibStatsManager } from './docLibStatsManager'
 import { offsetMounth, timeToYMD, lastDayOfThisMonth, offsetDay, firstDayOfMonth } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
-import { sortDocTreeList } from '../article/fileUtils'
-import { getUniqueId, cutSuffix, imagesSuffix } from '../utils'
+import { getUniqueId, cutSuffix, imagesSuffix, warnLog } from '../utils'
 import { IdMapping, FileItem } from '../doclib/idMapping'
 import { PicNameMapping, PicItem } from '../doclib/picNameMapping'
+import { findNodesByIds, sortDocTreeList } from './docLibUtil'
 
 const idMapping = IdMapping.getInstance()
 const docLibStatsManager = DocLibStatsManager.getInstance()
@@ -41,10 +41,25 @@ const initReadDocTree = () => {
  * 获取文档数并最终排序
  */
 export const readDocTreeSort = async (params: DocTreeReq): Promise<DocTree[]> => {
+  const start = new Date().getTime()
+
   await docLibStatsManager.clecrArticleUpdToday(params.docLibPath!)
+  picNameMapping.clear()
   const docTree = await readDocTree(params)
   sortDocTreeList(docTree)
   docLibStatsManager.save(params.docLibPath!)
+  picNameMapping.log()
+
+  if (params.type === 'PICTURE') {
+    const repeat: PicItem[] = picNameMapping.getRepeatPic()
+    const ids: string[] = repeat.map((item) => item.id)
+    const repeatDocTree = findNodesByIds(docTree, ids)
+    for (const item of repeatDocTree) {
+      item.status = 'PICTURE_REPEAT'
+    }
+  }
+
+  warnLog(`刷新文档用时 cost: ${new Date().getTime() - start} ms`)
   return docTree
 }
 
@@ -74,6 +89,7 @@ const readDocTree = async (req: DocTreeReq): Promise<DocTree[]> => {
       folderPath: file.path,
       creTime: timeToYMD(stats.birthtime.toString()), // 创建时间
       updTime: timeToYMD(stats.mtime.toString()), // 修改时间
+      status: 'NORMAL',
       childrenFileCount: 0
     }
 
@@ -82,6 +98,7 @@ const readDocTree = async (req: DocTreeReq): Promise<DocTree[]> => {
       if (isSysFile(doc.name)) {
         continue
       }
+
       const fileItem: FileItem = new FileItem(doc.id, doc.path, 'FOLDER')
       idMapping.add(fileItem)
 

@@ -1,11 +1,9 @@
 // index.ts
 import axios from 'axios'
-import { toLogin } from '@renderer/router'
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { Local } from '@renderer/assets/utils/storage'
 import { isNotNull } from '@renderer/assets/utils/obj'
 import { storeKey as authKey, useUserStore } from '@renderer/stores/user'
-import { storeKey as serverUrlKey } from '@renderer/stores/server'
 import Notify from '@renderer/scripts/notify'
 
 export class Request {
@@ -13,7 +11,7 @@ export class Request {
   instance: AxiosInstance
   /** 基础配置，url和超时时间 */
   baseConfig: AxiosRequestConfig = {
-    baseURL: Local.get(serverUrlKey),
+    baseURL: Local.get('serverUrlKey'),
     timeout: 60000
   }
   /**
@@ -32,7 +30,7 @@ export class Request {
         if (isNotNull(tokenCache) && isNotNull(tokenCache.token)) {
           token = tokenCache.token
         }
-        config.url = Local.get(serverUrlKey) + config.url
+        config.url = Local.get('serverUrlKey') + config.url
         config.headers = {
           ...config.headers,
           ...{
@@ -122,7 +120,7 @@ export class Request {
   public get<T>(url: string, params?: object): Promise<R<T>> {
     // return this.instance.get(url, params)
     return new Promise((resolve, reject) => {
-      resolve({ ok: true, code: 20000, msg: ''})
+      resolve({ ok: true, code: 20000, msg: '' })
     })
   }
 

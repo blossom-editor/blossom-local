@@ -433,15 +433,6 @@ export class CmWrapper {
       /* 修改之后光标移动到的位置 */
       selection: EditorSelection.create([EditorSelection.range(selectFrom, selectTo)])
     }
-    // editor.dispatch(
-    //   /**
-    //    * @param _range 当前选中的位置
-    //    */
-    //   editor.state.changeByRange((_range: SelectionRange) => {
-    //     console.log(_range);
-    //     return changeByRange
-    //   })
-    // )
     editor.dispatch(changeByRange)
   }
   sliceDoc = (from?: number, to?: number): string => {

@@ -125,7 +125,6 @@ const toTop = (docLib: DocLibItem) => {
 }
 
 const toEditor = (docLib: DocLibItem) => {
-  console.log('toEditor', docLib)
   docLibStore.setCurDoc(docLib)
   router.push('/articleIndex')
 }
