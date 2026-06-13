@@ -101,7 +101,7 @@ export const getDocById = (articleId: string, trees: DocTree[]): DocTree | undef
   let target: DocTree | undefined
   for (let i = 0; i < trees.length; i++) {
     let tree = trees[i]
-    if (tree.i == articleId) {
+    if (tree.id == articleId) {
       target = tree
     } else if (!isEmpty(tree.children)) {
       target = getDocById(articleId, tree.children!)

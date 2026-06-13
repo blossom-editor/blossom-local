@@ -433,8 +433,8 @@ export const renderLink = (
       // 内部引用不会使用 Markdown 中的链接名, 而是用内部文章名
       let article = getDocById(articleId.toString(), docTrees)
       if (article != undefined) {
-        ref.targetId = article.i
-        ref.targetName = article.n
+        ref.targetId = article.id
+        ref.targetName = article.name
         ref.type = 11
       } else {
         ref.targetId = articleId.toString()

@@ -11,7 +11,7 @@
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文件夹">
       <div class="iconbl bl-folderadd-line" @click="addFolderToRoot()"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" content="显示子文件数量">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="显示子文件数量">
       <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="搜索文件名">

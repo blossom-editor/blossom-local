@@ -4,16 +4,16 @@
     <Workbench></Workbench>
   </div>
   <div class="doc-tree-operator">
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" content="显示子文件数量">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="显示子文件数量">
       <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" :show-after="1000" content="搜索">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="搜索">
       <div class="iconbl bl-search-item" @click="showTreeFilter()"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" :show-after="1000" content="刷新">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="刷新">
       <div class="iconbl bl-refresh-line" @click="refreshDocTree()"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :offset="4" :hide-after="0" :show-after="1000" content="折叠所有文件夹">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="折叠所有文件夹">
       <div class="iconbl bl-collapse" @click="collapseAll"></div>
     </el-tooltip>
     <div class="doc-tree-search" ref="DocTreeSearch" v-show="isShowTreeFilter">
