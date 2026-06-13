@@ -23,9 +23,9 @@
         <div class="aside-item item-user" v-if="!viewStyle.isShowAsideSimple && viewStyle.isShowAsideLogo">
           <user></user>
         </div>
-        <div class="aside-item item-upload" v-if="!viewStyle.isShowAsideSimple && viewStyle.isShowAsideUpload">
+        <!-- <div class="aside-item item-upload" v-if="!viewStyle.isShowAsideSimple && viewStyle.isShowAsideUpload">
           <upload></upload>
-        </div>
+        </div> -->
         <div class="aside-item item-setting">
           <setting></setting>
         </div>
@@ -44,7 +44,6 @@ import { useThemeStore } from '@renderer/stores/theme'
 import { useConfigStore } from '@renderer/stores/config'
 import { useDocLibStore } from '@renderer/stores/docLib'
 import user from './AsideUser.vue'
-import upload from './AsideUpload.vue'
 import setting from './AsideSetting.vue'
 import logo from '@renderer/components/Logo.vue'
 import ThemeSetting from './setting/ThemeSetting.vue'

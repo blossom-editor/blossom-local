@@ -55,7 +55,17 @@ export const extractFileName = (pathOrUrl: string): string => {
   return fileName
 }
 
-export const images = ['.jpeg', '.jpg', '.gif', '.png', '.apng', '.bmp', '.pic', '.svg', '.tif', '.tiff', '.webp', '.jfif', '.ico']
+/**
+ * 去除图片的 ![]() 标记, 以符合 markdown 语法规范
+ */
+export const normalizeMarkdownImage = (text: string) => {
+  return text
+    .replace(/\s/g, '_') // 任何空白字符 -> _
+    .replace(/[!\[\]()]/g, '') // 删除 ! [ ] ( )
+}
+
+export const imagesSuffix: string[] = ['jpeg', 'jpg', 'gif', 'png', 'apng', 'bmp', 'pic', 'svg', 'tif', 'tiff', 'webp', 'jfif', 'ico']
+export const images: string[] = ['.jpeg', '.jpg', '.gif', '.png', '.apng', '.bmp', '.pic', '.svg', '.tif', '.tiff', '.webp', '.jfif', '.ico']
 
 /**
  * 检查是否为图片

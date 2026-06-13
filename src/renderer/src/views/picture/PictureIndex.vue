@@ -24,7 +24,6 @@
 
             <el-button plain @click="lastPage()">上一页</el-button>
             <el-button plain @click="nextPage()">下一页</el-button>
-            <!-- <el-button plain @click="refresh">刷新</el-button> -->
 
             <el-button @click="picCacheRefresh()">
               清空图片缓存
@@ -228,22 +227,6 @@ const clickCurDoc = (tree: DocTree) => {
     picStat.value.cur.totalSize = formatFileSize(resp.data!.totalSize)
 
     console.log(Math.ceil(picStat.value.cur.totalCount / picPageParam.value.pageSize))
-  })
-}
-
-/**
- * 刷新
- */
-const refresh = () => {
-  if (!curFolder.value) {
-    return
-  }
-  pictureListApi({
-    id: curFolder.value!.id,
-    pageNum: picPageParam.value.pageNum,
-    pageSize: picPageParam.value.pageSize
-  }).then((resp) => {
-    picPages.value = resp.data!.pictures
   })
 }
 

@@ -1,7 +1,5 @@
 import pinia from '@renderer/stores/store-config'
 import { useConfigStore } from '@renderer/stores/config'
-import type { UploadProps, UploadRawFile } from 'element-plus'
-import Notify from '@renderer/scripts/notify'
 import { getFilePrefix, getFileSuffix, getNowTime, isHttp, parseQueryParams, randomInt } from '@renderer/assets/utils/util'
 import { fileBuffSave } from '@renderer/api/picture'
 
@@ -68,84 +66,6 @@ export const uploadForm = (articleId: string, file: File, callback: UploadCallba
       callback(resp.data!.filePath!)
     })
   })
-}
-
-/**
- * uoload 组件的 data 数据获取
- * @param rawFile
- * @param pid
- * @returns
- */
-export const uploadDate = (rawFile: UploadRawFile, pid: string, repeatUpload: boolean = false) => {
-  return {
-    pid: pid,
-    filename: wrapperFilename(rawFile.name),
-    repeatUpload: repeatUpload
-  }
-}
-
-/**
- *
- * @param rawFile
- * @returns
- */
-export const beforeUpload: UploadProps['beforeUpload'] = (rawFile) => {
-  return true
-}
-
-/**
- *
- * @param resp
- * @param _file
- */
-export const onUploadSeccess: UploadProps['onSuccess'] = (resp, _file?) => {
-  handleUploadSeccess(resp)
-}
-
-/**
- * 上传文件结果处理, 失败是根据
- * @param resp 接口响应
- * @returns 是否成功
- */
-export const handleUploadSeccess = (resp: any): boolean => {
-  if (resp.code === '20000') {
-    Notify.success('上传成功')
-    return true
-  } else {
-    Notify.error(resp.msg, '上传失败')
-    return false
-  }
-}
-
-/**
- *
- * @param error
- * @param _file
- * @param _files
- */
-export const onError: UploadProps['onError'] = (error, _file, _files) => {
-  handleUploadError(error)
-}
-
-/**
- *
- * @param error
- */
-export const handleUploadError = (error: Error) => {
-  if (error.message != undefined) {
-    if (error.message.indexOf('fail to post') > -1 && error.message.indexOf('/picture/file/upload 0') > -1) {
-      Notify.error('可能是由于您上传的文件过大, 请检查服务端上传大小限制。', '上传失败')
-    } else {
-      try {
-        let resp = JSON.parse(error.message)
-        if (resp != undefined) {
-          Notify.error(resp.msg, '上传失败')
-        }
-      } catch (e) {
-        Notify.error(error.message, '上传失败')
-      }
-    }
-  }
 }
 
 // 图片缓存

@@ -82,7 +82,7 @@ const selectIcon = (docLib: DocLibItem) => {
   const params: SelectFileAndMoveReq = {
     targetFilePath: '.blossom',
     docLibPath: docLib.path,
-    cover: true,
+    replace: true,
     newFileName: 'doclib-icon'
   }
   selectFileAndMoveDialog(params).then((resp) => {

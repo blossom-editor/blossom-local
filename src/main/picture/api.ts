@@ -3,7 +3,7 @@ import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
 import { IdMapping } from '../doclib/idMapping'
-import { cutSuffix, getUniqueId, images, isImage } from '../utils'
+import { cutSuffix, getUniqueId, images, imagesSuffix, isImage, normalizeMarkdownImage } from '../utils'
 import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
 import { PicNameMapping } from '../doclib/picNameMapping'
@@ -18,6 +18,7 @@ const docLibStatsManager = DocLibStatsManager.getInstance()
 export const initPictureApi = () => {
   console.log('   4.5 初始化图片接口 initPictureApi')
   initSelectPicAndMoveDialog()
+  initPicMove()
   initFileBuffSave()
   initPictureList()
   initPictureInfoByName()
@@ -34,20 +35,26 @@ const initSelectPicAndMoveDialog = () => {
  * 选择一个图片, 并复制到选定为止, 然后将文件在新位置的路径返回
  */
 const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<SelectFileAndMoveRes | null>> => {
-  const targetDoc = idMapping.get(req.targetDocId)
-  const targetFolder = path.dirname(targetDoc!.path)
+  let targetFolder = ''
 
-  // 检查文档库的路径, 如果目标文件路径不包含文档库路径, 则自动添加
+  // 如果指定了文章, 则上传到文章路径, 否则上传到文档库根目录
+  if (req.targetDocId && !req.targetDocLibRoot) {
+    const targetDoc = idMapping.get(req.targetDocId)
+    targetFolder = path.dirname(targetDoc!.path)
+  } else if (req.targetDocLibRoot) {
+    targetFolder = req.docLibPath!
+  }
+
+  // 目标地址必须为文档库的子目录
   if (targetFolder.indexOf(req.docLibPath!) === -1) {
-    return R.fail('FOLDER_PATH_ERROR', '文件路径错误: ' + targetFolder)
+    return R.fail('FOLDER_PATH_ERROR', `不能将文件上传到文档库之外: [${targetFolder}]`)
   }
 
   const choiseFile = await dialog.showOpenDialog({
     properties: ['openFile'],
-    title: '选择图片或文件',
-    // 可选：限制文件类型
+    title: '选择文件',
     filters: [
-      { name: 'Images', extensions: images },
+      { name: 'Images', extensions: imagesSuffix },
       { name: 'All Files', extensions: ['*'] }
     ]
   })
@@ -57,21 +64,66 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
     return R.ok(null)
   }
 
+  // // 有后缀时, 图片名称不会重复
+  // const timeSuffix = '_' + picSuffix()
+  // const extname = path.extname(choiseFile.filePaths[0])
+  // const nameWithoutExt = path.basename(choiseFile.filePaths[0], extname)
+  // let targetPicPath = path.join(targetFolder, nameWithoutExt + timeSuffix + extname)
+
+  // fs.copyFileSync(choiseFile.filePaths[0], targetPicPath)
+  // picNameMapping.addPath(targetPicPath)
+
+  // const res: SelectFileAndMoveRes = {
+  //   filePath: targetPicPath,
+  //   fileName: path.basename(targetPicPath)
+  // }
+  const res = moveFile(choiseFile.filePaths[0], targetFolder)
+
+  return R.ok(res)
+}
+
+const initPicMove = () => {
+  ipcMain.handle('pic-move', (_event, params: PicMoveReq) => {
+    return picAndMove(params)
+  })
+}
+
+const picAndMove = async (req: PicMoveReq): Promise<R<SelectFileAndMoveRes | null>> => {
+  if (!req.docLibPath) {
+    return R.fail('DOCLIB_ERROR', `未选择文档库`)
+  }
+
+  let targetFolder = ''
+  if (req.targetDocLibRoot) {
+    // 如果指定了文章, 则上传到文章路径, 否则上传到文档库根目录
+    targetFolder = req.docLibPath!
+  } else {
+    return R.fail('FOLDER_PATH_ERROR', `不能将文件上传到文档库之外: [${targetFolder}]`)
+  }
+
+  // 目标地址必须为文档库的子目录
+  if (targetFolder.indexOf(req.docLibPath!) === -1) {
+    return R.fail('FOLDER_PATH_ERROR', `不能将文件上传到文档库之外: [${targetFolder}]`)
+  }
+  const res = moveFile(req.originFilePath, targetFolder)
+  return R.ok(res)
+}
+
+const moveFile = (originFilePath: string, targetFolder: string): SelectFileAndMoveRes => {
   // 有后缀时, 图片名称不会重复
   const timeSuffix = '_' + picSuffix()
-  const extname = path.extname(choiseFile.filePaths[0])
-  const nameWithoutExt = path.basename(choiseFile.filePaths[0], extname)
+  const extname = path.extname(originFilePath)
+  const nameWithoutExt = normalizeMarkdownImage(path.basename(originFilePath, extname))
   let targetPicPath = path.join(targetFolder, nameWithoutExt + timeSuffix + extname)
 
-  fs.copyFileSync(choiseFile.filePaths[0], targetPicPath)
+  fs.copyFileSync(originFilePath, targetPicPath)
   picNameMapping.addPath(targetPicPath)
 
   const res: SelectFileAndMoveRes = {
     filePath: targetPicPath,
     fileName: path.basename(targetPicPath)
   }
-
-  return R.ok(res)
+  return res
 }
 
 const initFileBuffSave = () => {

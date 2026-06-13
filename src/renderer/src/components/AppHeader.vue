@@ -14,24 +14,23 @@
         :offset="10"
         :persistent="false"
         virtual-triggering>
-        <div v-if="!userStore.isLogin" class="caution-popover-placeholder">登录后查看</div>
-        <div v-else class="caution-content">
+        <div class="caution-content">
           <bl-row class="no-more" just="center"> 无更多内容 </bl-row>
         </div>
       </el-popover>
-      <div
+      <!-- <div
         v-if="!props.simple"
         :class="['iconbl', 'bl-caution-line', userStore.paramIsCorrect ? '' : 'warn-heightlight']"
         ref="ButtonRef"
-        v-click-outside="onClickOutside"></div>
+        v-click-outside="onClickOutside"></div> -->
 
       <el-tooltip content="主题配置" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
         <div v-if="!props.simple" class="iconbl bl-a-colorpalette-line" @click="themeStrore.show()"></div>
       </el-tooltip>
 
-      <el-tooltip content="所有图标" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
+      <!-- <el-tooltip content="所有图标" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
         <div v-if="!props.simple" class="iconbl bl-a-radiochoose-line" @click="toRoute('/iconListIndex')"></div>
-      </el-tooltip>
+      </el-tooltip> -->
 
       <el-tooltip content="网页收藏" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
         <div v-if="!props.simple" class="iconbl bl-folding-line" @click="isShowWebDrawer = !isShowWebDrawer"></div>

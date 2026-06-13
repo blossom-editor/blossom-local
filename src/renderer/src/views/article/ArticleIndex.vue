@@ -366,7 +366,11 @@ const refreshCache = () => {
  * 右键选择图片上传
  */
 const selectPicAndMove = () => {
-  const req: SelectPicAndMoveReq = { targetDocId: curArticle.value!.id, cover: true }
+  const req: SelectPicAndMoveReq = {
+    targetDocId: curArticle.value!.id,
+    replace: false, // 右键上传文件不覆盖图片
+    targetDocLibRoot: false
+  }
   selectPicAndMoveDialog(req).then((resp) => {
     if (resp.code === '20000' && resp.data) {
       cmw.insertBlockCommand(`\n![${resp.data.fileName}](${resp.data.fileName})\n`)

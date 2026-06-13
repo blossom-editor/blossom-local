@@ -129,7 +129,7 @@ declare interface SelectFileAndMoveReq extends Base {
   // 将选择的文件保存到指定位置
   targetFilePath: string,
   // 是否覆盖同名文件
-  cover: boolean = false,
+  replace: boolean,
   // 是否将文件名重命名
   newFileName: string
 }
@@ -190,14 +190,31 @@ declare interface PictureListRes extends Base {
 declare interface SelectPicAndMoveReq extends Base {
   // 以文章的路径作为上传路径
   targetDocId: string
-  // 是否覆盖同名文件
-  cover: boolean = false
+  // 将图片上传到文档库根目录
+  targetDocLibRoot: boolean
+  // 是否替换同名文件
+  replace: boolean
 }
 
+/**
+ * 移动文件
+ */
+declare interface PicMoveReq extends Base {
+  originFilePath: string
+  // 将图片上传到文档库根目录
+  targetDocLibRoot: boolean
+}
+
+
+/**
+ * 将文件流保存为图片
+ */
 declare interface FileBuffSaveReq extends Base {
   // 以文章的路径作为上传路径
   targetDocId: string
+  // 文件名
   fileName?: stirng
+  // 文件流
   fileBuffer: ArrayBuffer
 }
 

@@ -69,13 +69,6 @@
 
           <bl-row class="prop-row" just="space-between">
             <div class="prop">
-              <div class="prop-name">显示左下角上传入口</div>
-            </div>
-            <el-switch v-model="configViewStyleForm.isShowAsideUpload" size="default" @change="changeViewStyle" />
-          </bl-row>
-
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
               <div class="prop-name">简约的左侧菜单</div>
             </div>
             <el-switch v-model="configViewStyleForm.isShowAsideSimple" size="default" @change="changeViewStyle" />

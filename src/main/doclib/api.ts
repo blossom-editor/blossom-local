@@ -8,7 +8,7 @@ import { DocLibStatsManager } from './docLibStatsManager'
 import { offsetMounth, timeToYMD, lastDayOfThisMonth, offsetDay, firstDayOfMonth } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
 import { sortDocTreeList } from '../article/fileUtils'
-import { getUniqueId, cutSuffix } from '../utils'
+import { getUniqueId, cutSuffix, imagesSuffix } from '../utils'
 import { IdMapping, FileItem } from '../doclib/idMapping'
 import { PicNameMapping, PicItem } from '../doclib/picNameMapping'
 
@@ -206,7 +206,7 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
     title: '选择文件上传',
     // 可选：限制文件类型
     filters: [
-      { name: 'Images', extensions: ['jpg', 'png', 'gif'] },
+      { name: 'Images', extensions: imagesSuffix },
       { name: 'All Files', extensions: ['*'] }
     ]
   })
@@ -225,7 +225,7 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
   }
 
   // 如果不覆盖文件, 先检查文件是否存在
-  if (!params.cover && fs.existsSync(targetFilePath)) {
+  if (!params.replace && fs.existsSync(targetFilePath)) {
     return R.fail('50101', `文件已存在: ${targetFilePath}`)
   }
 

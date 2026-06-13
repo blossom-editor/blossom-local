@@ -1,7 +1,7 @@
 <template>
   <div class="picture-upload-root">
     <!-- :data="{ pid: curFolder?.id, repeatUpload: porps.repeatUpload }" -->
-    <el-upload
+    <!-- <el-upload
       name="file"
       list-type="text"
       drag
@@ -14,25 +14,25 @@
       :before-upload="beforeUpload"
       :on-success="onUploadSeccess"
       :on-error="onError">
-      <bl-row v-if="!curFolder || !curFolder?.id" just="center" align="center" height="100%" style="font-size: 12px"
-        >请先选择文件夹，再上传文件</bl-row
-      >
+      <bl-row v-if="!curFolder || !curFolder?.id" just="center" align="center" height="100%" style="font-size: 12px">
+        请先选择文件夹，再上传文件
+      </bl-row>
       <bl-row v-else just="center" align="center" height="100%" style="font-size: 12px">
         点击或拖拽上传至<br />
         《{{ curFolder?.name }}》
       </bl-row>
-    </el-upload>
+    </el-upload> -->
   </div>
 </template>
 
 <script setup lang="ts">
 import { inject } from 'vue'
-import { UploadRawFile } from 'element-plus'
-import { uploadFileApiUrl } from '@renderer/api/blossom'
+// import { UploadRawFile } from 'element-plus'
+// import { uploadFileApiUrl } from '@renderer/api/blossom'
 import { useUserStore } from '@renderer/stores/user'
 import { useServerStore } from '@renderer/stores/server'
 import { provideKeyDocInfo } from '@renderer/views/doc/doc'
-import { beforeUpload, onUploadSeccess, onError, uploadDate } from '@renderer/views/picture/scripts/picture'
+// import { beforeUpload, onUploadSeccess, onError, uploadDate } from '@renderer/views/picture/scripts/picture'
 
 const porps = defineProps({
   repeatUpload: {

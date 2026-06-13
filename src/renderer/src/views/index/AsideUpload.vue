@@ -1,16 +1,22 @@
 <template>
   <div class="aside-upload-root">
     <el-tooltip effect="light" placement="right" :show-after="1000" :hide-after="0">
-      <template #content>从这里上传, 会上传至<br />《🌌 默认文件夹》</template>
+      <template #content>
+        从这里上传, 会上传至
+        <div v-if="docLibStore.isLogin" style="color: var(--el-color-primary); text-decoration: underline">
+          {{ docLibStore.cur!.path }}
+        </div>
+        <span v-else>文档库根目录</span>
+      </template>
       <el-upload
         name="file"
-        :action="serverStore.serverUrl + uploadFileApiUrl"
-        :data="(f: UploadRawFile) => uploadDate(f, '-1')"
-        :headers="{ Authorization: 'Bearer ' + userStore.auth.token }"
+        :http-request="upload"
+        :data="(f: UploadRawFile) => buildDate(f)"
         :show-file-list="false"
         :before-upload="beforeUpload"
         :on-success="onUploadSeccess"
         :on-error="onError"
+        :disabled="!docLibStore.isLogin"
         drag
         multiple>
         <upload-filled />
@@ -20,17 +26,81 @@
 </template>
 
 <script setup lang="ts">
-import { UploadRawFile } from 'element-plus'
+/**
+ * 该模块不使用, 暂留
+ * @description: AsideUpload
+ */
+import type { UploadProps, UploadRawFile, UploadRequestOptions } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
-import { uploadFileApiUrl } from '@renderer/api/blossom'
-import { useUserStore } from '@renderer/stores/user'
-import { useServerStore } from '@renderer/stores/server'
-import { beforeUpload, onUploadSeccess, onError, uploadDate } from '@renderer/views/picture/scripts/picture'
+import { useDocLibStore } from '@renderer/stores/docLib'
+import Notify from '@renderer/scripts/notify'
 
-//#region ----------------------------------------< panin store >--------------------------------------
-const userStore = useUserStore()
-const serverStore = useServerStore()
-//#endregion
+const docLibStore = useDocLibStore()
+
+/**
+ * 上传方法
+ * @param options
+ */
+const upload = (options: UploadRequestOptions) => {
+  console.log('upload', options)
+}
+
+/**
+ *
+ * upload 组件的 data 数据获取
+ * @param rawFile
+ * @param pid
+ * @returns
+ */
+const buildDate = (rawFile: UploadRawFile) => {
+  return { originFilePath: rawFile.path, targetDocLibRoot: true }
+}
+
+/**
+ * 上传校验
+ */
+const beforeUpload: UploadProps['beforeUpload'] = (_rawFile) => {
+  return true
+}
+
+/**
+ * 上传成功
+ * @param resp
+ * @param _file
+ */
+const onUploadSeccess: UploadProps['onSuccess'] = (resp, _file?) => {
+  return true
+  // if (resp.code === '20000') {
+  //   Notify.success('上传成功')
+  //   return true
+  // } else {
+  //   Notify.error(resp.msg, '上传失败')
+  //   return false
+  // }
+}
+
+/**
+ * 上传失败
+ * @param error
+ * @param _file
+ * @param _files
+ */
+const onError: UploadProps['onError'] = (error, _file, _files) => {
+  if (error.message != undefined) {
+    if (error.message.indexOf('fail to post') > -1 && error.message.indexOf('/picture/file/upload 0') > -1) {
+      Notify.error('可能是由于您上传的文件过大, 请检查服务端上传大小限制。', '上传失败')
+    } else {
+      try {
+        let resp = JSON.parse(error.message)
+        if (resp != undefined) {
+          Notify.error(resp.msg, '上传失败')
+        }
+      } catch (e) {
+        Notify.error(error.message, '上传失败')
+      }
+    }
+  }
+}
 </script>
 
 <style scoped lang="scss">
