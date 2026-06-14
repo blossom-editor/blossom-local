@@ -3,11 +3,13 @@ import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
 import { IdMapping, FileItem } from '../doclib/idMapping'
+import { DocLibStatsManager } from '../doclib/docLibStatsManager'
+import { readDocTreeSort } from '../doclib/api'
 import { timeToYMD } from '../date'
 import { getUniqueId } from '../utils'
-import { readDocTreeSort } from '../doclib/api'
 
 const idMapping = IdMapping.getInstance()
+const docLibStatsManager = DocLibStatsManager.getInstance()
 
 export const initArticleApi = () => {
   console.log('   4.4 初始化文章接口 initArticleApi')
@@ -33,7 +35,6 @@ const initReadDocInfo = () => {
  * @returns 返回包含文档基本信息的 DocInfo 对象。若读取成功，markdown 字段将包含文件内容；若读取失败，markdown 字段为空字符串，但仍返回包含路径等基础信息的对象
  */
 const readDocInfo = async (req: GetFileContentReq): Promise<R<DocInfo>> => {
-  console.log(`读取文章内容与信息(readDocInfo): 文章的路径: ${req.path}, ID: ${req.id}`)
   const cacheDoc: FileItem | undefined = idMapping.get(req.id)
   if (!cacheDoc || cacheDoc.type !== 'ARTICLE') {
     return R.fail('文章不存在', '文章不存在, 请尝试刷新文档列表')
@@ -98,7 +99,7 @@ const initMoveFile = () => {
 }
 
 /**
- * 移动文件, 同事会自动修改子文件夹下的文件路径, 不需要同步修改
+ * 移动文件, 同时会自动修改子文件夹下的文件路径, 不需要同步修改
  */
 const moveFile = async (req: MoveFileReq): Promise<R<DocTree[]>> => {
   try {
@@ -129,17 +130,21 @@ const initSaveArticleContent = () => {
  * 保存文件内容, 通过文件ID获取文件路径, 并保存
  */
 const saveArticleContent = async (req: SaveFileContentReq): Promise<R<any>> => {
-  const file = idMapping.get(req.id)
-  console.log('保存文件内容: ', file)
-  if (!file) {
+  const article = idMapping.get(req.id)
+  if (!article) {
     return R.fail('文件不存在', '未找到对应的文件')
   }
 
-  if (file.type !== 'ARTICLE') {
+  if (article.type !== 'ARTICLE') {
     return R.ok('')
   }
   try {
-    await fs.promises.writeFile(file.path, req.content, 'utf8')
+    await fs.promises.writeFile(article.path, req.content, 'utf8')
+    const stat = await fs.promises.stat(article.path, { bigint: true })
+
+    // 重新构建该文章的图片关系
+    docLibStatsManager.updateM2P_P2M(stat, req.content)
+    docLibStatsManager.log()
     return R.ok('')
   } catch (err) {
     return R.fail('50102', err)

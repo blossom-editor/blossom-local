@@ -32,25 +32,30 @@ export const initDocLibApi = () => {
 //#region ====================================< 文档列表 >====================================
 
 const initReadDocTree = () => {
-  ipcMain.handle('read-doc-tree', async (_event, params: DocTreeReq) => {
-    return R.ok(await readDocTreeSort(params))
+  ipcMain.handle('read-doc-tree', async (_event, req: DocTreeReq) => {
+    return R.ok(await readDocTreeSort(req))
   })
 }
 
 /**
  * 获取文档数并最终排序
+ * 同时包含以下逻辑
+ * 1. 统计当日修改的文章数并持久化
+ * 2. 重构图片名称路径映射
+ * 3. 重构全量文档ID与路径映射关系
  */
-export const readDocTreeSort = async (params: DocTreeReq): Promise<DocTree[]> => {
+export const readDocTreeSort = async (req: DocTreeReq): Promise<DocTree[]> => {
+  if (!req.docLibPath) return []
+
   const start = new Date().getTime()
-
-  await docLibStatsManager.clecrArticleUpdToday(params.docLibPath!)
+  await docLibStatsManager.clecrArticleUpdToday(req.docLibPath!)
   picNameMapping.clear()
-  const docTree = await readDocTree(params)
+  const docTree = await readDocTree(req)
   sortDocTreeList(docTree)
-  docLibStatsManager.save(params.docLibPath!)
-  picNameMapping.log()
+  docLibStatsManager.save(req.docLibPath!)
 
-  if (params.type === 'PICTURE') {
+  picNameMapping.log()
+  if (req.type === 'PICTURE') {
     const repeat: PicItem[] = picNameMapping.getRepeatPic()
     const ids: string[] = repeat.map((item) => item.id)
     const repeatDocTree = findNodesByIds(docTree, ids)
@@ -59,7 +64,7 @@ export const readDocTreeSort = async (params: DocTreeReq): Promise<DocTree[]> =>
     }
   }
 
-  warnLog(`刷新文档用时 cost: ${new Date().getTime() - start} ms`)
+  warnLog(`刷新文档用时: ${new Date().getTime() - start} ms`)
   return docTree
 }
 

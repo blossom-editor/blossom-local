@@ -178,6 +178,9 @@ declare interface ArticleLink {
   name: string
 }
 
+/**
+ * 指定文件夹下的文件列表
+ */
 declare interface PictureListReq extends Base {
   // 文件夹或文件的ID
   id: string
@@ -185,11 +188,17 @@ declare interface PictureListReq extends Base {
   pageSize: number
 }
 
+/**
+ * 指定文件夹下的文件列表返回
+ */
 declare interface PictureListRes extends Base {
-  // 文件夹或文件的ID
-  totalCount: number
-  totalSize: number
+  totalCount: number // 文件数量
+  totalSize: number // 文件大小
   pictures: Picture[]
+}
+
+declare interface PictureInfoReq extends Base {
+  id: string
 }
 
 
@@ -206,16 +215,6 @@ declare interface SelectPicAndMoveReq extends Base {
 }
 
 /**
- * 移动文件
- */
-declare interface PicMoveReq extends Base {
-  originFilePath: string
-  // 将图片上传到文档库根目录
-  targetDocLibRoot: boolean
-}
-
-
-/**
  * 将文件流保存为图片
  */
 declare interface FileBuffSaveReq extends Base {
@@ -225,6 +224,18 @@ declare interface FileBuffSaveReq extends Base {
   fileName?: stirng
   // 文件流
   fileBuffer: ArrayBuffer
+}
+
+/**
+ * 批量删除图片
+ */
+declare interface PictureDeleteBatchReq extends Base {
+  ids:string []
+}
+
+declare interface PictureMoveBatchReq extends Base  {
+  ids:string []
+  targetDocId: stirng
 }
 
 //#endregion

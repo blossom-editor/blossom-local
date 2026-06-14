@@ -462,14 +462,6 @@ export const pictureStarApi = (data?: object): Promise<R<any>> => {
   return rq.post<R<any>>('/picture/star', data)
 }
 
-/**
- * 删除图片
- * @param params {id:id}
- * @returns
- */
-export const pictureDelApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/picture/del', data)
-}
 
 /**
  * 批量删除图片

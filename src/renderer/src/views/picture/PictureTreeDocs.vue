@@ -78,15 +78,7 @@
               <div v-else class="name-wrapper" :style="{ maxWidth: isNotBlank(data.icon) ? 'calc(100% - 25px)' : '100%' }">
                 {{ data.name }}
               </div>
-              <el-tooltip
-                v-if="data.status === 'PICTURE_REPEAT'"
-                effect="light"
-                popper-class="is-small"
-                placement="right"
-                :hide-after="0"
-                content="文件名重复">
-                <bl-tag v-if="data.status === 'PICTURE_REPEAT'" style="margin-top: 4px" icon="bl-tier-line"></bl-tag>
-              </el-tooltip>
+              <bl-tag v-if="data.status === 'PICTURE_REPEAT'" style="margin-top: 4px" icon="bl-tier-line">重复</bl-tag>
             </div>
           </div>
         </div>
@@ -134,7 +126,7 @@ import Node from 'element-plus/es/components/tree/src/model/node'
 import { docTreeApi } from '@renderer/api/blossom'
 import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
 import { isShowImg, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
-import { getChildFileCountColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
+import { getChildFileCountColor } from '@renderer/views/doc/doc-tree'
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 // util
@@ -145,7 +137,7 @@ import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
 import { getFilePrefix, inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
 import { openFileLocation } from '@renderer/api/docLib'
-import { pictureUpdNameApi } from '@renderer/api/picture'
+import { pictureDeleteBatchApi, pictureInfoApi, pictureRenameApi } from '@renderer/api/picture'
 
 const docLibStore = useDocLibStore()
 const configStore = useConfigStore()
@@ -423,12 +415,12 @@ const collapseChilds = (node: Node) => {
 
 /**
  * 如果父节点没有子节点时, 关闭父节点的展开状态
- * @param pid 父ID
+ * @param id ID
  */
-const closeParentIfNoChild = (pid: string) => {
-  let node: Node = DocTreeRef.value.getNode(pid)
+const closeParentIfNoChild = (id: string) => {
+  let node: Node = DocTreeRef.value.getNode(id).parent
   if (node && isEmpty(node.childNodes)) {
-    docTreeCurrentExpandIdSet.value.delete(pid)
+    docTreeCurrentExpandIdSet.value.delete(id)
   }
 }
 
@@ -492,21 +484,24 @@ const closeTreeDocsMenuShow = (event?: MouseEvent) => {
  * 删除文档, 删除后将文档从树状节点中删除
  */
 const delPicture = () => {
-  ElMessageBox.confirm(
-    `是否确定删除文件夹: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.name}</span>？删除后将不可恢复！`,
-    {
-      confirmButtonText: '确定删除',
-      cancelButtonText: '我再想想',
-      type: 'info',
-      draggable: true,
-      dangerouslyUseHTMLString: true
+  pictureInfoApi({ id: curDoc.value.id }).then((resp) => {
+    if (resp.data!.articleLinks.length > 0) {
+      Notify.warning(`尚有[${resp.data!.articleLinks.length}]篇文章使用该图片, 无法删除`, '无法删除')
+    } else {
+      ElMessageBox.confirm(`文件将被移入回收站, 是否确定: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.name}</span>？`, {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '我再想想',
+        type: 'info',
+        draggable: true,
+        dangerouslyUseHTMLString: true
+      }).then(() => {
+        pictureDeleteBatchApi({ ids: [curDoc.value.id] }).then((resp) => {
+          Notify.success(`删除成功`)
+          closeParentIfNoChild(curDoc.value.id)
+          docTreeData.value = resp.data!
+        })
+      })
     }
-  ).then(() => {
-    // folderDelApi({ id: curDoc.value.i }).then((_resp) => {
-    //   Notify.success(`删除文件夹成功`)
-    //   DocTreeRef.value.remove(curDoc.value.i)
-    //   closeParentIfNoChild(curDoc.value.p)
-    // })
   })
 }
 
@@ -531,7 +526,7 @@ const rename = () => {
  * 重命名文章失去焦点
  */
 const blurArticleNameInput = (doc: DocTree) => {
-  const params = { oldPath: doc.path, newPath: '' }
+  const req = { oldPath: doc.path, newPath: '' }
   if (!changeArticleNameInput(doc)) {
     getDocTree()
     notAllowDragId = ''
@@ -547,15 +542,15 @@ const blurArticleNameInput = (doc: DocTree) => {
     notAllowDragId = ''
   }
 
-  params.newPath = joinPath(parentPath, newName)
+  req.newPath = joinPath(parentPath, newName)
   // 路径相同, 则未重命名
-  if (params.oldPath === params.newPath) {
+  if (req.oldPath === req.newPath) {
     resetUpdateState()
     return
   }
-  pictureUpdNameApi(params).then((_resp) => {
+  pictureRenameApi(req).then((resp) => {
     resetUpdateState()
-    getDocTree()
+    docTreeData.value = resp.data!
   })
 }
 

@@ -15,6 +15,7 @@ export class DocLibStatsManager {
   /** 统计字段 */
   private stats: DocLibStats | undefined
   private lastInitStatsTime: number = 0
+  private docLibPath: string = ''
 
   private picToMdMap: Map<string, PicToMd> = new Map()
   private mdToPicMap: Map<string, MdToPic> = new Map()
@@ -55,12 +56,17 @@ export class DocLibStatsManager {
       console.log(`包含 ${p2m.mds.length} 个文章:`)
       // 遍历当前文档下的所有图片项
       p2m.mds.forEach((md) => {
-        console.log(`  - 文章: ${md.mdPath}`)
+        console.log(`  - 文章: ${md.id}`)
       })
       traceLog('------------------------------------------------------------------------------')
     })
   }
 
+  /**
+   * 根据图片名称获取对应的文章信息
+   * @param picName 图片名称
+   * @returns
+   */
   public getMdsByPic(picName: string): PicToMdItem[] {
     return this.picToMdMap.get(picName)?.mds || []
   }
@@ -80,9 +86,9 @@ export class DocLibStatsManager {
 
     if (this.stats.wordsByMonth === undefined) this.stats.wordsByMonth = {}
     if (this.stats.articleUpdByDay === undefined) this.stats.articleUpdByDay = {}
-
     // 未定义的配置项初始化, 如果有新的配置项, 在此添加
-    // this.stats.articleUpdByDay[nowYMD()] = 0
+
+    // this.stats.articleUpdByDay[nowYMD()] = 0 // 当日修改数不持久化, 每次打开时更新
   }
 
   /**
@@ -103,8 +109,7 @@ export class DocLibStatsManager {
       return
     }
     fs.writeFileSync(path.join(docLibPath, sysFolder, docLibStatsFile), JSON.stringify(this.stats, null, 2))
-    // console.log('持久化文档库统计(docLib stats)', this.stats)
-    // console.log('============================================================')
+    // console.log(this.stats)
   }
 
   /**
@@ -115,9 +120,11 @@ export class DocLibStatsManager {
    */
   public async statsBegin(docLibPath: string): Promise<void> {
     // 三十秒一次
-    if (new Date().getTime() - this.lastInitStatsTime < 30 * 1000) {
+    if (this.docLibPath === docLibPath && new Date().getTime() - this.lastInitStatsTime < 30 * 1000) {
       return
     }
+
+    this.docLibPath = docLibPath
     this.lastInitStatsTime = new Date().getTime()
     if (!this.stats) {
       await this.init(docLibPath)
@@ -125,6 +132,9 @@ export class DocLibStatsManager {
     if (!this.stats) {
       return
     }
+
+    this.mdToPicMap.clear()
+    this.picToMdMap.clear()
 
     const temp: DocLibStats = {
       wordsByMonth: {},
@@ -161,22 +171,23 @@ export class DocLibStatsManager {
 
       // 只显示文件夹和 md 文件
       if (file.isDirectory()) {
-        this.statsFileTreeRecursive(path.join(docLibPath, file.name), temp)
+        await this.statsFileTreeRecursive(path.join(docLibPath, file.name), temp)
       } else if (file.name.endsWith('.md')) {
         const mdPath = path.join(docLibPath, file.name)
         const mdContent = await fs.promises.readFile(mdPath, 'utf8')
         const mdStat = await fs.promises.stat(mdPath, { bigint: true })
 
         // 提取图片和链接
-        this.extracImagesAndLinks(mdPath, mdStat, mdContent)
+        this.extracImagesAndLinks(mdStat, mdContent)
 
         // let start1 = new Date().getTime()
         let count = countWords(mdContent)
+        console.log('countWords:', count)
         temp.articleTotalWords += count
+        temp.articleTotal += 1
+
         // end = new Date().getTime() - start1
         // console.log(`字数: ${count} 耗时: ${end} ms`)
-
-        temp.articleTotal += 1
         // console.log('=============================================================================================')
       } else {
         const fullPath = path.join(docLibPath, file.name)
@@ -214,79 +225,151 @@ export class DocLibStatsManager {
   }
 
   /**
-   * 提取文章正文中的图片和链接
-   * @param mdPath 文章路径
+   * 提取单个文章正文中的图片和链接
+   *
    * @param mdStat 统计信息
    * @param mdContent 文章内容
    */
-  public extracImagesAndLinks(mdPath: string, mdStat: BigIntStats, mdContent: string) {
+  public extracImagesAndLinks(mdStat: BigIntStats, mdContent: string) {
     const start = new Date().getTime()
 
     // ================= 提取链接 ================
-    const items = extractImagesAndLinksFast(mdContent)
+    const markdownId = getUniqueId(mdStat)
+    const links = extractImagesAndLinksFast(mdContent)
+    const linkMatch = links.filter((item): item is LinkMatch => item.type === 'link')
+    const pictureMatch = links.filter((item): item is ImageMatch => item.type === 'picture')
 
-    for (const picItem of items) {
-      if (picItem.type === 'link') {
-        // console.log(`链接: ${picItem.text} -> ${picItem.url} , 标题: ${picItem.title}`)
-      } else {
-        // console.log(`图片: ${item.alt} -> ${item.url} , 标题: ${item.title}`)
-        console.log(`图片: ${picItem.raw}`)
-        this.handleMdToPic(picItem, mdPath, mdStat)
-      }
-    }
-
-    // console.log(`${mdPath}, ${mdContent.length}, 耗时: ${new Date().getTime() - start} ms`)
+    // 清空该文章的图片映射关系
+    this.mdToPicMap.set(markdownId, { pics: [] })
+    this.initM2P_P2M(pictureMatch, markdownId)
+    // TODO: 更新文章和链接的关系
   }
 
   /**
-   * 处理文章和图片的对应关系
+   * 初始化处理文章和图片的相互对应关系
+   *
    * @param pic 图片项
    * @param mdPath 文章的路径
    */
-  public handleMdToPic(pic: ImageMatch, mdPath: string, mdStat: BigIntStats) {
-    const picName = extractFileName(pic.url)
-
-    let mdToPic: MdToPic | undefined = this.mdToPicMap.get(mdPath)
-    if (mdToPic === undefined) {
-      mdToPic = { mdPath: mdPath, pics: [] }
-    }
-
-    let index = mdToPic.pics.findIndex((item) => item.picName === picName)
-    if (index !== -1) {
-      // 存在相同 picName，修改该对象
-      mdToPic.pics[index].picPath = pic.url // 图片的url, 可能存在绝对路径, 相对路径, 网络路径等
-      mdToPic.pics[index].picMdRaw = pic.raw // 图片的 markdown 全局格式
-    } else {
-      // 不存在，新增对象
+  private initM2P_P2M(pics: ImageMatch[], markdownId: string) {
+    for (const pic of pics) {
+      const picName = extractFileName(pic.url) // 从链接中获取图片的文件名
+      // ========================================================================
+      // 一篇文章对应多个图片名称, 每次文章的映射重新赋值即可
+      // ========================================================================
+      // 文章ID: 图片[]
+      let mdToPic: MdToPic = this.mdToPicMap.get(markdownId)!
       mdToPic.pics.push({ picName: picName, picPath: pic.url, picMdRaw: pic.raw })
+      this.mdToPicMap.set(markdownId, mdToPic)
+
+      // ========================================================================
+      // 一张图片映射多个文章ID
+      // ========================================================================
+
+      // 图片名称: 文章[]
+      let picToMd: PicToMd | undefined = this.picToMdMap.get(picName)
+      if (picToMd === undefined) {
+        picToMd = { mds: [] }
+      }
+
+      // 图片对应的文章, 只记录文章的ID, 路径与名称等会因为文章拖拽, 重命名等原因发生变化
+      // 文章的名称与路径需通过 idMapping 获取
+      const index = picToMd.mds.findIndex((item) => item.id === markdownId)
+      if (index !== -1) {
+        picToMd.mds[index].id = markdownId
+      } else {
+        picToMd.mds.push({ id: markdownId })
+      }
+
+      this.picToMdMap.set(picName, picToMd)
     }
-
-    this.mdToPicMap.set(mdPath, mdToPic)
-
-    // ------------------------------------------------------------------------------------------
-
-    let picToMd: PicToMd | undefined = this.picToMdMap.get(picName)
-    if (picToMd === undefined) {
-      picToMd = { picPath: '', mds: [] }
-    }
-    index = picToMd.mds.findIndex((item) => item.mdPath === mdPath)
-    if (index !== -1) {
-      // 存在相同 picName，修改该对象
-      picToMd.mds[index].id = getUniqueId(mdStat)
-      picToMd.mds[index].mdPath = mdPath
-      picToMd.mds[index].mdForderPath = path.dirname(mdPath)
-    } else {
-      // 不存在，新增对象
-      picToMd.mds.push({
-        id: getUniqueId(mdStat),
-        mdName: path.basename(mdPath),
-        mdPath: mdPath,
-        mdForderPath: path.dirname(mdPath)
-      })
-    }
-
-    this.picToMdMap.set(picName, picToMd)
   }
+
+  /**
+   * 更新处理文章和图片的相互对应关系, 通常用在文章正文被修改时
+   * 文章对应图片的关系与初始化时一样, 只有图片的逻辑不同
+   *
+   * @param pic 图片项
+   * @param mdPath 文章的路径
+   */
+  public updateM2P_P2M(mdStat: BigIntStats, mdContent: string) {
+    const markdownId = getUniqueId(mdStat)
+    const links = extractImagesAndLinksFast(mdContent)
+    const linkMatch = links.filter((item): item is LinkMatch => item.type === 'link')
+    const pictureMatch = links.filter((item): item is ImageMatch => item.type === 'picture')
+
+    // 清空该文章的图片映射关系
+    this.mdToPicMap.set(markdownId, { pics: [] })
+
+    // ========================================================================
+    // 一篇文章对应多个图片名称, 每次文章的映射重新赋值即可
+    // ========================================================================
+    for (const pic of pictureMatch) {
+      const picName = extractFileName(pic.url) // 从链接中获取图片的文件名
+      let mdToPic: MdToPic = this.mdToPicMap.get(markdownId)!
+      mdToPic.pics.push({ picName: picName, picPath: pic.url, picMdRaw: pic.raw })
+      this.mdToPicMap.set(markdownId, mdToPic)
+    }
+
+    // ========================================================================
+    // 一张图片映射多个文章ID
+    // ========================================================================
+    // 1. 先删除没有关联该文章的图片中, 记录的文章ID
+    const newPicNames: string[] = pictureMatch.map((p) => extractFileName(p.url))
+    const oldPicNames: string[] = findKeysByMarkdownId(this.picToMdMap, markdownId)
+    const deletePicNames = oldPicNames.filter((oldPicName) => !newPicNames.includes(oldPicName))
+    for (const deletePicName of deletePicNames) {
+      const markdowns: PicToMd | undefined = this.picToMdMap.get(deletePicName)
+      if (!markdowns || !markdowns.mds || markdowns.mds.length === 0) {
+        continue
+      }
+      const index = markdowns.mds.findIndex((md) => md.id === markdownId)
+      if (index !== -1) {
+        markdowns.mds.splice(index, 1)
+      }
+    }
+
+    // 2. 图片中增加该文章ID
+    for (const picName of newPicNames) {
+      // 图片名称: 文章[]
+      let picToMd: PicToMd | undefined = this.picToMdMap.get(picName)
+      if (picToMd === undefined) {
+        picToMd = { mds: [] }
+      }
+
+      // 图片对应的文章, 只记录文章的ID, 路径与名称等会因为文章拖拽, 重命名等原因发生变化
+      // 文章的名称与路径需通过 idMapping 获取
+      const index = picToMd.mds.findIndex((item) => item.id === markdownId)
+      if (index !== -1) {
+        picToMd.mds[index].id = markdownId
+      } else {
+        picToMd.mds.push({ id: markdownId })
+      }
+      this.picToMdMap.set(picName, picToMd)
+    }
+  }
+
+  public updatePicName(oldPicName: string, newPicName: string) {}
+
+  /**
+   * 删除图片对应的文章信息, 发生在图片删除和图片重命名时
+   */
+  public deleteP2M(picName: string) {
+    this.picToMdMap.delete(picName)
+  }
+}
+
+function findKeysByMarkdownId(map: Map<string, PicToMd>, markdownId: string): string[] {
+  const keys: string[] = []
+  for (const [key, value] of map.entries()) {
+    // 检查值对象中是否包含目标值（根据需求自定义检查逻辑）
+    for (const p2cItem of value.mds) {
+      if (p2cItem.id === markdownId) {
+        keys.push(key)
+      }
+    }
+  }
+  return keys
 }
 
 /**
@@ -294,7 +377,7 @@ export class DocLibStatsManager {
  * @param markdown
  * @returns
  */
-export function extractImagesAndLinksFast(markdown: string): (ImageMatch | LinkMatch)[] {
+export const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkMatch)[] => {
   const results: (ImageMatch | LinkMatch)[] = []
   const len = markdown.length
   let i = 0
@@ -316,19 +399,19 @@ export function extractImagesAndLinksFast(markdown: string): (ImageMatch | LinkM
 
   while (i < len) {
     const ch = markdown[i]
-    let isImage = false
+    let isPicture = false
     let startIdx = i
 
     if (ch === '!') {
       if (i + 1 < len && markdown[i + 1] === '[') {
-        isImage = true
+        isPicture = true
         i += 2
       } else {
         i++
         continue
       }
     } else if (ch === '[') {
-      isImage = false
+      isPicture = false
       i++
     } else {
       i++
@@ -377,11 +460,11 @@ export function extractImagesAndLinksFast(markdown: string): (ImageMatch | LinkM
     const endIdx = i + 1 // 包含 ')'
 
     results.push({
-      type: isImage ? 'image' : 'link',
+      type: isPicture ? 'picture' : 'link',
       raw: markdown.slice(startIdx, endIdx),
       start: startIdx,
       end: endIdx,
-      ...(isImage ? { alt: text } : { text }),
+      ...(isPicture ? { alt: text } : { text }),
       url,
       title
     } as any)
@@ -413,22 +496,17 @@ type DocLibStats = {
  * 图片和 markdown 的对应结果, 一个图片对应多个 markdown
  */
 interface PicToMd {
-  picPath: string
   mds: PicToMdItem[]
 }
 
 interface PicToMdItem {
   id: string
-  mdName: string
-  mdPath: string
-  mdForderPath: string
 }
 
 /**
  * markdown 和图片的对应结果, 一个 markdown 对应多个图片
  */
 interface MdToPic {
-  mdPath: string
   pics: MdToPicItem[]
 }
 
@@ -467,7 +545,7 @@ export interface LinkMatch extends BaseMatch {
  * 图片匹配结果
  */
 export interface ImageMatch extends BaseMatch {
-  type: 'image'
+  type: 'picture'
   /** 图片 alt 文本 */
   alt: string
   /** 图片 URL */

@@ -24,6 +24,7 @@
 
             <el-button plain @click="lastPage()">上一页</el-button>
             <el-button plain @click="nextPage()">下一页</el-button>
+            <el-button plain @click="refreshPage()">刷新</el-button>
 
             <el-button @click="picCacheRefresh()">
               清空图片缓存
@@ -84,7 +85,7 @@
           <div class="picuter-card-workbench">
             <el-tooltip placement="bottom" trigger="click" :hide-after="0">
               <template #content>
-                <div style="max-width: 300px; white-space: break-spaces; word-wrap: break-word; word-break: break-all">
+                <div class="picture-info-tooltip" style="max-width: 300px; white-space: break-spaces; word-wrap: break-word; word-break: break-all">
                   <bl-row>图片名称: {{ pic.name }}</bl-row>
                   <bl-row>图片大小: {{ formatFileSize(pic.size) }}</bl-row>
                   <bl-row>上传时间: {{ pic.creTime }}</bl-row>
@@ -149,7 +150,7 @@
 import { ref, provide, computed, StyleValue } from 'vue'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
-import { picturePageApi, pictureDelApi } from '@renderer/api/blossom'
+import { picturePageApi } from '@renderer/api/blossom'
 import { treeToInfo, provideKeyDocInfo } from '@renderer/views/doc/doc'
 import { isEmpty, isNotNull, isNull } from '@renderer/assets/utils/obj'
 import { formatFileSize, getFilePrefix, getFileSuffix, isImage } from '@renderer/assets/utils/util'
@@ -201,7 +202,7 @@ const clickCurDoc = (tree: DocTree) => {
       return
     }
 
-    pictureInfoApi({ filename: tree.name }).then((res) => {
+    pictureInfoApi({ id: tree.id }).then((res) => {
       const pic: Picture = res.data!
       PictureViewerInfoRef.value.showPicInfo([pic], tree.id)
     })
@@ -262,6 +263,17 @@ const nextPage = () => {
   })
 }
 
+const refreshPage = () => {
+  if (!curIsFolder()) return
+  pictureListApi({
+    id: curFolder.value!.id,
+    pageNum: picPageParam.value.pageNum,
+    pageSize: picPageParam.value.pageSize
+  }).then((resp) => {
+    picPages.value = resp.data!.pictures
+  })
+}
+
 //#endregion
 
 //#region ----------------------------------------< 图片卡片操作 >--------------------------------
@@ -308,14 +320,14 @@ const copyUrl = (path: string) => {
  * @param picName 图片名称
  * @param event event
  */
-const copyMarkdownUrl = (path: string, picName: string, event: MouseEvent) => {
+const copyMarkdownUrl = (_path: string, picName: string, event: MouseEvent) => {
   event.preventDefault()
   writeText(`![${picName}](${picName})`)
   ElMessage.info({ message: '已复制 MD 格式链接', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
 }
 
 /**
- * 删除图片
+ * 删除单个图片
  * @param pic 当前选中图片
  */
 const deletePicture = (pic: Picture) => {
@@ -340,14 +352,14 @@ const deletePicture = (pic: Picture) => {
     pic.url = '1'
     pic.delTime = 1
 
-    pictureDelApi({ id: pic.id })
-      .then((_resp) => {
-        pic.delTime = 2
-      })
-      .catch((_) => {
-        pic.delTime = 0
-        pic.url = urlBak
-      })
+    // pictureDelApi({ id: pic.id })
+    //   .then((_resp) => {
+    //     pic.delTime = 2
+    //   })
+    //   .catch((_) => {
+    //     pic.delTime = 0
+    //     pic.url = urlBak
+    //   })
   })
 }
 
@@ -522,5 +534,10 @@ useResizeVertical(DocsRef, PictureContainerRef, ResizeDividerRef, undefined, {
   :deep(.el-switch__action) {
     background-color: #ffffff !important;
   }
+}
+
+.picture-info-tooltip {
+  max-height: 300px;
+  overflow-y: scroll;
 }
 </style>

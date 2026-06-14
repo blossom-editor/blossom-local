@@ -79,7 +79,6 @@
 import { computed, ref } from 'vue'
 import { ElMessageBox, UploadProps } from 'element-plus'
 import { ArrowLeftBold, ArrowRightBold, WarnTriangleFilled } from '@element-plus/icons-vue'
-import { pictureDelApi } from '@renderer/api/blossom'
 import { DefaultPicture, picCacheWrapper, picCacheRefresh } from './scripts/picture'
 import { formatFileSize, isHttp } from '@renderer/assets/utils/util'
 import { writeText } from '@renderer/assets/utils/electron'
@@ -156,11 +155,11 @@ const deletePicture = () => {
     type: 'warning',
     icon: WarnTriangleFilled
   }).then(() => {
-    pictureDelApi({ id: picInfo.value!.id, ignoreCheck: true }).then((_resp) => {
-      picCacheRefresh()
-      closePicInfo()
-      emits('saved')
-    })
+    // pictureDelApi({ id: picInfo.value!.id, ignoreCheck: true }).then((_resp) => {
+    //   picCacheRefresh()
+    //   closePicInfo()
+    //   emits('saved')
+    // })
   })
 }
 
@@ -240,6 +239,8 @@ const emits = defineEmits(['saved'])
       white-space: break-spaces;
       word-wrap: break-word;
       word-break: break-all;
+      max-height: 40vh;
+      overflow: auto;
 
       strong {
         min-width: 70px;

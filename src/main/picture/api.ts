@@ -1,15 +1,16 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, shell } from 'electron'
 import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
 import { IdMapping } from '../doclib/idMapping'
-import { cutSuffix, getUniqueId, imagesSuffix, isImage, normalizeMarkdownImage } from '../utils'
+import { cutSuffix, errorLog, getUniqueId, imagesSuffix, isImage, normalizeMarkdownImage } from '../utils'
 import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
 import { PicItem, PicNameMapping } from '../doclib/picNameMapping'
 import { DocLibStatsManager } from '../doclib/docLibStatsManager'
 import { protocolWrapper } from '../customProtocol'
 import { naturalCompare } from '../doclib/docLibUtil'
+import { readDocTreeSort } from '../doclib/api'
 
 const idMapping = IdMapping.getInstance()
 const picNameMapping = PicNameMapping.getInstance()
@@ -18,11 +19,11 @@ const docLibStatsManager = DocLibStatsManager.getInstance()
 export const initPictureApi = () => {
   console.log('   4.5 初始化图片接口 initPictureApi')
   initSelectPicAndMoveDialog()
-  initPicMove()
   initFileBuffSave()
   initPictureList()
   initPictureInfoByName()
-  initRenameFile()
+  initRenamePicture()
+  initDeleteBatchPictures()
 }
 
 const initSelectPicAndMoveDialog = () => {
@@ -65,33 +66,6 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
   }
   const res = moveFile(choiseFile.filePaths[0], targetFolder)
 
-  return R.ok(res)
-}
-
-const initPicMove = () => {
-  ipcMain.handle('pic-move', (_event, params: PicMoveReq) => {
-    return picAndMove(params)
-  })
-}
-
-const picAndMove = async (req: PicMoveReq): Promise<R<SelectFileAndMoveRes | null>> => {
-  if (!req.docLibPath) {
-    return R.fail('DOCLIB_ERROR', `未选择文档库`)
-  }
-
-  let targetFolder = ''
-  if (req.targetDocLibRoot) {
-    // 如果指定了文章, 则上传到文章路径, 否则上传到文档库根目录
-    targetFolder = req.docLibPath!
-  } else {
-    return R.fail('FOLDER_PATH_ERROR', `不能将文件上传到文档库之外: [${targetFolder}]`)
-  }
-
-  // 目标地址必须为文档库的子目录
-  if (targetFolder.indexOf(req.docLibPath!) === -1) {
-    return R.fail('FOLDER_PATH_ERROR', `不能将文件上传到文档库之外: [${targetFolder}]`)
-  }
-  const res = moveFile(req.originFilePath, targetFolder)
   return R.ok(res)
 }
 
@@ -144,6 +118,7 @@ const fileBuffSave = async (req: FileBuffSaveReq): Promise<R<SelectFileAndMoveRe
   let targetPicPath = path.join(targetFolder, fileName)
   const uint8Array = new Uint8Array(req.fileBuffer)
   fs.writeFileSync(targetPicPath, uint8Array)
+  picNameMapping.addPath(targetPicPath)
 
   const res: SelectFileAndMoveRes = {
     filePath: targetPicPath,
@@ -170,9 +145,11 @@ const initPictureList = () => {
         if (!isImage(file.name)) return false
         return true
       })
-      .sort((a, b) => naturalCompare(a.name, b.name))
+      .sort((a, b) => {
+        return naturalCompare(cutSuffix(a.name), cutSuffix(b.name))
+      })
 
-    const pageFiles = picFiles.slice((req.pageNum - 1) * req.pageSize, req.pageNum * req.pageSize)
+    const pictures = picFiles.slice((req.pageNum - 1) * req.pageSize, req.pageNum * req.pageSize)
 
     const nodes: Picture[] = []
     let count: number = 0
@@ -184,27 +161,27 @@ const initPictureList = () => {
       size += Number(stats.size)
     }
 
-    for (const file of pageFiles) {
-      const fullPath = path.join(file.path, file.name)
+    for (const picture of pictures) {
+      const fullPath = path.join(picture.path, picture.name)
       const stats: BigIntStats = await fs.promises.stat(fullPath, { bigint: true })
       const doc: Picture = {
         id: getUniqueId(stats),
         type: 'PICTURE',
-        name: file.name,
+        name: picture.name,
         size: Number(stats.size),
-        suffix: path.extname(file.name),
-        formatName: cutSuffix(file.name),
+        suffix: path.extname(picture.name),
+        formatName: cutSuffix(picture.name),
         path: fullPath,
-        folderPath: file.path,
+        folderPath: picture.path,
         localProtocolPath: protocolWrapper(fullPath),
         creTime: timeToYMD(stats.birthtime.toString()), // 创建时间
         updTime: timeToYMD(stats.mtime.toString()), // 修改时间
         delTime: 0,
         checked: false,
-        articleLinks: docLibStatsManager.getMdsByPic(file.name).map((item) => {
+        articleLinks: docLibStatsManager.getMdsByPic(picture.name).map((item) => {
           return {
             id: item.id,
-            name: item.mdName
+            name: idMapping.get(item.id)!.name
           }
         })
       }
@@ -226,31 +203,28 @@ const initPictureList = () => {
  * 获取图片信息
  */
 const initPictureInfoByName = () => {
-  ipcMain.handle('picture-info', async (_event, req: { filename: string }): Promise<R<Picture>> => {
-    const basename = path.basename(req.filename)
+  ipcMain.handle('picture-info', async (_event, req: PictureInfoReq): Promise<R<Picture>> => {
+    const picture = idMapping.get(req.id)
+    if (!picture) return R.fail('FILE_NOT_FOUND', '未找到文件')
 
-    const pics: PicItem[] | undefined = picNameMapping.get(basename)
-    if (!pics) return R.fail('FILE_NOT_FOUND', '未找到文件:' + basename)
-    const pic = pics[0]
-
-    const stats: BigIntStats = await fs.promises.stat(pic!.path, { bigint: true })
+    const stats: BigIntStats = await fs.promises.stat(picture.path, { bigint: true })
     const picInfo: Picture = {
-      id: pic!.id,
+      id: getUniqueId(stats),
       type: 'PICTURE',
-      name: pic!.name,
+      name: picture!.name,
       size: Number(stats.size),
-      suffix: path.extname(pic!.name),
-      formatName: cutSuffix(pic!.name),
-      path: pic!.path,
-      folderPath: pic!.folderPath,
-      localProtocolPath: protocolWrapper(pic!.path),
+      suffix: path.extname(picture.name),
+      formatName: cutSuffix(picture.name),
+      path: picture.path,
+      folderPath: path.dirname(picture.path),
+      localProtocolPath: protocolWrapper(picture!.path),
       checked: false,
       creTime: timeToYMD(stats.birthtime.toString()),
       delTime: 0,
-      articleLinks: docLibStatsManager.getMdsByPic(pic.name).map((item) => {
+      articleLinks: docLibStatsManager.getMdsByPic(picture.name).map((item) => {
         return {
           id: item.id,
-          name: item.mdName
+          name: idMapping.get(item.id)!.name
         }
       })
     }
@@ -259,36 +233,92 @@ const initPictureInfoByName = () => {
   })
 }
 
-const initRenameFile = () => {
-  ipcMain.handle('picture-rename-file', async (_event, params: RenameFileReq) => {
-    console.log('重命名图片', params)
-    return renameFile(params.oldPath, params.newPath)
+const initRenamePicture = () => {
+  ipcMain.handle('picture-rename', async (_event, req: RenameFileReq) => {
+    return renamePicture(req)
   })
 }
 
 /**
  * 重命名文件
+ * 因为 renmae 方法具有修改路径的功能, 所以进行业务判断, 只重命名文件的名称, 不移动文件的路径
  *
  * @param oldPath - 旧文件路径
  * @param newPath - 新文件路径
+ * @returns 文档列表
  */
-const renameFile = async (oldPath: string, newPath: string): Promise<R<any>> => {
+const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
   try {
-    if (fs.existsSync(newPath)) return R.fail('文件名重复', '已存在相同名称的文件')
-    if (!fs.existsSync(oldPath)) return R.fail('文件不存在', '被重命名的文件不存在')
+    if (fs.existsSync(req.newPath)) return R.fail('文件名重复', '已存在相同名称的文件')
+    if (!fs.existsSync(req.oldPath)) return R.fail('文件不存在', '被重命名的文件不存在')
 
-    const oldName = path.basename(oldPath)
-    const newName = path.basename(newPath)
+    const newName = path.basename(req.newPath)
+
+    const oldFolderPath = path.dirname(req.oldPath)
+    const newFolderPath = path.dirname(req.newPath)
+
+    // 固定的业务逻辑校验, 重命名文件时不允许移动路径
+    if (oldFolderPath !== newFolderPath) return R.fail('文件路径错误', '重命名不允许修改路径')
 
     if (picNameMapping.exist(newName)) {
       return R.fail('文件名重复', '文档库中不允许图片名称重复')
     }
 
-    await fs.promises.rename(oldPath, newPath)
-    picNameMapping.updatePath(oldName, oldPath, newName, newPath)
-    picNameMapping.log()
-    return R.ok({})
+    await fs.promises.rename(req.oldPath, req.newPath)
+
+
+    // 返回文档列表, 会自动刷新图片名称与路径的对应关系
+    return R.ok(await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' }))
   } catch (err) {
     return R.fail('文件重命名失败', err)
   }
+}
+
+const initDeleteBatchPictures = () => {
+  ipcMain.handle('picture-delete-batch', async (_event, req: PictureDeleteBatchReq): Promise<R<DocTree[]>> => {
+    return deleteBatchPicture(req)
+  })
+}
+
+/**
+ * 批量删除图片
+ * 只允许删除文件, 不允许删除文件夹
+ *
+ * @param req
+ * @returns 文档列表
+ */
+const deleteBatchPicture = async (req: PictureDeleteBatchReq): Promise<R<DocTree[]>> => {
+  for (const id of req.ids) {
+    const picture = idMapping.get(id)
+
+    if (!picture || picture.type !== 'PICTURE') continue
+
+    // 图片不在文档库中, 则跳过
+    const picturePath = path.join(picture.path)
+    errorLog(picturePath)
+    if (!picturePath.startsWith(req.docLibPath!)) continue
+
+    // 跳过不存在的文件
+    if (!fs.existsSync(picturePath)) continue
+
+    await shell.trashItem(picturePath)
+
+    const basename = path.basename(picturePath)
+    // 如果图片在文档库中只有一个, 则删除图片时, 删除图片对应的文章记录解析
+    // 理论上图片有被文章使用时, 不允许删除, 这里做兼容
+    if (picNameMapping.count(basename) === 1) {
+      docLibStatsManager.deleteP2M(basename)
+    }
+  }
+  return R.ok(await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' }))
+}
+
+/**
+ * 批量移动文件
+ * 不能移动文件夹, 只能移动子文件, 并且目标路径为同一个父文件夹
+ *
+ * @returns 文档列表
+ */
+const moveBatchPictures = async (req: PictureMoveBatchReq): Promise<R<DocTree[]>> => {
+  return R.ok(await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' }))
 }

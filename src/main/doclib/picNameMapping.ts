@@ -118,6 +118,8 @@ export class PicNameMapping {
 
   /**
    * 修改路径, 先删除旧名称的路径信息, 添加新名称的路径信息
+   *
+   * @description 不需要更新, 每次刷新列表时全量重构
    * @param oldName 旧文件名
    * @param oldPath 旧路径
    * @param newName 新文件名

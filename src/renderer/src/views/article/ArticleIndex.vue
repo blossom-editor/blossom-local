@@ -346,7 +346,9 @@ const selectPicAndMove = () => {
  * 拖拽和黏贴上传
  * @param file 文件
  */
-const uploadFile = (file: File) => uploadForm(curArticle.value!.id, file, (url: string) => cmw.insertBlockCommand(`\n![${file.name}](${url})\n`))
+const uploadFile = (file: File) => {
+  uploadForm(curArticle.value!.id, file, (fileName: string) => cmw.insertBlockCommand(`\n![${file.name}](${fileName})\n`))
+}
 
 /**
  * 文件上传回调

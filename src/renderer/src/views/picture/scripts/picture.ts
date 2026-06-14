@@ -63,7 +63,7 @@ export const uploadForm = (articleId: string, file: File, callback: UploadCallba
     }
 
     fileBuffSave(req).then((resp) => {
-      callback(resp.data!.filePath!)
+      callback(resp.data!.fileName!)
     })
   })
 }
