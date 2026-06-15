@@ -37,9 +37,16 @@ export const pictureRenameApi = (req: RenameFileReq): Promise<R<DocTree[]>> => {
 
 /**
  * 删除图片
+ */
+export const pictureDeleteBatchApi = (req: PictureDeleteBatchReq): Promise<R<PictureDeleteBatchRes>> => {
+  return invoke('picture-delete-batch', req)
+}
+
+/**
+ * 移动图片
  * @param params {id:id}
  * @returns
  */
-export const pictureDeleteBatchApi = (req: PictureDeleteBatchReq): Promise<R<DocTree[]>> => {
-  return invoke('picture-delete-batch', req)
+export const pictureMoveBatchApi = (req: PictureMoveBatchReq): Promise<R<DocTree[]>> => {
+  return invoke('picture-move-batch', req)
 }

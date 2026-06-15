@@ -415,12 +415,10 @@ onUnmounted(() => {
   color: var(--bl-text-color);
 
   .title {
+    @include ellipsis();
     @include font(15px, 500);
     border-bottom: 1px solid var(--el-color-primary-light-5);
     padding: 10px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
   }
 
   .content {

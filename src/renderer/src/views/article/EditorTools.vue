@@ -419,6 +419,8 @@ const handleShowHotKeyDialog = () => {
 
     .divider {
       @include box(2px, 60%);
+      min-width: 2px;
+      max-width: 2px;
       padding: 0;
       border: 0;
     }

@@ -20,15 +20,11 @@
 </template>
 
 <script setup lang="ts">
+import { pictureDeleteBatchApi } from '@renderer/api/picture'
 import { ref } from 'vue'
-import { pictureDelBatchApi } from '@renderer/api/blossom'
-import type { PictureDelBatchRes } from '@renderer/api/blossom'
 
 const props = defineProps({
-  ids: {
-    type: Set<String>,
-    required: true
-  }
+  ids: { type: Set<string>, required: true }
 })
 
 const isLoading = ref(false)
@@ -39,13 +35,13 @@ const del = () => {
     return
   }
   isLoading.value = true
-  pictureDelBatchApi({ ids: Array.from(props.ids) }).then((resp: R<PictureDelBatchRes>) => {
+  pictureDeleteBatchApi({ ids: Array.from(props.ids) }).then((resp: R<PictureDeleteBatchRes>) => {
     delResult.value.msg = `${resp.data?.success} 个文件成功删除。 \n${resp.data?.inuse} 文件正在使用中。 \n${resp.data?.fault} 个文件删除失败。`
     setTimeout(() => {
       isLoading.value = false
       delResult.value.done = true
       emits('deleted', resp.data!.successIds)
-    }, 1500)
+    }, 1000)
   })
 }
 

@@ -2,13 +2,15 @@
   <div class="editor-status-root">
     <bl-row width="calc(100% - 260px)" height="100%" class="status-item-container-left">
       <div v-show="curArticle">{{ curArticle?.name }}</div>
-      <div v-show="curArticle" class="updTime">最近修改:{{ curArticle?.updTime }}</div>
+      <div v-show="curArticle" class="updTime">编辑:{{ curArticle?.updTime }}</div>
       <el-tooltip :content="curArticle?.path" effect="light" placement="top" :hide-after="0" :show-after="500">
-        <div v-show="curArticle" class="path" @click="openFileLocation(curArticle!.path)">路径:{{ curArticle?.path }}</div>
+        <div v-show="curArticle" class="path" @click="openFileLocation(curArticle!.path)">
+          <span>路径:{{ curArticle?.path }}</span>
+        </div>
       </el-tooltip>
-      <el-tooltip :content="curArticle?.id" effect="light" placement="top" :hide-after="0" :show-after="500">
+      <!-- <el-tooltip :content="curArticle?.id" effect="light" placement="top" :hide-after="0" :show-after="500">
         <div v-show="curArticle" class="id">ID:{{ curArticle?.id }}</div>
-      </el-tooltip>
+      </el-tooltip> -->
     </bl-row>
     <bl-row just="flex-end" width="260px" height="100%" class="status-item-container-right">
       <div v-show="curArticle" class="button" @click="openArticleReferenceWindow"><span class="iconbl bl-correlation-line"></span>引用</div>
@@ -16,7 +18,7 @@
       <div v-show="curArticle" just="center">渲染:{{ props.renderInterval }}ms</div>
 
       <el-tooltip :content="'上次保存: ' + (!lastSaveTime ? '未保存' : lastSaveTime)" trigger="click" effect="light" placement="top" :hide-after="0">
-        <div v-show="curArticle">保存状态: <span :class="[saveStatus ? 'save-yes' : 'save-no']">●</span></div>
+        <div v-show="curArticle">保存: <span :class="[saveStatus ? 'save-yes' : 'save-no']">●</span></div>
       </el-tooltip>
     </bl-row>
   </div>
@@ -75,25 +77,26 @@ defineExpose({ noSave, isSave })
 
   .status-item-container-left,
   .status-item-container-right {
-    overflow-x: hidden;
-    white-space: nowrap;
+    .updTime {
+      min-width: 98px;
+    }
 
     .id,
     .path {
       max-width: 125px;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
+      span {
+        @include ellipsis();
+      }
     }
 
     .button {
-      @include flex(row, center, center);
+      cursor: pointer;
     }
 
     & > div {
+      @include flex(row, flex-start, center);
       height: 100%;
-      padding: 7px 5px;
-      cursor: pointer;
+      padding: 0 5px;
 
       .iconbl {
         padding-right: 4px;
@@ -108,13 +111,16 @@ defineExpose({ noSave, isSave })
   .status-item-container-left {
     & > div {
       border-right: 1px solid var(--el-border-color);
-    }
-    & > div:first-child {
-      border-right: none;
+      word-break: break-all;
     }
   }
 
   .status-item-container-right {
+    .save-yes,
+    .save-no {
+      font-size: 13px;
+      margin-left: 5px;
+    }
     .save-yes {
       color: var(--el-color-success);
     }

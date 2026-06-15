@@ -17,8 +17,12 @@ export class DocLibStatsManager {
   private lastInitStatsTime: number = 0
   private docLibPath: string = ''
 
+  /** 图片对应文章 picName: markdown 的 ID 集合 */
   private picToMdMap: Map<string, PicToMd> = new Map()
+  /** 文章对应图片 articleId: { picName: string;  picPath: string;  picMdRaw: string; } */
   private mdToPicMap: Map<string, MdToPic> = new Map()
+
+  // TODO: 文章和链接的关系
 
   private static instance: DocLibStatsManager
   public static getInstance(): DocLibStatsManager {
@@ -38,30 +42,6 @@ export class DocLibStatsManager {
     return this.stats!
   }
 
-  public log() {
-    traceLog('**********************************************************************')
-    traceLog('* 文档库文档对图片 / 图片对文档统计')
-    traceLog('**********************************************************************')
-    this.mdToPicMap.forEach((m2p, key) => {
-      console.log(`文档: ${key}`)
-      console.log(`包含 ${m2p.pics.length} 张图片:`)
-      // 遍历当前文档下的所有图片项
-      m2p.pics.forEach((pic) => {
-        console.log(`  - 图片名称: ${pic.picName}, 路径: ${pic.picPath}, 结构: ${pic.picMdRaw}`)
-      })
-      traceLog('------------------------------------------------------------------------------')
-    })
-    this.picToMdMap.forEach((p2m, key) => {
-      console.log(`图片: ${key}`)
-      console.log(`包含 ${p2m.mds.length} 个文章:`)
-      // 遍历当前文档下的所有图片项
-      p2m.mds.forEach((md) => {
-        console.log(`  - 文章: ${md.id}`)
-      })
-      traceLog('------------------------------------------------------------------------------')
-    })
-  }
-
   /**
    * 根据图片名称获取对应的文章信息
    * @param picName 图片名称
@@ -69,6 +49,49 @@ export class DocLibStatsManager {
    */
   public getMdsByPic(picName: string): PicToMdItem[] {
     return this.picToMdMap.get(picName)?.mds || []
+  }
+
+  /**
+   * 统计文档库的统计信息
+   * 在每次打开软件时刷新
+   * 每次切换文档库时刷新
+   * @param docLibPath 文档库路径
+   */
+  public async statsBegin(docLibPath: string): Promise<void> {
+    // 三十秒一次
+    if (this.docLibPath === docLibPath && new Date().getTime() - this.lastInitStatsTime < 30 * 1000) {
+      return
+    }
+
+    this.docLibPath = docLibPath
+    this.lastInitStatsTime = new Date().getTime()
+    if (!this.stats) {
+      await this.init(docLibPath)
+    }
+    if (!this.stats) {
+      return
+    }
+
+    this.mdToPicMap.clear()
+    this.picToMdMap.clear()
+
+    const temp: DocLibStats = {
+      wordsByMonth: {},
+      articleUpdByDay: {},
+      articleTotal: 0,
+      articleTotalWords: 0,
+      pictureTotal: 0,
+      pictureTotalSize: 0
+    }
+
+    this.statsFileTreeRecursive(docLibPath, temp).then((temp: DocLibStats) => {
+      this.stats!.articleTotal = temp.articleTotal
+      this.stats!.articleTotalWords = temp.articleTotalWords
+      this.stats!.pictureTotal = temp.pictureTotal
+      this.stats!.pictureTotalSize = temp.pictureTotalSize
+      this.stats!.wordsByMonth[nowYM()] = temp.articleTotalWords
+      this.save(docLibPath)
+    })
   }
 
   /**
@@ -113,46 +136,15 @@ export class DocLibStatsManager {
   }
 
   /**
-   * 统计文档库的统计信息
-   * 在每次打开软件时刷新
-   * 每次切换文档库时刷新
-   * @param docLibPath 文档库路径
+   * 更新文章数, 图片数, 图片总大小
+   * @param stats
+   * @returns
    */
-  public async statsBegin(docLibPath: string): Promise<void> {
-    // 三十秒一次
-    if (this.docLibPath === docLibPath && new Date().getTime() - this.lastInitStatsTime < 30 * 1000) {
-      return
-    }
-
-    this.docLibPath = docLibPath
-    this.lastInitStatsTime = new Date().getTime()
-    if (!this.stats) {
-      await this.init(docLibPath)
-    }
-    if (!this.stats) {
-      return
-    }
-
-    this.mdToPicMap.clear()
-    this.picToMdMap.clear()
-
-    const temp: DocLibStats = {
-      wordsByMonth: {},
-      articleUpdByDay: {},
-      articleTotal: 0,
-      articleTotalWords: 0,
-      pictureTotal: 0,
-      pictureTotalSize: 0
-    }
-
-    this.statsFileTreeRecursive(docLibPath, temp).then((temp: DocLibStats) => {
-      this.stats!.articleTotal = temp.articleTotal
-      this.stats!.articleTotalWords = temp.articleTotalWords
-      this.stats!.pictureTotal = temp.pictureTotal
-      this.stats!.pictureTotalSize = temp.pictureTotalSize
-      this.stats!.wordsByMonth[nowYM()] = temp.articleTotalWords
-      this.save(docLibPath)
-    })
+  public updateStatsNumber(stats: DocLibStatsNumber) {
+    if (this.stats === undefined) return
+    this.stats.articleTotal = stats.articleTotal
+    this.stats.pictureTotal = stats.pictureTotal
+    this.stats.pictureTotalSize = stats.pictureTotalSize
   }
 
   /**
@@ -349,6 +341,7 @@ export class DocLibStatsManager {
     }
   }
 
+  // TODO:
   public updatePicName(oldPicName: string, newPicName: string) {}
 
   /**
@@ -356,6 +349,30 @@ export class DocLibStatsManager {
    */
   public deleteP2M(picName: string) {
     this.picToMdMap.delete(picName)
+  }
+
+  public log() {
+    traceLog('**********************************************************************')
+    traceLog('* 文档库文档对图片 / 图片对文档统计')
+    traceLog('**********************************************************************')
+    this.mdToPicMap.forEach((m2p, key) => {
+      console.log(`文档: ${key}`)
+      console.log(`包含 ${m2p.pics.length} 张图片:`)
+      // 遍历当前文档下的所有图片项
+      m2p.pics.forEach((pic) => {
+        console.log(`  - 图片名称: ${pic.picName}, 路径: ${pic.picPath}, 结构: ${pic.picMdRaw}`)
+      })
+      traceLog('------------------------------------------------------------------------------')
+    })
+    this.picToMdMap.forEach((p2m, key) => {
+      console.log(`图片: ${key}`)
+      console.log(`包含 ${p2m.mds.length} 个文章:`)
+      // 遍历当前文档下的所有图片项
+      p2m.mds.forEach((md) => {
+        console.log(`  - 文章: ${md.id}`)
+      })
+      traceLog('------------------------------------------------------------------------------')
+    })
   }
 }
 
@@ -474,6 +491,8 @@ export const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkM
   return results
 }
 
+//#region 类型声明 ================================================================
+
 /**
  * 文档库统计信息
  */
@@ -489,6 +508,12 @@ type DocLibStats = {
   /** 图片总数, 在选择文档库时刷新 */
   pictureTotal: number
   /** 图片总大小, 在选择文档库时刷新 */
+  pictureTotalSize: number
+}
+
+export type DocLibStatsNumber = {
+  articleTotal: number
+  pictureTotal: number
   pictureTotalSize: number
 }
 
@@ -553,3 +578,5 @@ export interface ImageMatch extends BaseMatch {
   /** 可选的标题 */
   title?: string
 }
+
+//#endregion

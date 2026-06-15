@@ -1,16 +1,6 @@
 <template>
   <div class="picture-viewer-info-root">
     <el-image-viewer v-if="isShowPicInfo" :url-list="[picCacheWrapper(picUrl)]" @close="closePicInfo" :z-index="2002">
-      <template v-if="pictureList.length > 0">
-        <button class="viewer-arrow prev" :class="{ disabled: !hasPrev }" type="button" title="上一张" aria-label="上一张" @click.stop="showPrev">
-          <el-icon size="18"><ArrowLeftBold /></el-icon>
-          <span>上一张</span>
-        </button>
-        <button class="viewer-arrow next" :class="{ disabled: !hasNext }" type="button" title="下一张" aria-label="下一张" @click.stop="showNext">
-          <span>下一张</span>
-          <el-icon size="18"><ArrowRightBold /></el-icon>
-        </button>
-      </template>
       <div class="bl-image-viewer-infos" v-if="picInfo?.id && picInfo?.id! !== '0'">
         <div class="container">
           <bl-row align="flex-start">
@@ -76,9 +66,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { ElMessageBox, UploadProps } from 'element-plus'
-import { ArrowLeftBold, ArrowRightBold, WarnTriangleFilled } from '@element-plus/icons-vue'
+import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import { DefaultPicture, picCacheWrapper, picCacheRefresh } from './scripts/picture'
 import { formatFileSize, isHttp } from '@renderer/assets/utils/util'
 import { writeText } from '@renderer/assets/utils/electron'
@@ -90,58 +80,17 @@ const isShowPicInfo = ref(false)
 // 图片地址
 const picUrl = ref('')
 // 图片信息
-const picInfo = ref<Picture | null>(new DefaultPicture())
-// 当前可预览的图片列表
-const pictureList = ref<Picture[]>([])
-// 当前索引
-const activeIndex = ref(0)
+const picInfo = ref<Picture>(new DefaultPicture())
 
-const hasPrev = computed(() => activeIndex.value > 0)
-const hasNext = computed(() => activeIndex.value < pictureList.value.length - 1)
-
-const loadPicInfo = (pic: Picture) => {
-  picInfo.value = pic
-  picUrl.value = pic.localProtocolPath
-}
-
-const setActiveIndex = (index: number) => {
-  if (index < 0 || index > pictureList.value.length - 1) {
-    return
-  }
-  activeIndex.value = index
-  loadPicInfo(pictureList.value[activeIndex.value])
-}
-
-const showPicInfo = (pictures: Picture[], picId: string) => {
-  if (!pictures.length) {
-    return
-  }
-  pictureList.value = pictures
-  const idx = pictureList.value.findIndex((pic: { id: string }) => pic.id === picId)
-  activeIndex.value = idx === -1 ? 0 : idx
+const showPicInfo = (picture: Picture, _picId: string) => {
   isShowPicInfo.value = true
-  loadPicInfo(pictureList.value[activeIndex.value])
-}
-
-const showPrev = () => {
-  if (!hasPrev.value) {
-    return
-  }
-  setActiveIndex(activeIndex.value - 1)
-}
-
-const showNext = () => {
-  if (!hasNext.value) {
-    return
-  }
-  setActiveIndex(activeIndex.value + 1)
+  picInfo.value = picture
+  picUrl.value = picture.localProtocolPath
 }
 
 const closePicInfo = () => {
   isShowPicInfo.value = false
   picInfo.value = new DefaultPicture()
-  pictureList.value = []
-  activeIndex.value = 0
 }
 
 /**

@@ -6,6 +6,7 @@ declare interface R<T> {
 }
 
 declare type DocType = 'FOLDER' | 'ARTICLE' | 'PICTURE'
+
 /**
  * 文档状态
  * NORMAL: 正常
@@ -153,7 +154,10 @@ declare interface SelectFileAndMoveRes extends Base {
 }
 
 
-//#region ====================================< 图片 >====================================
+//#region 图片 >============================================================================================================
+
+declare type PictureDelType = 'NORMAL' | 'DELETING' | 'DELETED'
+
 declare interface Picture {
   id: string
   type: DocType
@@ -163,43 +167,39 @@ declare interface Picture {
   path: string
   folderPath: string
   localProtocolPath: string
-  size: number = 0
+  size: number
   icon?: string
   updn?: boolean
   checked: boolean
-  delTime: 0 | 1 | 2
+  delType: PictureDelType
   creTime?: string
   updTime?: string
   articleLinks: ArticleLink[]
 }
 
-declare interface ArticleLink {
-  id: string
-  name: string
-}
+/**
+ * 使用该图片的文章ID和名称
+ */
+declare interface ArticleLink { id: string;  name: string }
 
 /**
- * 指定文件夹下的文件列表
+ * 指定文件夹ID下的文件列表
  */
-declare interface PictureListReq extends Base {
-  // 文件夹或文件的ID
-  id: string
-  pageNum: number
-  pageSize: number
-}
+declare interface PictureListReq extends Base { id: string; pageNum: number; pageSize: number; }
 
 /**
  * 指定文件夹下的文件列表返回
  */
 declare interface PictureListRes extends Base {
-  totalCount: number // 文件数量
-  totalSize: number // 文件大小
+  pictureTotal: number // 文件数量
+  pictureTotalSize: number // 文件大小
   pictures: Picture[]
 }
 
-declare interface PictureInfoReq extends Base {
-  id: string
-}
+/**
+ * 通过图片ID获取图片信息
+ */
+declare interface PictureInfoReq extends Base { id: string; }
 
 
 /**
@@ -229,13 +229,14 @@ declare interface FileBuffSaveReq extends Base {
 /**
  * 批量删除图片
  */
-declare interface PictureDeleteBatchReq extends Base {
-  ids:string []
-}
+declare interface PictureDeleteBatchReq extends Base { ids:string []; }
+declare interface PictureDeleteBatchRes { success: number; fault: number; inuse: number; successIds: Array<string>, docTree: DocTree[] }
 
 declare interface PictureMoveBatchReq extends Base  {
   ids:string []
   targetDocId: stirng
+  // 是否移动到文档库根目录, 如果为 true, 则 targetDocId 将被忽略
+  targetDocLibRoot: boolean
 }
 
 //#endregion

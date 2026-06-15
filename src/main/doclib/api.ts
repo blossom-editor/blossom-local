@@ -4,7 +4,7 @@ import path from 'path'
 import R from '../../preload/r'
 import { sysFolder, articleExtensionFile, docLibStatsFile } from './docLibManager'
 import { CurDocLibManager } from './curDocLibManager'
-import { DocLibStatsManager } from './docLibStatsManager'
+import { DocLibStatsManager, DocLibStatsNumber } from './docLibStatsManager'
 import { offsetMounth, timeToYMD, lastDayOfThisMonth, offsetDay, firstDayOfMonth } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
 import { getUniqueId, cutSuffix, imagesSuffix, warnLog } from '../utils'
@@ -46,14 +46,19 @@ const initReadDocTree = () => {
  */
 export const readDocTreeSort = async (req: DocTreeReq): Promise<DocTree[]> => {
   if (!req.docLibPath) return []
-
   const start = new Date().getTime()
+
+  // 清空必要数据
   await docLibStatsManager.clecrArticleUpdToday(req.docLibPath!)
   picNameMapping.clear()
-  const docTree = await readDocTree(req)
-  sortDocTreeList(docTree)
-  docLibStatsManager.save(req.docLibPath!)
+  const stats: DocLibStatsNumber = { articleTotal: 0, pictureTotal: 0, pictureTotalSize: 0 }
 
+  const docTree = await readDocTree(req, stats)
+  sortDocTreeList(docTree)
+
+  // 读取后置数据
+  docLibStatsManager.updateStatsNumber(stats)
+  docLibStatsManager.save(req.docLibPath!)
   picNameMapping.log()
   if (req.type === 'PICTURE') {
     const repeat: PicItem[] = picNameMapping.getRepeatPic()
@@ -73,11 +78,7 @@ export const readDocTreeSort = async (req: DocTreeReq): Promise<DocTree[]> => {
  *
  * @param req 文档库路径, 必填项
  */
-const readDocTree = async (req: DocTreeReq): Promise<DocTree[]> => {
-  if (!req.docLibPath) {
-    return []
-  }
-
+const readDocTree = async (req: DocTreeReq, status: DocLibStatsNumber): Promise<DocTree[]> => {
   const files = await fs.promises.readdir(req.docLibPath!, { withFileTypes: true })
   const nodes: DocTree[] = []
 
@@ -108,7 +109,7 @@ const readDocTree = async (req: DocTreeReq): Promise<DocTree[]> => {
       idMapping.add(fileItem)
 
       // 递归读取子目录
-      const children = await readDocTree({ docLibPath: fullPath, type: req.type })
+      const children = await readDocTree({ docLibPath: fullPath, type: req.type }, status)
       doc.type = 'FOLDER'
       doc.icon = 'wl-folder'
       doc.formatName = file.name
@@ -126,10 +127,13 @@ const readDocTree = async (req: DocTreeReq): Promise<DocTree[]> => {
       if (!file.name.endsWith('.md')) {
         picNameMapping.add(new PicItem(doc.id, doc.name, doc.folderPath, Number(stats.size)))
         fileItem.type = 'PICTURE'
+        status.pictureTotal++
+        status.pictureTotalSize += Number(stats.size)
       }
       if (file.name.endsWith('.md')) {
         docLibStatsManager.increaseArticleUpdToday(timeToYMD(stats.mtime.toString()))
         fileItem.type = 'ARTICLE'
+        status.articleTotal++
       }
       idMapping.add(fileItem)
     }
@@ -331,9 +335,8 @@ const checkdocLibStatsFileFile = async (docLibPath: string) => {
  * 获取文章数和文章字数
  */
 const initDocLibStatWords = () => {
-  ipcMain.handle('doclib-stats', async (_event, base: Base): Promise<R<{ articleTotal: number; articleTotalWords: number }>> => {
+  ipcMain.handle('doclib-stats', async (_event, base: Base): Promise<R<any>> => {
     const res = await docLibStatsManager.getStats(base.docLibPath!)
-
     return R.ok({
       articleTotal: res.articleTotal,
       articleTotalWords: res.articleTotalWords,

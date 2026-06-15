@@ -11,17 +11,15 @@
     @include flex(column, flex-start, center);
     height: 100%;
     min-width: 250px;
-    font-weight: 200;
+    font-weight: 300;
 
     .doc-tree-menu-container {
-      width: 100%;
-      height: calc(100% - 28px);
+      @include box(100%, calc(100% - 28px));
     }
 
     // 临时内容
     .doc-tree-bottom {
-      width: 100%;
-      height: 28px;
+      @include box(100%, 28px);
       color: var(--bl-editor-color);
       background-color: var(--bl-editor-gutters-bg-color);
       border-top: 1px solid var(--el-border-color);

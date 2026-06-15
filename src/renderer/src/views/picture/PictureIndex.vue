@@ -2,13 +2,16 @@
   <div class="index-picture-root">
     <!-- folder menu -->
     <div class="doc-container" ref="DocsRef">
-      <PictureTreeDocs @click-doc="clickCurDoc"></PictureTreeDocs>
+      <div class="doc-tree-menu-container">
+        <PictureTreeDocs @click-doc="clickCurDoc" @refresh-stats="refreshStats" ref="PictureTreeDocsRef"></PictureTreeDocs>
+      </div>
+      <div class="doc-tree-bottom">
+        <div class="picture-status-item">总数: {{ picStat.global.pictureTotal }}</div>
+        <div class="picture-status-item">大小: {{ picStat.global.pictureTotalSize }}</div>
+      </div>
     </div>
-
     <div class="resize-divider-vertical" ref="ResizeDividerRef"></div>
-
     <div class="picture-container" ref="PictureContainerRef">
-      <!-- 工作台 -->
       <div class="picutre-workbench" :style="workbencStyle.workbench1">
         <div class="workbenchs">
           <div class="workbench-level1">
@@ -37,7 +40,7 @@
             <el-button type="primary" plain @click="handleBenchworkStyle()">
               批量管理
               <el-tooltip effect="light" placement="top" popper-class="is-small" :hide-after="0">
-                <template #content> 批量删除，或转移至其他文件夹<br />右键点击卡片可快捷选中 </template>
+                <template #content> 批量删除，或转移至其他文件夹 </template>
                 <div><span class="iconbl bl-admonish-line"></span></div>
               </el-tooltip>
             </el-button>
@@ -46,6 +49,7 @@
             <el-checkbox v-model="checkedAll" @change="handlCheckedAll">全选</el-checkbox>
             <el-button type="primary" text bg @click="transfer" style="margin-left: 11px">移动</el-button>
             <el-button type="primary" text bg @click="delBatch">删除</el-button>
+            <div class="desc"><span class="iconbl bl-admonish-line"></span>右键点击文件可快捷选中</div>
           </div>
         </div>
 
@@ -57,11 +61,6 @@
       </div>
 
       <div class="picture-card-container" :style="workbencStyle.cards">
-        <!-- <div class="picuter-card-next">
-          <el-button type="info" plain style="width: 100px" @click="lastPage">上一页</el-button>
-          <el-button type="info" plain style="width: 100px" @click="nextPage">下一页</el-button>
-        </div> -->
-
         <div :class="['picture-card', cardClass]" v-for="(pic, _index) in picPages" :key="pic.id" @click.right="picCheckRightClick(pic, $event)">
           <el-checkbox
             v-show="isExpandWorkbench"
@@ -70,9 +69,8 @@
             v-model="pic.checked"
             @change="(check: boolean) => picCheckChange(check, pic.id)">
           </el-checkbox>
-
-          <div v-if="pic.delTime" class="img-deleted">
-            {{ pic.delTime == 2 ? '已删除' : pic.delTime == 1 ? '删除中' : '无法查看' }}
+          <div v-if="pic.delType !== 'NORMAL'" class="img-deleted">
+            {{ pic.delType == 'DELETED' ? '已删除' : pic.delType == 'DELETING' ? '删除中' : '无法查看' }}
           </div>
           <div v-else-if="!isImage(pic.name)" class="other-file">
             <div class="other-filename">{{ getFilePrefix(pic.name) }}</div>
@@ -80,6 +78,7 @@
           </div>
           <div v-else class="img-wrapper" @click="showPicInfo(pic)">
             <img :src="picCacheWrapper(pic.localProtocolPath)" @error="onErrorImg" />
+            <div v-if="pic.articleLinks.length > 0" class="img-articlelinks">{{ pic.articleLinks.length }}</div>
           </div>
 
           <div class="picuter-card-workbench">
@@ -108,12 +107,11 @@
         </div>
       </div>
       <div class="picture-status">
-        <bl-row width="calc(100% - 240px)" height="100%" class="status-item-container">
-          <div>{{ curFolder?.name }}: {{ picStat.cur.totalCount }} P / {{ picStat.cur.totalSize }}</div>
-          <div>存储路径: {{ curFolder?.path }}</div>
-        </bl-row>
-        <div class="status-item-container">
-          <div>文件总览: {{ picStat.global.picCount }} P / {{ picStat.global.picSize }}</div>
+        <div v-show="curFolder" class="picture-status-item">{{ curFolder?.name }}</div>
+        <div v-show="curFolder" class="picture-status-item count">总数: {{ picStat.cur.pictureTotal }}</div>
+        <div v-show="curFolder" class="picture-status-item size">大小: {{ picStat.cur.pictureTotalSize }}</div>
+        <div v-show="curFolder" class="picture-status-item path">
+          <span>{{ curFolder?.path }}</span>
         </div>
       </div>
     </div>
@@ -130,7 +128,7 @@
     :destroy-on-close="true"
     :close-on-click-modal="false"
     draggable>
-    <PictureTransfer :ids="picChecks" @transferred="transferred"></PictureTransfer>
+    <PictureTransfer :ids="picChecks" :cur-folder-id="curFolder?.id" @transferred="transferred"></PictureTransfer>
   </el-dialog>
 
   <el-dialog
@@ -150,13 +148,12 @@
 import { ref, provide, computed, StyleValue } from 'vue'
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
-import { picturePageApi } from '@renderer/api/blossom'
 import { treeToInfo, provideKeyDocInfo } from '@renderer/views/doc/doc'
-import { isEmpty, isNotNull, isNull } from '@renderer/assets/utils/obj'
+import { isEmpty, isNull } from '@renderer/assets/utils/obj'
 import { formatFileSize, getFilePrefix, getFileSuffix, isImage } from '@renderer/assets/utils/util'
 import { writeText } from '@renderer/assets/utils/electron'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
-import { pictureInfoApi, pictureListApi } from '@renderer/api/picture'
+import { pictureDeleteBatchApi, pictureInfoApi, pictureListApi } from '@renderer/api/picture'
 
 // component
 import { picCacheWrapper, picCacheRefresh } from './scripts/picture'
@@ -166,7 +163,7 @@ import PictureBatchDel from './PictureBatchDel.vue'
 import PictureTransfer from './PictureTransfer.vue'
 import errorImg from '@renderer/assets/imgs/img_error.png'
 import Notify from '@renderer/scripts/notify'
-import { openFileLocation } from '@renderer/api/docLib'
+import { doclibStatsApi, openFileLocation } from '@renderer/api/docLib'
 
 // 是否替换上传
 const cardSize = ref('mini')
@@ -176,12 +173,20 @@ const cardClass = computed(() => {
   return 'picutre-card-mini'
 })
 
-//#region ----------------------------------------< 当前文件当前文件 >----------------------------
+const PictureTreeDocsRef = ref()
+
+const refreshStats = async () => {
+  doclibStatsApi().then((resp) => {
+    picStat.value.global = { pictureTotal: resp.data!.pictureTotal, pictureTotalSize: formatFileSize(resp.data!.pictureTotalSize) }
+  })
+}
+
+//#region ----------------------------------------< 当前文件 >----------------------------------------
 type PageParam = { pageNum: number; pageSize: number; name: string } // 分页对象类型
 const curFolder = ref<DocInfo>() // 当前选中的文档, 包含文件夹和文章, 如果选中是文件夹, 则不会重置编辑器中的文章
 const picPageParam = ref<PageParam>({ pageNum: 1, pageSize: 15, name: '' }) // 列表参数
 const picPages = ref<Picture[]>([]) // 图片列表
-const picStat = ref<any>({ cur: { totalCount: 0, totalSize: '0MB' }, global: { picCount: 0, picSize: '0MB' } })
+const picStat = ref<any>({ cur: { pictureTotal: 0, pictureTotalSize: '0MB' }, global: { pictureTotal: 0, pictureTotalSize: '0MB' } })
 // 依赖注入
 provide(provideKeyDocInfo, curFolder)
 
@@ -193,24 +198,20 @@ const curIsFolder = () => {
 }
 
 /**
- * 点击 doc title 的回调, 用于选中某个文档
+ * 点击树状列表名称的回调, 用于选中某个文档
  */
 const clickCurDoc = (tree: DocTree) => {
   // 点击单个图片时显示图片详情
   if (tree.type === 'PICTURE') {
-    if (!PictureViewerInfoRef.value || !isImage(tree.path)) {
-      return
-    }
-
     pictureInfoApi({ id: tree.id }).then((res) => {
-      const pic: Picture = res.data!
-      PictureViewerInfoRef.value.showPicInfo([pic], tree.id)
+      picPages.value = [res.data!]
+      picStat.value.cur = { pictureTotal: 1, pictureTotalSize: formatFileSize(res.data!.size) }
     })
     return
   }
 
   const clickDoc = treeToInfo(tree)
-  if (isNotNull(curFolder.value) && clickDoc.id === curFolder.value!.id) {
+  if (isNull(clickDoc)) {
     return
   }
   curFolder.value = clickDoc
@@ -224,8 +225,7 @@ const clickCurDoc = (tree: DocTree) => {
     pageSize: picPageParam.value.pageSize
   }).then((resp) => {
     picPages.value = resp.data!.pictures
-    picStat.value.cur.totalCount = resp.data!.totalCount
-    picStat.value.cur.totalSize = formatFileSize(resp.data!.totalSize)
+    picStat.value.cur = { pictureTotal: resp.data!.pictureTotal, pictureTotalSize: formatFileSize(resp.data!.pictureTotalSize) }
   })
 }
 
@@ -283,8 +283,7 @@ const showPicInfo = (pic: Picture) => {
   if (!PictureViewerInfoRef.value || !isImage(pic.path)) {
     return
   }
-  const imageList = picPages.value.filter((item) => isImage(item.path))
-  PictureViewerInfoRef.value.showPicInfo(imageList, pic.id)
+  PictureViewerInfoRef.value.showPicInfo(pic, pic.id)
 }
 
 /**
@@ -331,35 +330,37 @@ const copyMarkdownUrl = (_path: string, picName: string, event: MouseEvent) => {
  * @param pic 当前选中图片
  */
 const deletePicture = (pic: Picture) => {
-  ElMessageBox.confirm('删除图片可能会造成公网访问失效, 是否确定删除?', {
+  ElMessageBox.confirm('文件将被移入系统回收站, 是否确定删除?', {
     confirmButtonText: '确认',
     cancelButtonText: '取消',
     type: 'warning'
   }).then(() => {
-    let articleCount = 0
+    let articleCount = pic.articleLinks.length
     if (articleCount > 0) {
       ElNotification.error({
         title: '删除失败',
         dangerouslyUseHTMLString: true,
-        message: `尚有[${articleCount}]篇文章正在引用该图片, 请先将文章中的图片引用删除后, 再删除图片! <br/>
-          <span style="color:red">注意: 引用文章篇数[${articleCount}]为引用了该图片的草稿数, 并不会校验公开文章是否引用.</span>`,
+        message: `尚有<span style="color:red">[${articleCount}]篇文章正在引用该图片</span>, 请先将文章中的图片引用删除后, 再删除图片!`,
         offset: 30,
         position: 'bottom-right'
       })
       return
     }
-    let urlBak = pic.url
-    pic.url = '1'
-    pic.delTime = 1
+    let path = pic.localProtocolPath
+    pic.localProtocolPath = '1'
+    pic.delType = 'DELETING'
 
-    // pictureDelApi({ id: pic.id })
-    //   .then((_resp) => {
-    //     pic.delTime = 2
-    //   })
-    //   .catch((_) => {
-    //     pic.delTime = 0
-    //     pic.url = urlBak
-    //   })
+    pictureDeleteBatchApi({ ids: [pic.id] })
+      .then((_resp) => {
+        Notify.success(`删除成功`)
+        PictureTreeDocsRef.value.getDocTree()
+        refreshStats()
+        pic.delType = 'DELETED'
+      })
+      .catch(() => {
+        pic.delType = 'NORMAL'
+        pic.localProtocolPath = path
+      })
   })
 }
 
@@ -450,11 +451,13 @@ const delBatch = () => {
 const deleted = (ids: Array<string>) => {
   picChecks.value.clear()
   checkedAll.value = false
+  refreshStats()
+  PictureTreeDocsRef.value.getDocTree()
   for (let i = 0; i < picPages.value.length; i++) {
     const pic = picPages.value[i]
     if (ids.includes(pic.id)) {
       pic.folderPath = '1'
-      pic.delTime = 2
+      pic.delType = 'DELETED'
     }
     pic.checked = false
   }
@@ -478,10 +481,7 @@ const transferred = () => {
   picChecks.value.clear()
   checkedAll.value = false
   picPageParam.value.pageNum = 1
-  picPageParam.value.pid = curFolder.value!.id
-  picturePageApi(picPageParam.value).then((resp) => {
-    picPages.value = resp.data.datas
-  })
+  PictureTreeDocsRef.value.getDocTree()
   isShowTransferDialog.value = false
 }
 
@@ -496,7 +496,7 @@ useResizeVertical(DocsRef, PictureContainerRef, ResizeDividerRef, undefined, {
   keyOne: 'picture_docs_width',
   keyTwo: 'picture_continer_width',
   defaultOne: '250px',
-  defaultTwo: 'calc(100% - 250px)',
+  defaultTwo: 'calc(100% - 252px)',
   maxOne: 700,
   minOne: 250
 })

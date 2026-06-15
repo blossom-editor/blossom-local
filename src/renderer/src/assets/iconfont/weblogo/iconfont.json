@@ -6,6 +6,62 @@
   "description": "各个网站的LOGO",
   "glyphs": [
     {
+      "icon_id": "2295983",
+      "name": "folder-open",
+      "font_class": "folder2",
+      "unicode": "e6a4",
+      "unicode_decimal": 59044
+    },
+    {
+      "icon_id": "2295985",
+      "name": "folder",
+      "font_class": "folder1",
+      "unicode": "e6ad",
+      "unicode_decimal": 59053
+    },
+    {
+      "icon_id": "5328033",
+      "name": "folder",
+      "font_class": "folder7",
+      "unicode": "e6bb",
+      "unicode_decimal": 59067
+    },
+    {
+      "icon_id": "41068397",
+      "name": "folder",
+      "font_class": "folder3",
+      "unicode": "e852",
+      "unicode_decimal": 59474
+    },
+    {
+      "icon_id": "44464355",
+      "name": "folder",
+      "font_class": "folder4",
+      "unicode": "e6c9",
+      "unicode_decimal": 59081
+    },
+    {
+      "icon_id": "44780530",
+      "name": "folder",
+      "font_class": "folder5",
+      "unicode": "e6ce",
+      "unicode_decimal": 59086
+    },
+    {
+      "icon_id": "45891700",
+      "name": "folder",
+      "font_class": "folder6",
+      "unicode": "e6d3",
+      "unicode_decimal": 59091
+    },
+    {
+      "icon_id": "8065292",
+      "name": "folder",
+      "font_class": "folder0",
+      "unicode": "e660",
+      "unicode_decimal": 58976
+    },
+    {
       "icon_id": "9826664",
       "name": "警告",
       "font_class": "jinggao",

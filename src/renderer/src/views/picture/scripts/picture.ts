@@ -22,7 +22,7 @@ export class DefaultPicture implements Picture {
   icon = ''
   updn = false
   checked = false
-  delTime: 0 | 1 | 2 = 0
+  delType: PictureDelType = 'NORMAL'
   creTime = ''
   updTime = ''
   articleLinks = []
@@ -82,19 +82,17 @@ export const picCacheRefresh = () => {
  */
 export const picCacheWrapper = (url: string): string => {
   const params: Record<string, string> | null = parseQueryParams(url)
-
   if (params) {
     return url + '&t=' + picCache
   } else {
     return url + '?t=' + picCache
   }
-  // if (url.includes(userStore.sysParams.BLOSSOM_OBJECT_STORAGE_DOMAIN)) {
-  //   return url + '?t=' + picCache
-  // } else {
-  //   return url
-  // }
 }
 
+/**
+ * 图片路径包装
+ * 如果是 blossom 存储的图片, 会增加 picCache 参数, 用来清理缓存
+ */
 export const protocolWrapper = (path: string) => {
   if (path === null || path === undefined || path === '') {
     return ''

@@ -6,58 +6,34 @@
   .doc-container {
     @include flex(column, flex-start, center);
     height: 100%;
-    font-weight: 200;
-    transition: height 0.1s;
-    left: 0;
-    top: 0;
+    min-width: 250px;
+    font-weight: 300;
+
+    .doc-tree-menu-container {
+      @include box(100%, calc(100% - 28px));
+    }
+
+    // 临时内容
+    .doc-tree-bottom {
+      @include flex(row, flex-start, center);
+      @include box(100%, 28px);
+      color: var(--bl-editor-color);
+      border-top: 1px solid var(--el-border-color);
+      background-color: var(--bl-editor-gutters-bg-color);
+
+      .picture-status-item {
+        width: 50%;
+        &:last-child {
+          border: 0px;
+        }
+      }
+    }
   }
 
   .picture-container {
     height: 100%;
-    border-left: 1px solid var(--el-border-color);
     background-color: #ffffff00;
     position: relative;
-
-    .tip {
-      @include font(12px, 300);
-      padding-top: 8px;
-      color: var(--bl-text-color-light);
-      position: absolute;
-      left: 10px;
-      bottom: 35px;
-      cursor: pointer;
-      &:hover {
-        color: var(--el-color-primary);
-      }
-    }
-
-    .star {
-      @include flex(row, center, flex-end);
-      height: 100%;
-      color: rgb(206, 175, 0);
-
-      .iconbl {
-        padding: 5px;
-        font-size: 30px;
-        text-shadow: var(--bl-text-shadow);
-        transition: color 0.3s;
-        cursor: pointer;
-      }
-    }
-
-    .bl-star-line {
-      &:hover {
-        color: rgb(255, 217, 0) !important;
-      }
-    }
-
-    .bl-star-fill {
-      color: rgb(237, 204, 11);
-
-      &:hover {
-        color: rgb(255, 217, 0) !important;
-      }
-    }
 
     // 图片列表的控制按钮
     .picutre-workbench {
@@ -98,6 +74,16 @@
         transition:
           height 0.1s,
           opacity 0.1s;
+        .desc {
+          @include flex(row, flex-start, center);
+          @include font(12px, 300);
+          margin-left: 10px;
+          color: var(--bl-text-color);
+
+          .iconbl {
+            margin-right: 5px;
+          }
+        }
       }
 
       .btn-wrapper {
@@ -190,6 +176,17 @@
           @include box(100%, 100%);
           @include flex(row, center, center);
           cursor: pointer;
+          position: relative;
+          .img-articlelinks {
+            @include font(10px, 500);
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            background: var(--el-color-primary-light-3);
+            color: #ffffff;
+            padding: 3px 5px;
+            border-radius: 5px;
+          }
         }
 
         img {
@@ -266,44 +263,42 @@
         text-align: center;
       }
     }
+  }
 
-    .picture-status {
-      @include flex(row, space-between, center);
-      @include box(100%, 28px);
-      @include font(10px, 500);
-      position: absolute;
-      bottom: 0;
-      color: var(--bl-editor-color);
-      border-top: 1px solid var(--el-border-color);
-      background-color: var(--bl-editor-gutters-bg-color);
+  .picture-status {
+    @include flex(row, flex-start, center);
+    @include box(100%, 28px);
+    border-top: 1px solid var(--el-border-color);
+    background-color: var(--bl-editor-gutters-bg-color);
+    position: absolute;
+    bottom: 0;
+    word-break: break-all;
+  }
 
-      .status-item-container {
-        height: 100%;
-        white-space: nowrap;
-        overflow-x: hidden;
+  .picture-status-item {
+    @include flex(row, flex-start, center);
+    @include font(10px, 500);
+    height: 100%;
+    padding: 10px;
+    color: var(--bl-editor-color);
+    border-right: 1px solid var(--el-border-color);
 
-        & > div {
-          height: 100%;
-          padding: 0 5px;
-          cursor: pointer;
+    &:hover {
+      background-color: var(--bl-editor-bg-color);
+    }
+  }
 
-          .iconbl {
-            padding-right: 4px;
-          }
-
-          &:hover {
-            background-color: var(--bl-editor-bg-color);
-          }
-        }
-      }
-
-      .tag-root {
-        cursor: pointer;
-      }
-
-      div {
-        @include flex(row, flex-start, center);
-      }
+  .picture-status-item.count {
+    word-break: keep-all;
+  }
+  .picture-status-item.size {
+    word-break: keep-all;
+  }
+  .picture-status-item.path {
+    min-width: 300px;
+    cursor: pointer;
+    span {
+      @include ellipsis();
     }
   }
 }

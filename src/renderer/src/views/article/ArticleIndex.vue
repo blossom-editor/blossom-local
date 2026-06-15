@@ -317,9 +317,9 @@ useResizeVertical(EditorRef, PreviewRef, ResizeEditorDividerRef, EditorOperatorR
 //#region ----------------------------------------< 图片管理 >--------------------------------------
 const PictureViewerInfoRef = ref()
 const showPicInfo = (path: string) => {
-  const picList = [new DefaultPicture()]
-  picList[0].localProtocolPath = path
-  PictureViewerInfoRef.value.showPicInfo(picList, path)
+  const picture = new DefaultPicture()
+  picture.localProtocolPath = path
+  PictureViewerInfoRef.value.showPicInfo(picture, path)
 }
 const refreshCache = () => {
   picCacheRefresh()

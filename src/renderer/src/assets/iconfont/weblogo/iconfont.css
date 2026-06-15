@@ -1,8 +1,8 @@
 @font-face {
   font-family: "iconwl"; /* Project id 4163717 */
-  src: url('iconfont.woff2?t=1696522249652') format('woff2'),
-       url('iconfont.woff?t=1696522249652') format('woff'),
-       url('iconfont.ttf?t=1696522249652') format('truetype');
+  src: url('iconfont.woff2?t=1781513211207') format('woff2'),
+       url('iconfont.woff?t=1781513211207') format('woff'),
+       url('iconfont.ttf?t=1781513211207') format('truetype');
 }
 
 .iconwl {
@@ -11,6 +11,38 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.wl-folder2:before {
+  content: "\e6a4";
+}
+
+.wl-folder1:before {
+  content: "\e6ad";
+}
+
+.wl-folder7:before {
+  content: "\e6bb";
+}
+
+.wl-folder3:before {
+  content: "\e852";
+}
+
+.wl-folder4:before {
+  content: "\e6c9";
+}
+
+.wl-folder5:before {
+  content: "\e6ce";
+}
+
+.wl-folder6:before {
+  content: "\e6d3";
+}
+
+.wl-folder0:before {
+  content: "\e660";
 }
 
 .wl-jinggao:before {

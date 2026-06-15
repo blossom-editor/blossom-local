@@ -126,7 +126,7 @@ import Node from 'element-plus/es/components/tree/src/model/node'
 import { docTreeApi } from '@renderer/api/blossom'
 import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
 import { isShowImg, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
-import { getChildFileCountColor } from '@renderer/views/doc/doc-tree'
+import { DOC_LIB_ROOT_FOLDER_ID, getChildFileCountColor } from '@renderer/views/doc/doc-tree'
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 // util
@@ -137,7 +137,7 @@ import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
 import { getFilePrefix, inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
 import { openFileLocation } from '@renderer/api/docLib'
-import { pictureDeleteBatchApi, pictureInfoApi, pictureRenameApi } from '@renderer/api/picture'
+import { pictureDeleteBatchApi, pictureInfoApi, pictureMoveBatchApi, pictureRenameApi } from '@renderer/api/picture'
 
 const docLibStore = useDocLibStore()
 const configStore = useConfigStore()
@@ -189,7 +189,10 @@ const getDocTree = (callback?: () => void) => {
       docTreeData.value = resp.data!
       if (callback) callback()
     })
-    .finally(() => endLoading())
+    .finally(() => {
+      endLoading()
+      emits('refreshStats')
+    })
 }
 
 /**
@@ -200,24 +203,13 @@ const getDocTree = (callback?: () => void) => {
  * @param event 点击事件
  */
 const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: MouseEvent) => {
+  // 关闭右键菜单
   closeTreeDocsMenuShow(event)
-  setCurrentKey(
-    {
-      id: tree.id,
-      parentId: node.parent.data.id,
-      type: tree.type
-    },
-    node,
-    treeNode,
-    event
-  )
-
+  // 设置当前文档
+  setDocTreeCurrentKey({ id: tree.id, parentId: node.parent.data.id, type: tree.type }, node, treeNode, event)
   // 正在重命名的图片不能点击
-  if (tree.id === notAllowDragId) {
-    return
-  } else {
-    emits('clickDoc', tree)
-  }
+  if (tree.id === notAllowDragId) return
+  emits('clickDoc', tree)
 }
 
 /**
@@ -277,7 +269,7 @@ const handleShowPictureRepeat = () => {
  *
  * @param tree 当前选中的文档
  */
-const setCurrentKey = (tree: { id: string; parentId: string; type: DocType }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
+const setDocTreeCurrentKey = (tree: { id: string; parentId: string; type: DocType }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
   if (tree.type === 'FOLDER') {
     docTreeCurrentChoiseId.value = tree.id
     if (node && node.expanded) {
@@ -427,7 +419,27 @@ const closeParentIfNoChild = (id: string) => {
 /**
  * 拖拽后处理各个节点排序
  */
-const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: DragEvents) => {}
+const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: DragEvents) => {
+  const req: PictureMoveBatchReq = { ids: [drag.data.id], targetDocId: '', targetDocLibRoot: false }
+
+  if (dropType === 'inner') {
+    req.targetDocId = enter.data.id
+  }
+
+  if (dropType === 'before' || dropType === 'after') {
+    if (enter.parent && enter.parent.level !== 0) {
+      req.targetDocId = enter.parent.data.id
+    } else {
+      req.targetDocLibRoot = true
+    }
+  }
+
+  pictureMoveBatchApi(req)
+    .then((resp) => {
+      docTreeData.value = resp.data!
+    })
+    .catch(() => getDocTree())
+}
 
 //#endregion
 
@@ -447,7 +459,7 @@ const handleClickRightMenu = (event: MouseEvent, doc: DocTree) => {
   event.preventDefault()
   if (!doc) return
 
-  if (doc.id === '-2' || doc.id === '-1') {
+  if (doc.id === DOC_LIB_ROOT_FOLDER_ID) {
     return
   }
 
@@ -498,7 +510,8 @@ const delPicture = () => {
         pictureDeleteBatchApi({ ids: [curDoc.value.id] }).then((resp) => {
           Notify.success(`删除成功`)
           closeParentIfNoChild(curDoc.value.id)
-          docTreeData.value = resp.data!
+          docTreeData.value = resp.data!.docTree
+          emits('refreshStats')
         })
       })
     }
@@ -575,7 +588,8 @@ const changeArticleNameInput = (data: DocTree): boolean => {
 
 //#endregion
 
-const emits = defineEmits(['clickDoc'])
+defineExpose({ getDocTree })
+const emits = defineEmits(['clickDoc', 'refreshStats'])
 </script>
 
 <style scoped lang="scss">

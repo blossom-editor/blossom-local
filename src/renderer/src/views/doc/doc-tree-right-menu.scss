@@ -11,12 +11,10 @@
   font-size: 12px;
 
   .doc-name {
+    @include ellipsis();
     font-size: 13px;
     padding: 5px 10px;
     color: var(--el-color-primary);
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
   }
 
   .menu-content {

@@ -5,7 +5,7 @@
       移动文件
     </div>
     <div class="content">
-      <div class="tips" style="margin-bottom: 10px">移动后, 同名文件将会重命名</div>
+      <div class="tips" style="margin-bottom: 10px">注意: 名称重复的图片不会被移动</div>
       <el-tree
         class="pic-transfer-tree"
         node-key="i"
@@ -42,29 +42,36 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { docTreeApi, pictureTransferApi } from '@renderer/api/blossom'
+import { docTreeApi } from '@renderer/api/blossom'
 import { isNotBlank, isNull } from '@renderer/assets/utils/obj'
+import { useDocLibStore } from '@renderer/stores/docLib'
+import { buildDocLibRootFolder } from '../doc/doc-tree'
+import { pictureMoveBatchApi } from '@renderer/api/picture'
+import Notify from '@renderer/scripts/notify'
 
 const defaultProps = { children: 'children', label: 'formatName' }
+const docLibStore = useDocLibStore()
 
 onMounted(() => {
   docTreeApi({ type: 'FOLDER' }).then((resp) => {
-    if (resp.data) docTreeData.value = resp.data
+    if (resp.data) {
+      docTreeData.value = [buildDocLibRootFolder(docLibStore.cur!.path)].concat(resp.data)
+    }
   })
 })
 
 const props = defineProps({
-  // 被删除的ID集合
-  ids: {
-    type: Set<String>,
-    required: true
-  }
+  ids: { type: Set<string>, required: true },
+  curFolderId: { type: String, required: false }
 })
 
-const docTreeData = ref<DocTree[]>([]) // 文档菜单
+const docTreeData = ref<DocTree[]>([])
 const isLoading = ref(false)
 const targetDoc = ref<DocTree>()
 
+/**
+ * 移动文件
+ */
 const transfer = () => {
   if (props.ids.size <= 0) {
     return
@@ -72,8 +79,19 @@ const transfer = () => {
   if (isNull(targetDoc.value)) {
     return
   }
+  if (targetDoc.value!.id === props.curFolderId) {
+    Notify.error('不能移动到原目录', '移动失败')
+    return
+  }
+
   isLoading.value = true
-  pictureTransferApi({ ids: Array.from(props.ids), pid: targetDoc.value?.i })
+
+  const req: PictureMoveBatchReq = { ids: Array.from(props.ids), targetDocId: targetDoc.value!.id, targetDocLibRoot: false }
+  if (targetDoc.value!.id === '-1') {
+    req.targetDocLibRoot = true
+  }
+
+  pictureMoveBatchApi(req)
     .then((_resp) => {
       emits('transferred')
     })

@@ -24,6 +24,7 @@ export const initPictureApi = () => {
   initPictureInfoByName()
   initRenamePicture()
   initDeleteBatchPictures()
+  initMoveBatchPictures()
 }
 
 const initSelectPicAndMoveDialog = () => {
@@ -176,7 +177,7 @@ const initPictureList = () => {
         localProtocolPath: protocolWrapper(fullPath),
         creTime: timeToYMD(stats.birthtime.toString()), // 创建时间
         updTime: timeToYMD(stats.mtime.toString()), // 修改时间
-        delTime: 0,
+        delType: 'NORMAL',
         checked: false,
         articleLinks: docLibStatsManager.getMdsByPic(picture.name).map((item) => {
           return {
@@ -190,8 +191,8 @@ const initPictureList = () => {
     }
 
     const res: PictureListRes = {
-      totalCount: count,
-      totalSize: size,
+      pictureTotal: count,
+      pictureTotalSize: size,
       pictures: nodes
     }
 
@@ -220,7 +221,7 @@ const initPictureInfoByName = () => {
       localProtocolPath: protocolWrapper(picture!.path),
       checked: false,
       creTime: timeToYMD(stats.birthtime.toString()),
-      delTime: 0,
+      delType: 'NORMAL',
       articleLinks: docLibStatsManager.getMdsByPic(picture.name).map((item) => {
         return {
           id: item.id,
@@ -265,7 +266,7 @@ const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
     }
 
     await fs.promises.rename(req.oldPath, req.newPath)
-
+    // TODO: 重命名(移动)文章时, 修改文章正文中的文章链接
 
     // 返回文档列表, 会自动刷新图片名称与路径的对应关系
     return R.ok(await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' }))
@@ -275,7 +276,7 @@ const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
 }
 
 const initDeleteBatchPictures = () => {
-  ipcMain.handle('picture-delete-batch', async (_event, req: PictureDeleteBatchReq): Promise<R<DocTree[]>> => {
+  ipcMain.handle('picture-delete-batch', async (_event, req: PictureDeleteBatchReq): Promise<R<PictureDeleteBatchRes>> => {
     return deleteBatchPicture(req)
   })
 }
@@ -284,33 +285,68 @@ const initDeleteBatchPictures = () => {
  * 批量删除图片
  * 只允许删除文件, 不允许删除文件夹
  *
- * @param req
- * @returns 文档列表
+ * @returns 批量删除的各项结果, 成功, 失败, 使用中等信息
  */
-const deleteBatchPicture = async (req: PictureDeleteBatchReq): Promise<R<DocTree[]>> => {
+const deleteBatchPicture = async (req: PictureDeleteBatchReq): Promise<R<PictureDeleteBatchRes>> => {
+  const res: PictureDeleteBatchRes = {
+    success: 0,
+    fault: 0,
+    inuse: 0,
+    successIds: [],
+    docTree: []
+  }
+
   for (const id of req.ids) {
     const picture = idMapping.get(id)
 
-    if (!picture || picture.type !== 'PICTURE') continue
+    if (!picture || picture.type !== 'PICTURE') {
+      res.fault++
+      continue
+    }
 
     // 图片不在文档库中, 则跳过
     const picturePath = path.join(picture.path)
-    errorLog(picturePath)
-    if (!picturePath.startsWith(req.docLibPath!)) continue
+
+    errorLog(`删除图片(deleteBatchPicture): ${picturePath}`)
+    if (!picturePath.startsWith(req.docLibPath!)) {
+      res.fault++
+      continue
+    }
 
     // 跳过不存在的文件
-    if (!fs.existsSync(picturePath)) continue
+    if (!fs.existsSync(picturePath)) {
+      res.fault++
+      continue
+    }
+
+    // 图片正在被使用
+    const markdowns = docLibStatsManager.getMdsByPic(picture.name)
+    if (markdowns && markdowns.length > 0) {
+      res.inuse++
+      continue
+    }
 
     await shell.trashItem(picturePath)
+    res.success++
+    res.successIds.push(id)
 
     const basename = path.basename(picturePath)
+
     // 如果图片在文档库中只有一个, 则删除图片时, 删除图片对应的文章记录解析
     // 理论上图片有被文章使用时, 不允许删除, 这里做兼容
     if (picNameMapping.count(basename) === 1) {
       docLibStatsManager.deleteP2M(basename)
     }
   }
-  return R.ok(await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' }))
+
+  res.docTree = await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' })
+  return R.ok(res)
+}
+
+const initMoveBatchPictures = () => {
+  ipcMain.handle('picture-move-batch', async (_event, req: PictureMoveBatchReq): Promise<R<DocTree[]>> => {
+    return moveBatchPictures(req)
+  })
 }
 
 /**
@@ -320,5 +356,42 @@ const deleteBatchPicture = async (req: PictureDeleteBatchReq): Promise<R<DocTree
  * @returns 文档列表
  */
 const moveBatchPictures = async (req: PictureMoveBatchReq): Promise<R<DocTree[]>> => {
+  let targetFolderPath = ''
+  if (req.targetDocId && req.targetDocLibRoot === false) {
+    const targetFolder = idMapping.get(req.targetDocId)
+    if (!targetFolder || targetFolder.type !== 'FOLDER') return R.fail('目标文件不存在', '目标文件不存在')
+    targetFolderPath = targetFolder.path
+  } else if (req.targetDocLibRoot === true) {
+    targetFolderPath = req.docLibPath!
+  } else {
+    return R.fail('目标文件夹不存在', '目标文件夹不存在')
+  }
+
+  for (const id of req.ids) {
+    const picture = idMapping.get(id)
+    if (!picture || picture.type !== 'PICTURE') continue
+
+    // 图片不在文档库中, 跳过
+    const picturePath = path.join(picture.path)
+    if (!picturePath.startsWith(req.docLibPath!)) continue
+
+    // 图片不存在, 跳过
+    if (!fs.existsSync(picturePath)) continue
+
+    const pictureName = path.basename(picturePath)
+    const targetPath = path.join(targetFolderPath, pictureName)
+
+    // 原地移动
+    if (picture.path === targetPath) continue
+
+    // 图片已存在, 跳过
+    if (fs.existsSync(targetPath)) continue
+
+    // 移动文件
+    await fs.promises.rename(picturePath, targetPath)
+
+    // TODO: 修改文章中的图片路径
+  }
+
   return R.ok(await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' }))
 }

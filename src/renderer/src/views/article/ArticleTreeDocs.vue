@@ -182,13 +182,13 @@ import {
 } from '@renderer/api/blossom'
 import { grammar } from './scripts/markedjs'
 import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
-import { getChildFileCountColor, handleTreeDrop } from '@renderer/views/doc/doc-tree'
+import { getChildFileCountColor } from '@renderer/views/doc/doc-tree'
 import { tagLins, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
 // util
 import { isEmpty } from 'lodash'
-import { joinPath, platformText, inValidateFileName } from '@renderer/assets/utils/util'
+import { joinPath, platformText, inValidateFileName, getParentDirPath } from '@renderer/assets/utils/util'
 import { isNotNull, isNotBlank, isBlank, isNull } from '@renderer/assets/utils/obj'
 import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
@@ -237,11 +237,7 @@ const getRouteQueryParams = () => {
     nextTick(() => {
       docTreeCurrentChoiseId.value = articleId
       const parentNode = DocTreeRef.value.getNode(articleId).parent
-      setCurrentKey({
-        id: articleId,
-        parentId: parentNode.data.id,
-        type: 'ARTICLE'
-      })
+      setDocTreeCurrentKey({ id: articleId, parentId: parentNode.data.id, type: 'ARTICLE' })
       const ele = document.getElementById('article-doc-wrapper-' + articleId)
       if (ele) {
         ;(DocTreeContainer.value as Element).scrollTop = ele.offsetTop
@@ -303,7 +299,7 @@ const getDocTree = (callback?: () => void) => {
  */
 const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: MouseEvent) => {
   closeTreeDocsMenuShow(event)
-  setCurrentKey(
+  setDocTreeCurrentKey(
     {
       id: tree.id,
       parentId: node.parent.data.id,
@@ -368,7 +364,7 @@ watch(treeFilterText, (val) => {
  * 设置选中项, 并展开所有上级
  * 通过 key 设置某个节点的当前选中状态，使用此方法必须设置 node-key  属性
  */
-const setCurrentKey = (tree: { id: string; parentId: string; type: DocType }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
+const setDocTreeCurrentKey = (tree: { id: string; parentId: string; type: DocType }, node?: Node, _treeNode?: any, _event?: MouseEvent) => {
   if (tree.type === 'FOLDER') {
     docTreeCurrentChoiseId.value = tree.id
     if (node && node.expanded) {
@@ -507,12 +503,26 @@ const closeParentIfNoChild = (pid: string) => {}
  * 拖拽后处理各个节点排序
  */
 const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: DragEvents) => {
-  const moveFileParams = handleTreeDrop(drag, enter, dropType, _event, DocTreeRef, docTreeData)
-  if (isNull(moveFileParams)) {
+  const req: MoveFileReq = { oldPath: drag.data.path, newPath: '' }
+
+  if (dropType === 'inner') {
+    if (drag.data.type === 'ARTICLE') {
+      req.newPath = joinPath(enter.data.path, drag.data.name)
+    } else if (drag.data.type === 'FOLDER') {
+      req.newPath = joinPath(enter.data.path, drag.data.name)
+    }
+  } else if (dropType === 'before' || dropType === 'after') {
+    if (drag.data.type === 'ARTICLE') {
+      req.newPath = joinPath(getParentDirPath(enter.data.path), drag.data.name)
+    } else if (drag.data.type === 'FOLDER') {
+      req.newPath = joinPath(getParentDirPath(enter.data.path), drag.data.name)
+    }
+  }
+  if (isNull(req)) {
     getDocTree()
     return
   }
-  moveFileApi(moveFileParams!).finally(() => {
+  moveFileApi(req!).finally(() => {
     getDocTree()
   })
 }

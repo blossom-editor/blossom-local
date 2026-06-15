@@ -1,11 +1,30 @@
 /* ======================================================================
  * 文章树状列表
  * ====================================================================== */
-import { getParentDirPath, joinPath } from '@renderer/assets/utils/util'
 import Node from 'element-plus/es/components/tree/src/model/node'
-import { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNode'
-import { NodeDropType } from 'element-plus/es/components/tree/src/tree.type'
-import { Ref, StyleValue } from 'vue'
+import { StyleValue } from 'vue'
+
+/** 树状列表中的虚拟文件夹, 文档库根目录文件夹ID */
+export const DOC_LIB_ROOT_FOLDER_ID: string = '-1'
+
+export const buildDocLibRootFolder = (docLibPath: string): DocTree => {
+  const root: DocTree = {
+    id: DOC_LIB_ROOT_FOLDER_ID,
+    name: '文档库根目录',
+    path: docLibPath,
+    folderPath: docLibPath,
+    icon: 'wl-folder0',
+    updn: false,
+    creTime: '',
+    updTime: '',
+    type: 'FOLDER',
+    formatName: '文档库根目录',
+    size: 0,
+    status: 'NORMAL',
+    childrenFileCount: 0
+  }
+  return root
+}
 
 export const getColor = (node: Node) => {
   if (node.level === 1) {
@@ -45,58 +64,6 @@ export interface NeedUpd {
   s: number
   n: string
   ty: DocType
-}
-
-/**
- * 拖拽后处理各个节点排序
- * @param drag 拖拽的节点
- * @param enter 放入的节点
- * @param dropType 拖拽的类型
- * @param _event 事件
- * @param DocTreeRef 树状列表对象
- * @param docTreeData 树状类表数据
- * @param folderType 文件夹类型: 1:文章文件夹|2:图片文件夹
- * @param dropAfter 修改后的回调方法, 请求接口
- */
-export const handleTreeDrop = (
-  drag: Node,
-  enter: Node,
-  dropType: NodeDropType,
-  _event: DragEvents,
-  DocTreeRef: Ref,
-  docTreeData: Ref<DocTree[]>
-): MoveFileReq | null => {
-  // 是否同级别
-  const isSame = drag.data.path === enter.data.path
-  // 同级别不能移动, 目前有校验显示, 该判断不会为 true
-  if (isSame) {
-    return null
-  }
-
-  const parmas: MoveFileReq = {
-    oldPath: drag.data.path,
-    newPath: ''
-  }
-
-  // console.log(`same: ${isSame}, dropType: ${dropType}, 拖动文件类型: ${drag.data.type}`)
-  // console.log('拖动的', drag.data)
-  // console.log('放置的', enter.data)
-
-  if (dropType === 'inner') {
-    if (drag.data.type === 'ARTICLE') {
-      parmas.newPath = joinPath(enter.data.path, drag.data.name)
-    } else if (drag.data.type === 'FOLDER') {
-      parmas.newPath = joinPath(enter.data.path, drag.data.name)
-    }
-  } else if (dropType === 'before' || dropType === 'after') {
-    if (drag.data.type === 'ARTICLE') {
-      parmas.newPath = joinPath(getParentDirPath(enter.data.path), drag.data.name)
-    } else if (drag.data.type === 'FOLDER') {
-      parmas.newPath = joinPath(getParentDirPath(enter.data.path), drag.data.name)
-    }
-  }
-  // console.log('最终数据', parmas)
-  return parmas
 }
 
 /**
