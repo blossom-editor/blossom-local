@@ -19,7 +19,11 @@ const ipcToRender = {
    * @param callback 截屏回调
    * @returns
    */
-  printScreenAfter: (callback: any) => ipcRenderer.on('printScreenAfter', callback)
+  printScreenAfter: (callback: any) => ipcRenderer.on('printScreenAfter', callback),
+  /**
+   * 替换过文章内容的文章ID
+   */
+  replaceContentArticleId: (callback: any) => ipcRenderer.on('replace-content-article-id', callback)
 }
 
 /**

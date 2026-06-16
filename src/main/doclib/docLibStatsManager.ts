@@ -5,7 +5,7 @@ import { BigIntStats } from 'fs'
 import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
-import { extractFileName, getUniqueId, traceLog } from '../utils'
+import { extractFileName, getUniqueId, traceLog, warnLog } from '../utils'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -174,7 +174,6 @@ export class DocLibStatsManager {
 
         // let start1 = new Date().getTime()
         let count = countWords(mdContent)
-        console.log('countWords:', count)
         temp.articleTotalWords += count
         temp.articleTotal += 1
 
@@ -341,8 +340,46 @@ export class DocLibStatsManager {
     }
   }
 
-  // TODO:
-  public updatePicName(oldPicName: string, newPicName: string) {}
+  /**
+   * TODO:
+   * @param oldPicName
+   * @param newPicName
+   * @return 图片对应的文章ID
+   */
+  public updatePicName(oldPicName: string, newPicName: string): UpdatePicNameRes[] | undefined {
+    const markdowns: PicToMd | undefined = this.picToMdMap.get(oldPicName)
+    if (markdowns === undefined) {
+      return
+    }
+
+    const results: UpdatePicNameRes[] = []
+
+    // 1. 将文章关联到新图片名称
+    this.picToMdMap.delete(oldPicName)
+    this.picToMdMap.set(newPicName, markdowns)
+
+    // 2. 修改文章中对应的图片名称和地址
+    const markdownIds: string[] = markdowns.mds.map((md) => md.id)
+    for (const markdownId of markdownIds) {
+      const mdToPic: MdToPic | undefined = this.mdToPicMap.get(markdownId)
+      if (mdToPic === undefined) {
+        continue
+      }
+      const result: UpdatePicNameRes = { markdownId: markdownId, pictures: [] }
+      mdToPic.pics.forEach((pic) => {
+        if (pic.picName === oldPicName) {
+          const replace = { oldPicMdRaw: pic.picMdRaw, newPicMdRaw: '' }
+          pic.picName = newPicName
+          pic.picPath = pic.picPath.replace(oldPicName, newPicName)
+          pic.picMdRaw = pic.picMdRaw.replace(oldPicName, newPicName)
+          replace.newPicMdRaw = pic.picMdRaw
+          result.pictures.push(replace)
+        }
+      })
+      results.push(result)
+    }
+    return results
+  }
 
   /**
    * 删除图片对应的文章信息, 发生在图片删除和图片重命名时
@@ -352,9 +389,11 @@ export class DocLibStatsManager {
   }
 
   public log() {
-    traceLog('**********************************************************************')
-    traceLog('* 文档库文档对图片 / 图片对文档统计')
-    traceLog('**********************************************************************')
+    traceLog(
+      '\n\n\n\n==============================================================================================================================='
+    )
+    traceLog('* 文章对应的图片 / 图片对应的文章')
+    traceLog('===============================================================================================================================')
     this.mdToPicMap.forEach((m2p, key) => {
       console.log(`文档: ${key}`)
       console.log(`包含 ${m2p.pics.length} 张图片:`)
@@ -364,6 +403,9 @@ export class DocLibStatsManager {
       })
       traceLog('------------------------------------------------------------------------------')
     })
+    warnLog('===============================================================================================================================')
+    warnLog('图片对应的文章')
+    warnLog('===============================================================================================================================')
     this.picToMdMap.forEach((p2m, key) => {
       console.log(`图片: ${key}`)
       console.log(`包含 ${p2m.mds.length} 个文章:`)
@@ -580,3 +622,10 @@ export interface ImageMatch extends BaseMatch {
 }
 
 //#endregion
+
+//#region 方法参数与返回值
+export interface UpdatePicNameRes {
+  markdownId: string
+  pictures: { oldPicMdRaw: string; newPicMdRaw: string }[]
+}
+//#endreginn

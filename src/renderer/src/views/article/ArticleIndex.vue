@@ -166,7 +166,7 @@ import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
 import { articleInfoApi, saveArticleContentApi } from '@renderer/api/blossom'
 // utils
-import { isBlank, isNull } from '@renderer/assets/utils/obj'
+import { isBlank, isNotNull, isNull } from '@renderer/assets/utils/obj'
 import { sleep, isElectron, isBase64Img, isHttp } from '@renderer/assets/utils/util'
 import { openExtenal, writeText, readText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 import { formartMarkdownTable } from '@renderer/assets/utils/format-table'
@@ -179,7 +179,7 @@ import hotkeys from 'hotkeys-js'
 import Notify from '@renderer/scripts/notify'
 import { useDraggable } from '@renderer/scripts/draggable'
 import type { shortcutFunc } from '@renderer/scripts/shortcut-register'
-import { treeToInfo, provideKeyDocInfo, provideKeyCurArticleInfo, isArticle } from '@renderer/views/doc/doc'
+import { treeToInfo, provideKeyDocInfo, provideKeyCurArticleInfo, isArticle, DefaultDocTree } from '@renderer/views/doc/doc'
 import { ArticleReference, parseTocAsync, countWords } from './scripts/article'
 import type { Toc } from './scripts/article'
 import { picCacheWrapper, picCacheRefresh, uploadForm, DefaultPicture, protocolWrapper } from '@renderer/views/picture/scripts/picture'
@@ -206,6 +206,7 @@ onMounted(() => {
   initScroll()
   addListenerScroll()
   initAutoSaveInterval()
+  listenMainMessage()
   if (!isMounted) {
     enterView()
     bindKeys()
@@ -418,15 +419,16 @@ provide(provideKeyCurArticleInfo, curArticle)
  * 2:选中的是文章, 则查询文章内容
  *
  * @param tree
+ * @param isClickRepeat 是否允许重复点击, 如果为 true, 则点击同一个文章时仍然允许查询文章内容
  */
-const clickCurDoc = async (tree: DocTree) => {
+const clickCurDoc = async (tree: DocTree, isClickRepeat: boolean = false) => {
   let doc: DocInfo = treeToInfo(tree)
   curDoc.value = doc
   if (doc.type !== 'ARTICLE') {
     return
   }
   // 重复点击同一个, 不会多次查询
-  if (isArticle(curArticle.value) && curArticle.value!.id == doc.id) {
+  if (isArticle(curArticle.value) && curArticle.value!.id == doc.id && !isClickRepeat) {
     return
   }
   // 如果保存用时过长, 则显示一个loading
@@ -434,7 +436,7 @@ const clickCurDoc = async (tree: DocTree) => {
   // 先保存当前文章内容, 再查询下一个文章
   await saveCurArticleContent(true)
   clearTocAndImg()
-  await articleInfoApi({ id: doc.id, path: doc.path })
+  await articleInfoApi({ id: doc.id })
     .then((resp) => {
       if (isNull(resp) || isNull(resp.data)) {
         return
@@ -503,9 +505,7 @@ const saveCurArticleContent = async (auto: boolean = false) => {
   articleChanged = false
   let data: SaveFileContentReq = {
     id: curArticle.value!.id!,
-    path: curArticle.value!.path!,
-    content: cmw.getDocString(),
-    words: 0
+    content: cmw.getDocString()
     // references: articleImg.value.concat(articleLink.value).map((item) => {
     //   let refer: ArticleReference = { targetId: '', targetName: '', targetUrl: '', type: 10 }
     //   Object.assign(refer, item)
@@ -516,7 +516,6 @@ const saveCurArticleContent = async (auto: boolean = false) => {
     // })
   }
   curArticle.value!.words = countWords(data.content)
-  data.words = curArticle.value!.words
   await saveArticleContentApi(data)
     .then((_resp) => {
       lastSaveTime = new Date().getTime()
@@ -910,6 +909,25 @@ const unbindKeys = () => {
   hotkeys.unbind('alt+4, command+4')
 }
 
+//#endregion
+
+//#region 监听主进程发来的消息
+const listenMainMessage = () => {
+  if (isElectron()) {
+    //@ts-ignore
+    window.electronAPI.replaceContentArticleId((_event: any, articleIds: string[]): void => {
+      console.log('主进程发来的文章ID: ' + articleIds)
+      if (articleIds.length > 0 && isArticle(curArticle.value)) {
+        if (articleIds.includes(curArticle.value!.id)) {
+          const tree: DocTree = new DefaultDocTree()
+          tree.id = curArticle.value!.id
+          tree.type = 'ARTICLE'
+          clickCurDoc(tree, true)
+        }
+      }
+    })
+  }
+}
 //#endregion
 </script>
 

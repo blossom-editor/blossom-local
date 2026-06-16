@@ -82,19 +82,14 @@ declare interface DocInfo {
 /**
  * 获取文件内容
  */
-declare interface GetFileContentReq extends Base {
-  id: string,
-  path?: string
-}
+declare interface GetFileContentReq extends Base { id: string }
 
 /**
  * 保存文件内容
  */
 declare interface SaveFileContentReq extends Base {
   id: string
-  path: string
   content: string
-  words: number
 }
 
 /**

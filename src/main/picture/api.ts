@@ -1,24 +1,28 @@
-import { ipcMain, dialog, shell } from 'electron'
+import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
 import { IdMapping } from '../doclib/idMapping'
-import { cutSuffix, errorLog, getUniqueId, imagesSuffix, isImage, normalizeMarkdownImage } from '../utils'
+import { cutSuffix, errorLog, generateUniqueId, getUniqueId, imagesSuffix, isImage, normalizeMarkdownImage, traceLog } from '../utils'
 import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
 import { PicItem, PicNameMapping } from '../doclib/picNameMapping'
-import { DocLibStatsManager } from '../doclib/docLibStatsManager'
+import { DocLibStatsManager, UpdatePicNameRes } from '../doclib/docLibStatsManager'
 import { protocolWrapper } from '../customProtocol'
 import { naturalCompare } from '../doclib/docLibUtil'
 import { readDocTreeSort } from '../doclib/api'
+import { readDocInfo, saveArticleContent } from '../article/api'
 
 const idMapping = IdMapping.getInstance()
 const picNameMapping = PicNameMapping.getInstance()
 const docLibStatsManager = DocLibStatsManager.getInstance()
 
-export const initPictureApi = () => {
+let mainWindow: BrowserWindow
+export const initPictureApi = (win: BrowserWindow) => {
+  mainWindow = win
   console.log('   4.5 初始化图片接口 initPictureApi')
   initSelectPicAndMoveDialog()
+  initSelectMultiPicAndMoveDialog()
   initFileBuffSave()
   initPictureList()
   initPictureInfoByName()
@@ -42,7 +46,14 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
   // 如果指定了文章, 则上传到文章路径, 否则上传到文档库根目录
   if (req.targetDocId && !req.targetDocLibRoot) {
     const targetDoc = idMapping.get(req.targetDocId)
-    targetFolder = path.dirname(targetDoc!.path)
+    if (!targetDoc) {
+      return R.fail('上传目录不存在')
+    }
+    if (targetDoc.type === 'FOLDER') {
+      targetFolder = targetDoc.path
+    } else {
+      targetFolder = path.dirname(targetDoc!.path)
+    }
   } else if (req.targetDocLibRoot) {
     targetFolder = req.docLibPath!
   }
@@ -66,16 +77,93 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
     return R.ok(null)
   }
   const res = moveFile(choiseFile.filePaths[0], targetFolder)
+  if (!res) {
+  }
 
   return R.ok(res)
 }
 
+const initSelectMultiPicAndMoveDialog = () => {
+  ipcMain.handle('select-multi-pic-and-move-dialog', (_event, params: SelectPicAndMoveReq) => {
+    return selectMultiPicAndMoveDialog(params)
+  })
+}
+
+/**
+ * 选择一个图片, 并复制到选定为止, 然后将文件在新位置的路径返回
+ */
+const selectMultiPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<SelectFileAndMoveRes[] | null>> => {
+  let targetFolder = ''
+
+  // 如果指定了文章, 则上传到文章路径, 否则上传到文档库根目录
+  if (req.targetDocId && !req.targetDocLibRoot) {
+    const targetDoc = idMapping.get(req.targetDocId)
+    if (!targetDoc) {
+      return R.fail('上传目录不存在')
+    }
+    if (targetDoc.type === 'FOLDER') {
+      targetFolder = targetDoc.path
+    } else {
+      targetFolder = path.dirname(targetDoc!.path)
+    }
+  } else if (req.targetDocLibRoot) {
+    targetFolder = req.docLibPath!
+  }
+
+  // 目标地址必须为文档库的子目录
+  if (targetFolder.indexOf(req.docLibPath!) === -1) {
+    return R.fail('FOLDER_PATH_ERROR', `不能将文件上传到文档库之外: [${targetFolder}]`)
+  }
+
+  const choiseFile = await dialog.showOpenDialog({
+    properties: ['openFile', 'multiSelections'],
+    title: '选择文件',
+    filters: [
+      { name: 'Images', extensions: imagesSuffix },
+      { name: 'All Files', extensions: ['*'] }
+    ]
+  })
+
+  if (choiseFile.canceled) {
+    return R.ok(null)
+  }
+  const res: SelectFileAndMoveRes[] = []
+  choiseFile.filePaths.forEach((filePath) => {
+    res.push(moveFile(filePath, targetFolder))
+  })
+
+  return R.ok(res)
+}
+
+/**
+ * 将文件移动到目标文件夹
+ * 原文件会被重命名, 增加 YYYY_MM_DD_HHMMSS_SSS 后缀
+ *
+ * @param originFilePath 原文件
+ * @param targetFolder 目标文件夹
+ */
 const moveFile = (originFilePath: string, targetFolder: string): SelectFileAndMoveRes => {
   // 有后缀时, 图片名称不会重复
   const timeSuffix = '_' + picSuffix()
   const extname = path.extname(originFilePath)
   const nameWithoutExt = normalizeMarkdownImage(path.basename(originFilePath, extname))
-  let targetPicPath = path.join(targetFolder, nameWithoutExt + timeSuffix + extname)
+
+  // 1. 原始名称, 与原名字相同
+  let targetPicName = nameWithoutExt + extname
+  let targetPicPath = path.join(targetFolder, targetPicName)
+
+  // 2. 如果原始名存在, 添加时间后缀
+  if (picNameMapping.exist(targetPicName) || fs.existsSync(targetPicPath)) {
+    targetPicName = nameWithoutExt + timeSuffix + extname
+    targetPicPath = path.join(targetFolder, targetPicName)
+  }
+
+  // 3. 如果添加时间后缀后仍然存在, 添加随机数后缀
+  if (picNameMapping.exist(targetPicName) || fs.existsSync(targetPicPath)) {
+    const moreSuffix = '_' + generateUniqueId()
+    targetPicName = nameWithoutExt + timeSuffix + moreSuffix + extname
+    targetPicPath = path.join(targetFolder, targetPicName)
+  }
 
   fs.copyFileSync(originFilePath, targetPicPath)
   picNameMapping.addPath(targetPicPath)
@@ -253,6 +341,7 @@ const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
     if (fs.existsSync(req.newPath)) return R.fail('文件名重复', '已存在相同名称的文件')
     if (!fs.existsSync(req.oldPath)) return R.fail('文件不存在', '被重命名的文件不存在')
 
+    const oldName = path.basename(req.oldPath)
     const newName = path.basename(req.newPath)
 
     const oldFolderPath = path.dirname(req.oldPath)
@@ -266,7 +355,34 @@ const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
     }
 
     await fs.promises.rename(req.oldPath, req.newPath)
-    // TODO: 重命名(移动)文章时, 修改文章正文中的文章链接
+
+    /*
+     * 重命名图片时, 修改文章正文中的图片链接
+     */
+    const result: UpdatePicNameRes[] | undefined = docLibStatsManager.updatePicName(oldName, newName)
+    if (result) {
+      for (const markdown of result) {
+        const article = idMapping.get(markdown.markdownId)
+        if (!article) {
+          continue
+        }
+        const r: R<DocInfo> = await readDocInfo({ id: article.id })
+        if (r.ok && r.data) {
+          const docInfo = r.data
+          let newContent = docInfo.markdown
+          if (newContent === undefined || newContent.length === 0) {
+            continue
+          }
+          // 修改文章内容
+          for (const pic of markdown.pictures) {
+            newContent = newContent.replaceAll(pic.oldPicMdRaw, pic.newPicMdRaw)
+          }
+          await saveArticleContent({ id: article.id, content: newContent })
+        }
+      }
+      const markdownIds = result.map((item) => item.markdownId)
+      mainWindow.webContents.send('replace-content-article-id', markdownIds)
+    }
 
     // 返回文档列表, 会自动刷新图片名称与路径的对应关系
     return R.ok(await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' }))

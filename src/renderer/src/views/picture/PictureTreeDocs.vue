@@ -94,9 +94,14 @@
         <div v-if="curDoc.type === 'PICTURE'" :class="['menu-item', Number(curDoc.id) <= 0 ? 'disabled' : '']" @click="rename">
           <span class="iconbl bl-pen"></span>重命名
         </div>
+        <div v-if="curDoc.type === 'FOLDER'" @click="uploadFiles()"><span class="iconbl bl-picture-line"></span>上传图片</div>
         <div @click="openFileLocation(curDoc.path)">
           <span class="iconbl bl-computer-line"></span>{{ platformText('在资源管理器中查看', '在访达中查看') }}
         </div>
+        <div v-if="curDoc.type === 'PICTURE'" class="menu-item-divider"></div>
+        <div v-if="curDoc.type === 'PICTURE'"><span class="iconbl bl-a-filelink-line"></span>复制 Markdown 链接</div>
+        <div v-if="curDoc.type === 'PICTURE'"><span class="iconbl bl-a-linkspread-line"></span>复制绝对路径</div>
+        <div v-if="curDoc.type === 'PICTURE'" class="menu-item-divider"></div>
         <div v-if="curDoc.type === 'PICTURE'" @click="delPicture()"><span class="iconbl bl-delete-line"></span>删除图片</div>
       </div>
     </div>
@@ -123,6 +128,7 @@ import { DragEvents } from 'element-plus/es/components/tree/src/model/useDragNod
 import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 import Node from 'element-plus/es/components/tree/src/model/node'
 // ts
+import { pictureDeleteBatchApi, pictureInfoApi, pictureMoveBatchApi, pictureRenameApi, selectMultiPicAndMoveDialog } from '@renderer/api/picture'
 import { docTreeApi } from '@renderer/api/blossom'
 import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
 import { isShowImg, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
@@ -132,12 +138,11 @@ import { useLifecycle } from '@renderer/scripts/lifecycle'
 // util
 import { isEmpty } from 'lodash'
 import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
+import { getFilePrefix, inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
 // components
 import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
-import { getFilePrefix, inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
 import { openFileLocation } from '@renderer/api/docLib'
-import { pictureDeleteBatchApi, pictureInfoApi, pictureMoveBatchApi, pictureRenameApi } from '@renderer/api/picture'
 
 const docLibStore = useDocLibStore()
 const configStore = useConfigStore()
@@ -518,7 +523,20 @@ const delPicture = () => {
   })
 }
 
-// ======================== 文章重命名 ==============================
+const uploadFiles = () => {
+  const req: SelectPicAndMoveReq = {
+    targetDocId: curDoc.value.id,
+    targetDocLibRoot: false,
+    replace: false
+  }
+  selectMultiPicAndMoveDialog(req).then((_resp) => {
+    getDocTree()
+  })
+}
+
+//#endregion
+
+//#region ----------------------------------------< 文件重命名 >--------------------------------------
 const renameTooltipVisible = ref(false)
 const renameTooltipRef = ref({ getBoundingClientRect: () => position.value })
 const position = ref({ top: 0, left: 0, bottom: 0, right: 0 } as DOMRect)

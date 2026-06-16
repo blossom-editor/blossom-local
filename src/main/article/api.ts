@@ -34,7 +34,7 @@ const initReadDocInfo = () => {
  * @param req - 获取文件内容的请求参数，包含文件路径等信息
  * @returns 返回包含文档基本信息的 DocInfo 对象。若读取成功，markdown 字段将包含文件内容；若读取失败，markdown 字段为空字符串，但仍返回包含路径等基础信息的对象
  */
-const readDocInfo = async (req: GetFileContentReq): Promise<R<DocInfo>> => {
+export const readDocInfo = async (req: GetFileContentReq): Promise<R<DocInfo>> => {
   const cacheDoc: FileItem | undefined = idMapping.get(req.id)
   if (!cacheDoc || cacheDoc.type !== 'ARTICLE') {
     return R.fail('文章不存在', '文章不存在, 请尝试刷新文档列表')
@@ -56,7 +56,7 @@ const readDocInfo = async (req: GetFileContentReq): Promise<R<DocInfo>> => {
     doc.markdown = data
     return R.ok(doc)
   } catch (error) {
-    console.error(`读取文件失败: ${req.path}`, error)
+    console.error(`读取文件失败: ${doc.path}`, error)
     return R.fail('获取文章内容失败', error)
   }
 }
@@ -129,7 +129,7 @@ const initSaveArticleContent = () => {
 /**
  * 保存文件内容, 通过文件ID获取文件路径, 并保存
  */
-const saveArticleContent = async (req: SaveFileContentReq): Promise<R<any>> => {
+export const saveArticleContent = async (req: SaveFileContentReq): Promise<R<any>> => {
   const article = idMapping.get(req.id)
   if (!article) {
     return R.fail('文件不存在', '未找到对应的文件')

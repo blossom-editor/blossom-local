@@ -161,7 +161,7 @@ function createMainWindow(): void {
   // 注册各类业务接口
   initDocLibApi()
   initArticleApi()
-  initPictureApi()
+  initPictureApi(mainWindow)
   // 注册全局快捷键 printScreen:截屏快捷键
   new ShortcutRegistrant(mainWindow).printScreen()
   console.log('============================================================')

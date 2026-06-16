@@ -19,6 +19,11 @@ export const getUniqueId = (fileStats: BigIntStats) => {
   return fileStats.dev.toString() + '-' + fileStats.ino.toString()
 }
 
+/**
+ * 去除文件的后缀, 只获取文件名
+ * @param filename 文件名
+ * @returns
+ */
 export const cutSuffix = (filename: string): string => {
   return filename.replace(/\.[^.]+$/, '')
 }
@@ -87,13 +92,55 @@ export const isImage = (name: string): boolean => {
   return result
 }
 
+const BASE = 36
+const MAX_COUNTER = Math.pow(BASE, 3) - 1 // 后3位给计数器，最多 46655 个/毫秒
+
+let lastTimestamp = -1
+let counter = 0
+
+/**
+ * 生成一个 6 位字母数字唯一 ID
+ * 保证在同一毫秒内调用多次，每次返回不同值
+ */
+export function generateUniqueId(): string {
+  const now = Date.now()
+
+  // 若时间戳变化，重置计数器
+  if (now !== lastTimestamp) {
+    lastTimestamp = now
+    counter = 0
+  } else {
+    counter++
+    // 极端情况：同一毫秒内超过计数器上限，则等待下一毫秒（避免溢出）
+    if (counter > MAX_COUNTER) {
+      // 主动等待直到时间戳变化（极少发生）
+      while (Date.now() === now) {
+        // 空循环，或使用 setTimeout 但会阻塞，这里用简单忙等（适合低频场景）
+      }
+      // 递归调用，使用新时间戳
+      return generateUniqueId()
+    }
+  }
+
+  // 取时间戳的后3位（0~999）作为时间部分，编码为 base36（最多2位）
+  const timePart = (now % 1000).toString(BASE).toUpperCase()
+  // 计数器编码为 base36，补零到3位
+  const counterPart = counter.toString(BASE).toUpperCase().padStart(3, '0')
+  // 组合：时间部分（左补零至2位）+ 计数器部分（3位），总长5位？不够，我们调整为：取时间部分左补零至3位，计数器部分左补零至3位，总共6位
+  // 但时间部分最多999 -> 36进制是 "RR"（2位），所以补零到3位，计数器也补零到3位，总长6位
+  const fullTime = timePart.padStart(3, '0')
+  const fullCounter = counterPart.padStart(3, '0')
+  return fullTime + fullCounter
+}
+
+//#region 染色日志
+
 export const traceLog = (msg: any) => {
   console.log(`\x1b[36m${msg}\x1b[0m`)
 }
 export const infoLog = (msg: any) => {
   console.log(`${msg}`)
 }
-
 export const succLog = (msg: any) => {
   console.log(`\x1b[32m${msg}\x1b[0m`)
 }
@@ -104,3 +151,4 @@ export const warnLog = (msg: any) => {
   console.log(`\x1b[33m${msg}\x1b[0m`)
 }
 
+//#endregion

@@ -6,6 +6,9 @@ import { invoke } from './ipc-wrapper'
 export const selectPicAndMoveDialog = (req: SelectPicAndMoveReq): Promise<R<SelectFileAndMoveRes>> => {
   return invoke('select-pic-and-move-dialog', req)
 }
+export const selectMultiPicAndMoveDialog = (req: SelectPicAndMoveReq): Promise<R<SelectFileAndMoveRes>> => {
+  return invoke('select-multi-pic-and-move-dialog', req)
+}
 
 /**
  * 通用文件选择框, 用于选择图片等
