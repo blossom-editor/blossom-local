@@ -18,6 +18,8 @@ const picNameMapping = PicNameMapping.getInstance()
 const docLibStatsManager = DocLibStatsManager.getInstance()
 
 let mainWindow: BrowserWindow
+
+//#region init
 export const initPictureApi = (win: BrowserWindow) => {
   mainWindow = win
   console.log('   4.5 初始化图片接口 initPictureApi')
@@ -32,13 +34,27 @@ export const initPictureApi = (win: BrowserWindow) => {
 }
 
 const initSelectPicAndMoveDialog = () => {
-  ipcMain.handle('select-pic-and-move-dialog', (_event, params: SelectPicAndMoveReq) => {
-    return selectPicAndMoveDialog(params)
-  })
+  ipcMain.handle('select-pic-and-move-dialog', (_event, params: SelectPicAndMoveReq) => selectPicAndMoveDialog(params))
 }
+const initSelectMultiPicAndMoveDialog = () => {
+  ipcMain.handle('select-multi-pic-and-move-dialog', (_event, params: SelectPicAndMoveReq) => selectMultiPicAndMoveDialog(params))
+}
+const initFileBuffSave = () => {
+  ipcMain.handle('file-buffer-save', (_event, params: FileBuffSaveReq) => fileBuffSave(params))
+}
+const initRenamePicture = () => {
+  ipcMain.handle('picture-rename', async (_event, req: RenameFileReq) => renamePicture(req))
+}
+const initDeleteBatchPictures = () => {
+  ipcMain.handle('picture-delete-batch', async (_event, req: PictureDeleteBatchReq): Promise<R<PictureDeleteBatchRes>> => deleteBatchPicture(req))
+}
+const initMoveBatchPictures = () => {
+  ipcMain.handle('picture-move-batch', async (_event, req: PictureMoveBatchReq): Promise<R<DocTree[]>> => moveBatchPictures(req))
+}
+//#endregion
 
 /**
- * 选择一个图片, 并复制到选定为止, 然后将文件在新位置的路径返回
+ * 选择一个图片, 并复制到选定位置, 然后将文件在新位置的路径返回
  */
 const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<SelectFileAndMoveRes | null>> => {
   let targetFolder = ''
@@ -83,14 +99,8 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
   return R.ok(res)
 }
 
-const initSelectMultiPicAndMoveDialog = () => {
-  ipcMain.handle('select-multi-pic-and-move-dialog', (_event, params: SelectPicAndMoveReq) => {
-    return selectMultiPicAndMoveDialog(params)
-  })
-}
-
 /**
- * 选择一个图片, 并复制到选定为止, 然后将文件在新位置的路径返回
+ * 选择多个图片, 并复制到选定位置, 然后将文件在新位置的路径返回
  */
 const selectMultiPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<SelectFileAndMoveRes[] | null>> => {
   let targetFolder = ''
@@ -137,7 +147,7 @@ const selectMultiPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<
 
 /**
  * 将文件移动到目标文件夹
- * 原文件会被重命名, 增加 YYYY_MM_DD_HHMMSS_SSS 后缀
+ * 原文件如果重复会被重命名, 增加 YYYY_MM_DD_HHMMSS_SSS_随机字符串 后缀
  *
  * @param originFilePath 原文件
  * @param targetFolder 目标文件夹
@@ -173,12 +183,6 @@ const moveFile = (originFilePath: string, targetFolder: string): SelectFileAndMo
     fileName: path.basename(targetPicPath)
   }
   return res
-}
-
-const initFileBuffSave = () => {
-  ipcMain.handle('file-buffer-save', (_event, params: FileBuffSaveReq) => {
-    return fileBuffSave(params)
-  })
 }
 
 /**
@@ -322,12 +326,6 @@ const initPictureInfoByName = () => {
   })
 }
 
-const initRenamePicture = () => {
-  ipcMain.handle('picture-rename', async (_event, req: RenameFileReq) => {
-    return renamePicture(req)
-  })
-}
-
 /**
  * 重命名文件
  * 因为 renmae 方法具有修改路径的功能, 所以进行业务判断, 只重命名文件的名称, 不移动文件的路径
@@ -391,12 +389,6 @@ const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
   }
 }
 
-const initDeleteBatchPictures = () => {
-  ipcMain.handle('picture-delete-batch', async (_event, req: PictureDeleteBatchReq): Promise<R<PictureDeleteBatchRes>> => {
-    return deleteBatchPicture(req)
-  })
-}
-
 /**
  * 批量删除图片
  * 只允许删除文件, 不允许删除文件夹
@@ -457,12 +449,6 @@ const deleteBatchPicture = async (req: PictureDeleteBatchReq): Promise<R<Picture
 
   res.docTree = await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' })
   return R.ok(res)
-}
-
-const initMoveBatchPictures = () => {
-  ipcMain.handle('picture-move-batch', async (_event, req: PictureMoveBatchReq): Promise<R<DocTree[]>> => {
-    return moveBatchPictures(req)
-  })
 }
 
 /**

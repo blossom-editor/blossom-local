@@ -99,7 +99,7 @@
             </el-tooltip>
 
             <el-tooltip content="左键复制 MD 格式, 右键复制文件路径" placement="bottom" :show-after="500">
-              <div class="item iconbl bl-copy-line" @click="copyMarkdownUrl(pic.path, pic.name, $event)" @click.right="copyUrl(pic.path)"></div>
+              <div class="item iconbl bl-copy-line" @click="copyMarkdownUrl(pic.name)" @click.right="copyUrl(pic.path)"></div>
             </el-tooltip>
             <div class="item iconbl bl-computer-line" @click="openFileLocation(pic.path)"></div>
             <div class="item iconbl bl-delete-line" @click="deletePicture(pic)"></div>
@@ -146,17 +146,15 @@
 <script setup lang="ts">
 // vue
 import { ref, provide, computed, StyleValue } from 'vue'
-import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
-import { CopyDocument } from '@element-plus/icons-vue'
+import { ElMessageBox, ElNotification } from 'element-plus'
 import { treeToInfo, provideKeyDocInfo } from '@renderer/views/doc/doc'
 import { isEmpty, isNull } from '@renderer/assets/utils/obj'
 import { formatFileSize, getFilePrefix, getFileSuffix, isImage } from '@renderer/assets/utils/util'
-import { writeText } from '@renderer/assets/utils/electron'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
 import { pictureDeleteBatchApi, pictureInfoApi, pictureListApi } from '@renderer/api/picture'
 
 // component
-import { picCacheWrapper, picCacheRefresh } from './scripts/picture'
+import { picCacheWrapper, picCacheRefresh, copyMarkdownUrl, copyUrl } from './scripts/picture'
 import PictureTreeDocs from './PictureTreeDocs.vue'
 import PictureViewerInfo from './PictureViewerInfo.vue'
 import PictureBatchDel from './PictureBatchDel.vue'
@@ -302,27 +300,6 @@ const onErrorImg = (a: Event) => {
       imgWrapper.style.backgroundColor = 'var(--bl-bg-color)'
     }
   }
-}
-
-/**
- * 复制文章链接
- * @param path
- */
-const copyUrl = (path: string) => {
-  writeText(path)
-  ElMessage.info({ message: '已复制文件路径', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
-}
-
-/**
- * 复制文章 Markdown 链接
- * @param path 路径
- * @param picName 图片名称
- * @param event event
- */
-const copyMarkdownUrl = (_path: string, picName: string, event: MouseEvent) => {
-  event.preventDefault()
-  writeText(`![${picName}](${picName})`)
-  ElMessage.info({ message: '已复制 MD 格式链接', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
 }
 
 /**

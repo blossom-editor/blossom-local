@@ -2,6 +2,9 @@ import pinia from '@renderer/stores/store-config'
 import { useConfigStore } from '@renderer/stores/config'
 import { getFilePrefix, getFileSuffix, getNowTime, isHttp, parseQueryParams, randomInt } from '@renderer/assets/utils/util'
 import { fileBuffSave } from '@renderer/api/picture'
+import { writeText } from '@renderer/assets/utils/electron'
+import { ElMessage } from 'element-plus'
+import { CopyDocument } from '@element-plus/icons-vue'
 
 const { picStyle } = useConfigStore(pinia)
 
@@ -66,6 +69,26 @@ export const uploadForm = (articleId: string, file: File, callback: UploadCallba
       callback(resp.data!.fileName!)
     })
   })
+}
+
+/**
+ * 文件绝对路径
+ * @param path
+ */
+export const copyUrl = (path: string) => {
+  writeText(path)
+  ElMessage.info({ message: '已复制文件路径', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
+}
+
+/**
+ * 复制文章 Markdown 链接
+ * @param path 路径
+ * @param picName 图片名称
+ * @param event event
+ */
+export const copyMarkdownUrl = (picName: string) => {
+  writeText(`![${picName}](${picName})`)
+  ElMessage.info({ message: '已复制 MD 格式链接', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
 }
 
 // 图片缓存
