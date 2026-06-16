@@ -34,7 +34,7 @@ export class Notify {
     ElNotification.error({
       message: message,
       title: title ? title : '(๑T^T๑) ',
-      offset: 30, 
+      offset: 30,
       // duration: 0,
       position: 'bottom-right'
     })

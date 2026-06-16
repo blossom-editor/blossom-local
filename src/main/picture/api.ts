@@ -226,11 +226,22 @@ const fileBuffSave = async (req: FileBuffSaveReq): Promise<R<SelectFileAndMoveRe
  */
 const initPictureList = () => {
   ipcMain.handle('picture-list', async (_event, req: PictureListReq): Promise<R<PictureListRes>> => {
-    const folder = idMapping.get(req.id)
-    if (!folder) {
+    let folderPath: string
+    if (req.id && req.readDocLibRoot === false) {
+      const targetFolder = idMapping.get(req.id)
+      if (!targetFolder || targetFolder.type !== 'FOLDER') return R.fail('目标文件不存在', '目标文件不存在')
+      folderPath = targetFolder.path
+    } else if (req.readDocLibRoot === true) {
+      folderPath = req.docLibPath!
+    } else {
       return R.fail('文件不存在', '未找到对应的文件')
     }
-    const files = await fs.promises.readdir(folder.path, { withFileTypes: true })
+
+    // if (!folderPath) {
+    //   return R.fail('文件不存在', '未找到对应的文件')
+    // }
+
+    const files = await fs.promises.readdir(folderPath, { withFileTypes: true })
 
     const picFiles = files
       .filter((file) => {

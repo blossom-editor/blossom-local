@@ -3,7 +3,7 @@ import { useConfigStore } from '@renderer/stores/config'
 import { getFilePrefix, getFileSuffix, getNowTime, isHttp, parseQueryParams, randomInt } from '@renderer/assets/utils/util'
 import { fileBuffSave } from '@renderer/api/picture'
 import { writeText } from '@renderer/assets/utils/electron'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElNotification } from 'element-plus'
 import { CopyDocument } from '@element-plus/icons-vue'
 
 const { picStyle } = useConfigStore(pinia)
@@ -125,4 +125,14 @@ export const protocolWrapper = (path: string) => {
     return window.electronAPI.constants.BLOSSOM_PROTOCOL + path
   }
   return path
+}
+
+export const pictureUseNotify = (useCount: number | string) => {
+  ElNotification.error({
+    title: '删除失败',
+    dangerouslyUseHTMLString: true,
+    message: `尚有<span style="color:red">[${useCount}]篇文章正在引用该图片</span>, 请先删除文章中的图片链接。`,
+    offset: 30,
+    position: 'bottom-right'
+  })
 }

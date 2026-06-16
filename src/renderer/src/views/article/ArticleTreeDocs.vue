@@ -12,7 +12,7 @@
       <div class="iconbl bl-folderadd-line" @click="addFolderToRoot()"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="显示子文件数量">
-      <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount"></div>
+      <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount()"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="搜索文件名">
       <div class="iconbl bl-search-item" @click="showTreeFilter()"></div>
@@ -20,11 +20,11 @@
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="刷新">
       <div class="iconbl bl-refresh-line" @click="refreshDocTree()"></div>
     </el-tooltip>
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="定位到当前文章">
-      <div class="iconbl bl-collimation" @click="collimationCurrentArticle"></div>
-    </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="折叠所有文件夹">
-      <div class="iconbl bl-collapse" @click="collapseAll"></div>
+      <div class="iconbl bl-collapse" @click="collapseAll()"></div>
+    </el-tooltip>
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="定位到当前文章">
+      <div class="iconbl bl-collimation" @click="collimationCurrentArticle()"></div>
     </el-tooltip>
     <div class="doc-tree-search" ref="DocTreeSearch" v-show="isShowTreeFilter">
       <el-input v-model="treeFilterText" style="width: 180px" ref="DocTreeSearchInput">
@@ -247,7 +247,7 @@ const getRouteQueryParams = () => {
 }
 
 /**
- * 聚焦当前打开的文章
+ * 定位到当前打开的文章
  */
 const collimationCurrentArticle = () => {
   if (!isEmpty(docTreeData.value) && isNotBlank(articleCurrnetChoiseId.value)) {
@@ -267,8 +267,12 @@ const collimationCurrentArticle = () => {
 const refreshDocTree = () => {
   getDocTree(() => {
     nextTick(() => {
-      if (!isEmpty(docTreeData.value) && isNotBlank(docTreeCurrentChoiseId.value)) {
-        DocTreeRef.value.setCurrentKey(docTreeCurrentChoiseId.value)
+      if (!isEmpty(docTreeData.value)) {
+        if (isNotBlank(articleCurrnetChoiseId.value)) {
+          DocTreeRef.value.setCurrentKey(articleCurrnetChoiseId.value)
+        } else if (isNotBlank(docTreeCurrentChoiseId.value)) {
+          DocTreeRef.value.setCurrentKey(docTreeCurrentChoiseId.value)
+        }
       }
     })
   })

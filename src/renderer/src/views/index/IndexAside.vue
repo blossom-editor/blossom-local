@@ -87,7 +87,7 @@ const toRoute = (menu: AsideMenu) => {
     activeMenuPath.value = menu.path
     router.push(menu.path)
   } else {
-    Notify.info('请现在左下角设置中选择文档库。', '请选择文档库')
+    Notify.info('', '请选择文档库')
   }
 }
 

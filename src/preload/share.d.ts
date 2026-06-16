@@ -180,7 +180,7 @@ declare interface ArticleLink { id: string;  name: string }
 /**
  * 指定文件夹ID下的文件列表
  */
-declare interface PictureListReq extends Base { id: string; pageNum: number; pageSize: number; }
+declare interface PictureListReq extends Base { id: string; pageNum: number; pageSize: number; readDocLibRoot: boolean }
 
 /**
  * 指定文件夹下的文件列表返回

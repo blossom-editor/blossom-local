@@ -23,7 +23,7 @@ export const invoke = async (channel: string, ...args: any[]): Promise<any> => {
     const docLib = Local.get(DOC_LIB_CUR_KEY)
     if (docLib === undefined || isBlank(docLib.path)) {
       console.error(`未选择文档库: ${channel}`)
-      Notify.info('请现在左下角设置中选择文档库。', '请选择文档库')
+      Notify.info('', '请选择文档库')
       router.push('/settingIndex')
       return {
         ok: false,

@@ -146,7 +146,7 @@
 <script setup lang="ts">
 // vue
 import { ref, provide, computed, StyleValue } from 'vue'
-import { ElMessageBox, ElNotification } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { treeToInfo, provideKeyDocInfo } from '@renderer/views/doc/doc'
 import { isEmpty, isNull } from '@renderer/assets/utils/obj'
 import { formatFileSize, getFilePrefix, getFileSuffix, isImage } from '@renderer/assets/utils/util'
@@ -154,7 +154,7 @@ import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
 import { pictureDeleteBatchApi, pictureInfoApi, pictureListApi } from '@renderer/api/picture'
 
 // component
-import { picCacheWrapper, picCacheRefresh, copyMarkdownUrl, copyUrl } from './scripts/picture'
+import { picCacheWrapper, picCacheRefresh, copyMarkdownUrl, copyUrl, pictureUseNotify } from './scripts/picture'
 import PictureTreeDocs from './PictureTreeDocs.vue'
 import PictureViewerInfo from './PictureViewerInfo.vue'
 import PictureBatchDel from './PictureBatchDel.vue'
@@ -185,6 +185,8 @@ const curFolder = ref<DocInfo>() // 当前选中的文档, 包含文件夹和文
 const picPageParam = ref<PageParam>({ pageNum: 1, pageSize: 15, name: '' }) // 列表参数
 const picPages = ref<Picture[]>([]) // 图片列表
 const picStat = ref<any>({ cur: { pictureTotal: 0, pictureTotalSize: '0MB' }, global: { pictureTotal: 0, pictureTotalSize: '0MB' } })
+const readDocLibRoot = ref<boolean>(false)
+
 // 依赖注入
 provide(provideKeyDocInfo, curFolder)
 
@@ -198,7 +200,7 @@ const curIsFolder = () => {
 /**
  * 点击树状列表名称的回调, 用于选中某个文档
  */
-const clickCurDoc = (tree: DocTree) => {
+const clickCurDoc = (tree: DocTree, isReadDocLibRoot: boolean = false) => {
   // 点击单个图片时显示图片详情
   if (tree.type === 'PICTURE') {
     pictureInfoApi({ id: tree.id }).then((res) => {
@@ -212,6 +214,7 @@ const clickCurDoc = (tree: DocTree) => {
   if (isNull(clickDoc)) {
     return
   }
+  readDocLibRoot.value = isReadDocLibRoot
   curFolder.value = clickDoc
   picChecks.value.clear()
   checkedAll.value = false
@@ -220,7 +223,8 @@ const clickCurDoc = (tree: DocTree) => {
   pictureListApi({
     id: curFolder.value.id,
     pageNum: picPageParam.value.pageNum,
-    pageSize: picPageParam.value.pageSize
+    pageSize: picPageParam.value.pageSize,
+    readDocLibRoot: readDocLibRoot.value
   }).then((resp) => {
     picPages.value = resp.data!.pictures
     picStat.value.cur = { pictureTotal: resp.data!.pictureTotal, pictureTotalSize: formatFileSize(resp.data!.pictureTotalSize) }
@@ -232,13 +236,14 @@ const clickCurDoc = (tree: DocTree) => {
  */
 const lastPage = () => {
   if (!curIsFolder()) return
-  if (picPageParam.value.pageNum - 1 === 0) return
+  if (picPageParam.value.pageNum === 1) return
 
   picPageParam.value.pageNum = Math.max(1, picPageParam.value.pageNum - 1)
   pictureListApi({
     id: curFolder.value!.id,
     pageNum: picPageParam.value.pageNum,
-    pageSize: picPageParam.value.pageSize
+    pageSize: picPageParam.value.pageSize,
+    readDocLibRoot: readDocLibRoot.value
   }).then((resp) => {
     picPages.value = resp.data!.pictures
   })
@@ -249,13 +254,14 @@ const lastPage = () => {
  */
 const nextPage = () => {
   if (!curIsFolder()) return
-  if (picPageParam.value.pageNum + 1 > Math.ceil(picStat.value.cur.totalCount / picPageParam.value.pageSize)) return
+  if (picPageParam.value.pageNum + 1 > Math.ceil(picStat.value.cur.pictureTotal / picPageParam.value.pageSize)) return
 
   picPageParam.value.pageNum += 1
   pictureListApi({
     id: curFolder.value!.id,
     pageNum: picPageParam.value.pageNum,
-    pageSize: picPageParam.value.pageSize
+    pageSize: picPageParam.value.pageSize,
+    readDocLibRoot: readDocLibRoot.value
   }).then((resp) => {
     picPages.value = resp.data!.pictures
   })
@@ -266,7 +272,8 @@ const refreshPage = () => {
   pictureListApi({
     id: curFolder.value!.id,
     pageNum: picPageParam.value.pageNum,
-    pageSize: picPageParam.value.pageSize
+    pageSize: picPageParam.value.pageSize,
+    readDocLibRoot: readDocLibRoot.value
   }).then((resp) => {
     picPages.value = resp.data!.pictures
   })
@@ -307,32 +314,35 @@ const onErrorImg = (a: Event) => {
  * @param pic 当前选中图片
  */
 const deletePicture = (pic: Picture) => {
-  ElMessageBox.confirm('文件将被移入系统回收站, 是否确定删除?', {
+  let articleCount = pic.articleLinks.length
+  if (articleCount > 0) {
+    pictureUseNotify(articleCount)
+    return
+  }
+  ElMessageBox.confirm(`文件将被移入回收站, 是否确定删除: <span style="color:#C02B2B;text-decoration: underline;">${pic.name}</span>？`, {
     confirmButtonText: '确认',
     cancelButtonText: '取消',
-    type: 'warning'
+    type: 'warning',
+    draggable: true,
+    dangerouslyUseHTMLString: true
   }).then(() => {
-    let articleCount = pic.articleLinks.length
-    if (articleCount > 0) {
-      ElNotification.error({
-        title: '删除失败',
-        dangerouslyUseHTMLString: true,
-        message: `尚有<span style="color:red">[${articleCount}]篇文章正在引用该图片</span>, 请先将文章中的图片引用删除后, 再删除图片!`,
-        offset: 30,
-        position: 'bottom-right'
-      })
-      return
-    }
     let path = pic.localProtocolPath
     pic.localProtocolPath = '1'
     pic.delType = 'DELETING'
-
     pictureDeleteBatchApi({ ids: [pic.id] })
-      .then((_resp) => {
-        Notify.success(`删除成功`)
-        PictureTreeDocsRef.value.getDocTree()
-        refreshStats()
-        pic.delType = 'DELETED'
+      .then((resp) => {
+        if (resp.data!.success === 1) {
+          Notify.success(`删除成功`)
+          PictureTreeDocsRef.value.getDocTree()
+          refreshStats()
+          pic.delType = 'DELETED'
+        }
+        if (resp.data!.inuse > 0) {
+          pictureUseNotify(resp.data!.inuse)
+          pic.delType = 'NORMAL'
+          pic.localProtocolPath = path
+          return
+        }
       })
       .catch(() => {
         pic.delType = 'NORMAL'

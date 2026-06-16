@@ -4,11 +4,14 @@
     <Workbench></Workbench>
   </div>
   <div class="doc-tree-operator">
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="显示重复文件">
-      <div class="iconbl bl-tier-line" @click="handleShowPictureRepeat"></div>
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="查看根目录图片">
+      <div class="iconbl bl-a-boxchoice-line" @click="clickRootDoc()"></div>
+    </el-tooltip>
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="上传到根目录">
+      <div class="iconbl bl-a-boxaddition-line" @click="uploadFiles(true)"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="显示子文件数量">
-      <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount"></div>
+      <div class="iconbl bl-a-leftdirection-line" @click="handleShowChildFileCount()"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="搜索">
       <div class="iconbl bl-search-item" @click="showTreeFilter()"></div>
@@ -17,7 +20,10 @@
       <div class="iconbl bl-refresh-line" @click="refreshDocTree()"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="折叠所有文件夹">
-      <div class="iconbl bl-collapse" @click="collapseAll"></div>
+      <div class="iconbl bl-collapse" @click="collapseAll()"></div>
+    </el-tooltip>
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="显示重复文件">
+      <div class="iconbl bl-tier-line" @click="handleShowPictureRepeat()"></div>
     </el-tooltip>
     <div class="doc-tree-search" ref="DocTreeSearch" v-show="isShowTreeFilter">
       <el-input v-model="treeFilterText" style="width: 180px" ref="DocTreeSearchInput">
@@ -94,7 +100,7 @@
         <div v-if="curDoc.type === 'PICTURE'" :class="['menu-item', Number(curDoc.id) <= 0 ? 'disabled' : '']" @click="rename">
           <span class="iconbl bl-pen"></span>重命名
         </div>
-        <div v-if="curDoc.type === 'FOLDER'" @click="uploadFiles()"><span class="iconbl bl-picture-line"></span>上传图片</div>
+        <div v-if="curDoc.type === 'FOLDER'" @click="uploadFiles()"><span class="iconbl bl-picture-line"></span>上传到此处</div>
         <div @click="openFileLocation(curDoc.path)">
           <span class="iconbl bl-computer-line"></span>{{ platformText('在资源管理器中查看', '在访达中查看') }}
         </div>
@@ -104,7 +110,7 @@
         </div>
         <div v-if="curDoc.type === 'PICTURE'" @click="copyUrl(curDoc.path)"><span class="iconbl bl-a-linkspread-line"></span>复制绝对路径</div>
         <div v-if="curDoc.type === 'PICTURE'" class="menu-item-divider"></div>
-        <div v-if="curDoc.type === 'PICTURE'" @click="delPicture()"><span class="iconbl bl-delete-line"></span>删除图片</div>
+        <div v-if="curDoc.type === 'PICTURE'" @click="deletePicture()"><span class="iconbl bl-delete-line"></span>删除图片</div>
       </div>
     </div>
   </Teleport>
@@ -145,7 +151,7 @@ import { getFilePrefix, inValidateFileName, joinPath, platformText } from '@rend
 import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
 import { openFileLocation } from '@renderer/api/docLib'
-import { copyMarkdownUrl, copyUrl } from './scripts/picture.js'
+import { copyMarkdownUrl, copyUrl, pictureUseNotify } from './scripts/picture.js'
 
 const docLibStore = useDocLibStore()
 const configStore = useConfigStore()
@@ -218,6 +224,15 @@ const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: Mouse
   // 正在重命名的图片不能点击
   if (tree.id === notAllowDragId) return
   emits('clickDoc', tree)
+}
+
+const clickRootDoc = () => {
+  const tree: DocTree = new DefaultDocTree()
+  tree.type = 'FOLDER'
+  tree.name = '文档库根目录'
+  tree.formatName = '文档库根目录'
+  tree.path = docLibStore.cur!.path
+  emits('clickDoc', tree, true)
 }
 
 /**
@@ -356,14 +371,14 @@ const collapseAll = () => {
 /**
  * 折叠所有无子菜单的文件夹
  */
-const collapseNoChild = () => {
-  nextTick(() => {
-    for (let i = 0; i < docTreeData.value.length; i++) {
-      const doc = docTreeData.value[i]
-      collapseChild(doc)
-    }
-  })
-}
+// const collapseNoChild = () => {
+//   nextTick(() => {
+//     for (let i = 0; i < docTreeData.value.length; i++) {
+//       const doc = docTreeData.value[i]
+//       collapseChild(doc)
+//     }
+//   })
+// }
 
 /**
  * 递归折叠所有子文件夹
@@ -503,37 +518,56 @@ const closeTreeDocsMenuShow = (event?: MouseEvent) => {
 /**
  * 删除文档, 删除后将文档从树状节点中删除
  */
-const delPicture = () => {
+const deletePicture = () => {
   pictureInfoApi({ id: curDoc.value.id }).then((resp) => {
     if (resp.data!.articleLinks.length > 0) {
-      Notify.warning(`尚有[${resp.data!.articleLinks.length}]篇文章使用该图片, 无法删除`, '无法删除')
+      let articleCount = resp.data!.articleLinks.length
+      if (articleCount > 0) {
+        pictureUseNotify(articleCount)
+        return
+      }
     } else {
-      ElMessageBox.confirm(`文件将被移入回收站, 是否确定: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.name}</span>？`, {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '我再想想',
-        type: 'info',
-        draggable: true,
-        dangerouslyUseHTMLString: true
-      }).then(() => {
+      ElMessageBox.confirm(
+        `文件将被移入回收站, 是否确定删除: <span style="color:#C02B2B;text-decoration: underline;">${curDoc.value.name}</span>？`,
+        {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '我再想想',
+          type: 'info',
+          draggable: true,
+          dangerouslyUseHTMLString: true
+        }
+      ).then(() => {
         pictureDeleteBatchApi({ ids: [curDoc.value.id] }).then((resp) => {
           Notify.success(`删除成功`)
           closeParentIfNoChild(curDoc.value.id)
-          docTreeData.value = resp.data!.docTree
-          emits('refreshStats')
+          if (resp.data!.success === 1) {
+            docTreeData.value = resp.data!.docTree
+            emits('refreshStats')
+          }
+          if (resp.data!.inuse > 0) {
+            pictureUseNotify(resp.data!.inuse)
+            return
+          }
         })
       })
     }
   })
 }
 
-const uploadFiles = () => {
+/**
+ * 选择多个图片上传到文件夹
+ *
+ * @param targetDocLibRoot 是否上传到跟目录
+ */
+const uploadFiles = (targetDocLibRoot: boolean = false) => {
   const req: SelectPicAndMoveReq = {
     targetDocId: curDoc.value.id,
-    targetDocLibRoot: false,
+    targetDocLibRoot: targetDocLibRoot,
     replace: false
   }
   selectMultiPicAndMoveDialog(req).then((_resp) => {
     getDocTree()
+    emits('refreshStats')
   })
 }
 

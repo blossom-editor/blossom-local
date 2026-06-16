@@ -25,18 +25,6 @@
     margin-bottom: 1px;
   }
 
-  .bl-folderadd-line {
-    margin: 0 2px;
-  }
-
-  .bl-search-item {
-    margin: 0 2px;
-  }
-
-  .bl-collapse {
-    font-size: 16px;
-  }
-
   .doc-tree-search {
     position: absolute;
     top: 28px;
@@ -184,4 +172,19 @@
   text-align: left;
   width: 700px;
   word-break: break-all;
+}
+
+.warn-heightlight {
+  animation: animated-border 1.5s infinite;
+  text-shadow: 0 0 3px #e3000000;
+}
+
+@keyframes animated-border {
+  0% {
+    filter: drop-shadow(0 0 0 #e30000);
+  }
+
+  100% {
+    filter: drop-shadow(0 0 10px #e30000);
+  }
 }

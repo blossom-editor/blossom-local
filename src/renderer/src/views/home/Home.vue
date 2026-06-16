@@ -57,20 +57,8 @@
       <div v-if="!viewStyle.webCollectExpand" class="web-show iconbl bl-left-line" @click="expand"></div>
       <div style="height: 15px"></div>
 
-      <bl-col width="100%" height="300px">
+      <bl-col width="100%" height="calc(100% - 20px)">
         <ArticleStars></ArticleStars>
-      </bl-col>
-
-      <bl-col width="100%" height="330px">
-        <ArticleSubjects></ArticleSubjects>
-      </bl-col>
-
-      <bl-col width="100%" height="calc(100% - 33px - 270px - 330px)">
-        <bl-row class="container-name">待办事项</bl-row>
-        <bl-row class="container-sub-name">Todo List</bl-row>
-        <bl-row style="padding-bottom: 10px; height: calc(100% - 80px)">
-          <TaskProgressSimpleVue></TaskProgressSimpleVue>
-        </bl-row>
       </bl-col>
     </div>
 
