@@ -1,7 +1,6 @@
-import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
 import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
-import { escape2Html, isHttp, randomInt, sleep } from '@renderer/assets/utils/util'
+import { escape2Html, isHttp, pathJoin, randomInt, sleep } from '@renderer/assets/utils/util'
 import { marked, Marked } from 'marked'
 import markedKatex from 'marked-katex-extension'
 // highlight
@@ -17,11 +16,12 @@ import { Transformer } from 'markmap-lib'
 import { Markmap, deriveOptions } from 'markmap-view'
 import { ArticleReference } from './article'
 import { picCacheWrapper } from '@renderer/views/picture/scripts/picture'
-import { getDocById } from '@renderer/views/doc/doc'
+import { getDocByPath } from '@renderer/views/doc/doc'
+import { useDocLibStore } from '@renderer/stores/docLib'
 // import 'highlight.js/styles/atom-one-light.css';
 // import 'highlight.js/styles/base16/darcula.css';
 
-const userStore = useUserStore()
+const docLibStore = useDocLibStore()
 const { editorStyle } = useConfigStore()
 
 //#region ----------------------------------------< 组件配置 >--------------------------------------
@@ -360,7 +360,6 @@ export const renderCodespan = (src: string) => {
   return `<code>${src}</code>`
 }
 
-
 /**
  * 拓展图片设置
  * ![照片A${grammar}shadow${grammar}w100]()
@@ -414,40 +413,61 @@ export const renderLink = (
   docTrees: DocTree[]
 ): { link: string; ref: ArticleReference } => {
   let link: string
-  let ref: ArticleReference = { targetId: '0', targetName: text, targetUrl: href as string, type: 21 }
-  if (isBlank(title)) {
-    link = `<a target="_blank" href=${href} target="_blank">${text}</a>`
-  } else if (!href.startsWith(userStore.userParams.WEB_ARTICLE_URL)) {
+  let ref: ArticleReference = { targetId: '0', targetName: text, targetUrl: href as string, type: 'PUBLIC_ARTICLE' }
+
+  // 外部链接
+  if (isHttp(href)) {
     link = `<a target="_blank" href=${href} target="_blank">${text}</a>`
   } else {
-    let arr = title!.match(/(?<=\#\#).*?(?=\#\#)/)
-    let isInnerArticle: boolean = arr != null && arr.length > 0 && !isBlank(arr[0])
-    if (isInnerArticle) {
-      let articleId = Number(arr![0])
-      // 如果ID不是数字
-      if (isNaN(articleId)) {
-        link = `<a target="_blank" href=${href} title=${title}>${text}</a>`
-      }
+    // 拼接目标文章的路径
+    const targetPath = pathJoin(docLibStore.cur!.path, href)
+    const targetArticle = getDocByPath(targetPath, docTrees)
 
-      // 从文章列表中获取文章, 如果找到则认为是内部引用, 否则即使是内部引用格式, 也认为是个外部文章.
-      // 内部引用不会使用 Markdown 中的链接名, 而是用内部文章名
-      let article = getDocById(articleId.toString(), docTrees)
-      if (article != undefined) {
-        ref.targetId = article.id
-        ref.targetName = article.name
-        ref.type = 11
-      } else {
-        ref.targetId = articleId.toString()
-        ref.targetName = '未知文章-' + articleId.toString()
-        ref.type = 12
-      }
-
-      link = `<a target="_blank" href=${href} class="inner-link"
-      onclick="onHtmlEventDispatch(this,'',event,'showArticleReferenceView','${ref.targetId}')">${text}</a>`
+    if (targetArticle != undefined) {
+      ref.targetId = targetArticle.id
+      ref.targetName = targetArticle.name
+      ref.type = 'INNER_ARTICLE'
     } else {
-      link = `<a target="_blank" href=${href} title=${title} >${text}</a>`
+      ref.targetId = href
+      ref.targetName = '未知文章-' + href
+      ref.type = 'UNKNOWN_INNER_ARTICLE'
     }
+
+    // 内部链接
+    link = `<a target="_blank" href=${href} class="inner-link" onclick="onHtmlEventDispatch(this,'',event,'showArticleReferenceView','${ref.targetId}')">${text}</a>`
   }
+
+  // if (isBlank(title)) {
+  //   link = `<a target="_blank" href=${href} target="_blank">${text}</a>`
+  // } else if (!href.startsWith(userStore.userParams.WEB_ARTICLE_URL)) {
+  //   link = `<a target="_blank" href=${href} target="_blank">${text}</a>`
+  // } else {
+  //   let arr = title!.match(/(?<=\#\#).*?(?=\#\#)/)
+  //   let isInnerArticle: boolean = arr != null && arr.length > 0 && !isBlank(arr[0])
+  //   if (isInnerArticle) {
+  //     let articleId = Number(arr![0])
+  //     // 如果ID不是数字
+  //     if (isNaN(articleId)) {
+  //       link = `<a target="_blank" href=${href} title=${title}>${text}</a>`
+  //     }
+
+  //     // 从文章列表中获取文章, 如果找到则认为是内部引用, 否则即使是内部引用格式, 也认为是个外部文章.
+  //     // 内部引用不会使用 Markdown 中的链接名, 而是用内部文章名
+  //     let article = getDocById(articleId.toString(), docTrees)
+  //     if (article != undefined) {
+  //       ref.targetId = article.id
+  //       ref.targetName = article.name
+  //     } else {
+  //       ref.targetId = articleId.toString()
+  //       ref.targetName = '未知文章-' + articleId.toString()
+  //     }
+
+  //     link = `<a target="_blank" href=${href} class="inner-link"
+  //     onclick="onHtmlEventDispatch(this,'',event,'showArticleReferenceView','${ref.targetId}')">${text}</a>`
+  //   } else {
+  //     link = `<a target="_blank" href=${href} title=${title} >${text}</a>`
+  //   }
+  // }
   return { link: link, ref: ref }
 }
 

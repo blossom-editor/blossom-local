@@ -4,7 +4,7 @@ import { articleInfoApi } from '@renderer/api/blossom'
 
 type ArticleHtmlEvent = 'copyPreCode' | 'showArticleReferenceView'
 
-const articleViewWidth = 550
+const articleViewWidth = 30
 const articleViewHeight = 370
 
 export function useArticleHtmlEvent(articleViewRef: Ref<HTMLElement>) {
@@ -12,6 +12,7 @@ export function useArticleHtmlEvent(articleViewRef: Ref<HTMLElement>) {
     show: false,
     html: '',
     articleId: '0',
+    path: '',
     name: '',
     style: {
       top: '0',
@@ -22,10 +23,10 @@ export function useArticleHtmlEvent(articleViewRef: Ref<HTMLElement>) {
   })
 
   function onHtmlEventDispatch(_t: any, _ty: any, event: any, type: ArticleHtmlEvent, data: any) {
-    // console.log(type)
-    // console.log(t)
-    // console.log(ty)
-    // console.log(e)
+    console.log(type)
+    console.log(_t)
+    console.log(_ty)
+    console.log(event)
     /*
      复制代码块内容
      */
@@ -50,13 +51,13 @@ export function useArticleHtmlEvent(articleViewRef: Ref<HTMLElement>) {
       articleReferenceView.value.style = {
         left: rect.left + 'px',
         top: top + 'px',
-        width: `${articleViewWidth}px`,
+        width: `${articleViewWidth}vw`,
         height: `${articleViewHeight}px`
       }
 
       articleReferenceView.value.show = true
       articleReferenceView.value.articleId = data
-      articleReferenceView.value.html = `<p style="color:var(--bl-text-color-light)">正在加载文章...</p>`
+      articleReferenceView.value.html = `正在加载文章...`
 
       function closeView() {
         if (articleViewRef.value) {
@@ -67,9 +68,10 @@ export function useArticleHtmlEvent(articleViewRef: Ref<HTMLElement>) {
 
       nextTick(() => {
         setTimeout(() => articleViewRef.value.addEventListener('mouseleave', closeView), 100)
-        articleInfoApi({ id: data, showToc: false, showMarkdown: false, showHtml: true }).then((resp) => {
-          articleReferenceView.value.html = resp.data.html
-          articleReferenceView.value.name = resp.data.name
+        articleInfoApi({ id: data }).then((resp) => {
+          articleReferenceView.value.html = resp.data!.markdown!.toString()
+          articleReferenceView.value.name = resp.data!.name
+          articleReferenceView.value.path = resp.data!.path
         })
       })
     }
@@ -78,13 +80,6 @@ export function useArticleHtmlEvent(articleViewRef: Ref<HTMLElement>) {
   onMounted(() => {
     window.onHtmlEventDispatch = onHtmlEventDispatch
   })
-
-  // onBeforeUnmount(() => {
-  //   if (articleViewRef.value) {
-  //     articleViewRef.value.removeEventListener('mouseleave', closeView)
-  //   }
-  //   document.body.removeEventListener('click', closeView)
-  // })
 
   return { articleReferenceView }
 }

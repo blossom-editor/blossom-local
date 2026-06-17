@@ -366,84 +366,63 @@ export const isElectron = () => {
 
   return false
 }
-
 /**
- * 根据当前操作系统，将路径片段拼接为平台本地路径格式
- * @param segments 路径片段，例如 'usr', 'local', 'bin'
- * @returns 拼接后的路径字符串
+ * 调用主进程的 path.join 方法
+ * @param paths 路径片段
+ * @returns 规范化后的路径字符串
  */
-export function joinPath(...segments: string[]): string {
-  // 1. 确定分隔符
-  let separator: string
-  if (isWindows()) {
-    separator = '\\'
-  } else if (isMacOS()) {
-    separator = '/'
-  } else {
-    // fallback（理论上不会到这里，但保留）
-    separator = '/'
-  }
+export function pathJoin(...paths: string[]): string {
+  // 检测当前平台分隔符
+  const isWin = isWindows()
+  const sep = isWin ? '\\' : '/'
 
-  // 2. 过滤掉 null/undefined/空字符串片段（但保留空数组情况）
-  const validSegments = segments.filter((seg) => seg != null && seg !== '')
+  // 内部统一使用 '/' 处理逻辑，最后再转换分隔符
+  const stack: string[] = []
+  let isAbsolute = false
 
-  if (validSegments.length === 0) {
-    return ''
-  }
+  for (let p of paths) {
+    if (p === '') continue
 
-  // 3. 标准化每个片段：去除首尾多余的分隔符
-  //    Windows 需同时处理 '/' 和 '\'
-  const cleaned = validSegments.map((seg) => {
-    // 如果是 Windows，两种斜杠都视为分隔符
-    if (isWindows()) {
-      // 去除开头和结尾的 \ 或 /
-      return seg.replace(/^[\\/]+/, '').replace(/[\\/]+$/, '')
-    } else {
-      // macOS/Linux 只需处理 /
-      return seg.replace(/^\/+/, '').replace(/\/+$/, '')
+    // 将 Windows 反斜杠转换为正斜杠，统一处理
+    const normalized = p.replace(/\\/g, '/')
+
+    // 若以 '/' 开头，重置栈（绝对路径）
+    if (normalized.startsWith('/')) {
+      stack.length = 0
+      isAbsolute = true
     }
-  })
 
-  // 4. 检查第一个原始片段是否为绝对路径（开头有分隔符）
-  const firstSeg = validSegments[0]
-  const isAbsolute = isWindows()
-    ? /^[\\/]/.test(firstSeg) // Windows 绝对路径以 \ 或 / 开头
-    : /^\//.test(firstSeg) // macOS 绝对路径以 / 开头
+    const segments = normalized.split('/')
+    for (const seg of segments) {
+      if (seg === '' || seg === '.') continue
 
-  // 5. 拼接（使用分隔符）
-  let result = cleaned.join(separator)
-
-  // 6. 若原路径为绝对路径，拼接结果前补上分隔符
-  if (isAbsolute && !result.startsWith(separator)) {
-    result = separator + result
-  }
-
-  // 7. 处理 Windows 盘符（可选，常见场景如 C: 开头）
-  //    如果第一个片段包含冒号（如 'C:' 或 'C:/'），保留冒号并正确处理
-  if (isWindows() && /^[A-Za-z]:/.test(firstSeg)) {
-    const driveLetter = firstSeg.slice(0, 2) // 例如 "C:"
-    // 剩余部分：如果 cleaned[0] 可能已经去掉了盘符，需要还原
-    // 更简单的做法：特殊处理
-    // 因为 cleaned 数组已经去掉了盘符中的斜杠，我们重新构建
-    // 实际使用中，用户可能会传入 'C:' 作为第一个片段
-    // 这里我们重新检测
-    const driveMatch = firstSeg.match(/^([A-Za-z]:)[\\/]?(.*)$/)
-    if (driveMatch) {
-      const drive = driveMatch[1]
-      const rest = driveMatch[2]
-      // 重新构造
-      const restParts = rest ? [rest, ...cleaned.slice(1)] : cleaned.slice(1)
-      result = drive + separator + restParts.join(separator)
-      // 避免变成 C:\\\ 多个分隔符
-      result = result.replace(new RegExp(separator + '{2,}', 'g'), separator)
+      if (seg === '..') {
+        if (stack.length > 0 && stack[stack.length - 1] !== '..') {
+          stack.pop()
+        } else if (!isAbsolute) {
+          stack.push('..')
+        }
+        // 绝对路径下的 '..' 忽略
+      } else {
+        stack.push(seg)
+      }
     }
   }
 
-  // 8. 消除多余的分隔符（如 '\\\\' 变为 '\\'，'//' 变为 '/'）
-  if (isWindows()) {
-    result = result.replace(/\\{2,}/g, '\\')
-  } else {
-    result = result.replace(/\/{2,}/g, '/')
+  // 无有效段
+  if (stack.length === 0) {
+    return isAbsolute ? '/' : '.'
+  }
+
+  // 用 '/' 连接，并补绝对前缀
+  let result = stack.join('/')
+  if (isAbsolute) {
+    result = '/' + result
+  }
+
+  // 转换为目标平台分隔符
+  if (sep === '\\') {
+    result = result.replace(/\//g, '\\')
   }
 
   return result

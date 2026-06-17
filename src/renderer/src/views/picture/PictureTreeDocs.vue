@@ -146,7 +146,7 @@ import { useLifecycle } from '@renderer/scripts/lifecycle'
 // util
 import { isEmpty } from 'lodash'
 import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
-import { getFilePrefix, inValidateFileName, joinPath, platformText } from '@renderer/assets/utils/util.js'
+import { getFilePrefix, inValidateFileName, pathJoin, platformText } from '@renderer/assets/utils/util.js'
 // components
 import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
@@ -610,7 +610,7 @@ const blurArticleNameInput = (doc: DocTree) => {
     notAllowDragId = ''
   }
 
-  req.newPath = joinPath(parentPath, newName)
+  req.newPath = pathJoin(parentPath, newName)
   // 路径相同, 则未重命名
   if (req.oldPath === req.newPath) {
     resetUpdateState()

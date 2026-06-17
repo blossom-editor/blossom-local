@@ -9,6 +9,7 @@ import printScreen from './printScreen'
 import ShortcutRegistrant from './shortcut'
 import { initProtocol } from './customProtocol'
 import { initPictureApi } from './picture/api'
+import { errorLog } from './utils'
 
 // 主窗口
 let mainWindow: BrowserWindow | undefined
@@ -158,6 +159,8 @@ function createMainWindow(): void {
   initOnFocusedWindow()
   // 主窗口监听事件
   initOnMainWindow(mainWindow)
+  // 暴露一些 NODE 方法
+  initOnUtil()
   // 注册各类业务接口
   initDocLibApi()
   initArticleApi()
@@ -165,6 +168,7 @@ function createMainWindow(): void {
   // 注册全局快捷键 printScreen:截屏快捷键
   new ShortcutRegistrant(mainWindow).printScreen()
   console.log('============================================================')
+  initTest()
 }
 
 /**
@@ -465,6 +469,12 @@ export const initOnWindow = (window: BrowserWindow) => {
   })
 }
 
+const initOnUtil = () => {
+  // ipcMain.on('path-join', (_event: IpcMainEvent, paths: string[]): string => {
+  //   return join(...paths)
+  // })
+}
+
 // /**
 //  * 拦截 a 标签
 //  * @param e
@@ -481,3 +491,9 @@ export const initOnWindow = (window: BrowserWindow) => {
 //   }
 //   return true
 // }
+
+const initTest = () => {
+  // const p1 = 'F:\\WebProjects\\blossom-demo-workspace1'
+  // const p2 = '..\文件夹1/SP2-文章1.md'
+  // errorLog(path.join(p1, p2))
+}

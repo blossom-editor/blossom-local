@@ -145,11 +145,14 @@
     </Teleport>
 
     <Teleport to="body">
-      <div v-if="articleReferenceView.show" ref="ArticleViewRef" class="article-view-absolute bl-preview" :style="articleReferenceView.style">
-        <div class="content-view bl-preview" v-html="articleReferenceView.html" :style="editorStyle"></div>
+      <div v-if="articleReferenceView.show" ref="ArticleViewRef" class="article-view-absolute" :style="articleReferenceView.style">
+        <div class="content-view" :style="editorStyle">
+          {{ articleReferenceView.html }}
+        </div>
         <bl-row class="workbench" just="space-between">
           <div class="btns">
             <div @click="openArticleWindow(articleReferenceView.articleId)">新窗口打开</div>
+            <div @click="openFileLocation(articleReferenceView.path)">查看原文件</div>
           </div>
           <div class="infos">{{ articleReferenceView.name }}</div>
         </bl-row>
@@ -194,6 +197,7 @@ import { shallowRef } from 'vue'
 import { keymaps } from './scripts/editor-tools'
 import { selectPicAndMoveDialog } from '@renderer/api/picture.js'
 import { noRanderTemplate } from './scripts/noRanderTemplate.js'
+import { openFileLocation } from '@renderer/api/docLib.js'
 
 //#region -- mounted
 
@@ -384,10 +388,8 @@ const uploadFileCallback = async (event: DragEvent | ClipboardEvent) => {
 //#region ----------------------------------------< html 事件监听 >----------------------------
 const ArticleViewRef = ref()
 const { articleReferenceView } = useArticleHtmlEvent(ArticleViewRef)
+const openArticleWindow = (id: string) => openNewArticleWindow('article_window_' + id, id)
 
-const openArticleWindow = (id: string) => {
-  openNewArticleWindow('article_window_' + id, id)
-}
 //#endregion
 
 //#region ----------------------------------------< 文档列表与当前文章 >----------------------------
@@ -661,7 +663,7 @@ const renderer = {
   },
   image(href: string | null, title: string | null, text: string): string {
     if (!isHttp(href)) href = protocolWrapper(href as string)
-    articleImg.value.push({ targetId: curArticle.value!.id, targetName: curArticle.value!.name, targetUrl: href as string, type: 10 })
+    articleImg.value.push({ targetId: curArticle.value!.id, targetName: curArticle.value!.name, targetUrl: href as string, type: 'PICTURE' })
     return renderImage(href, title, text)
   },
   link(href: string, title: string | null | undefined, text: string): string {

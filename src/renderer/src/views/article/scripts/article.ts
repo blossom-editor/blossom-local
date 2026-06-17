@@ -47,7 +47,7 @@ export interface ArticleReference {
    * 12 : unknown inner article
    * 21 : public article
    */
-  type: 10 | 11 | 12 | 21
+  type: 'PICTURE' | 'INNER_ARTICLE' | 'UNKNOWN_INNER_ARTICLE' | 'PUBLIC_ARTICLE'
 }
 
 /**

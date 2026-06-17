@@ -115,6 +115,28 @@ export const getDocById = (articleId: string, trees: DocTree[]): DocTree | undef
 }
 
 /**
+ * 递归从文档树状列表中获取指定路径的文章信息
+ *
+ * @param path 文档的路径ID
+ * @param trees 文档树状列表
+ */
+export const getDocByPath = (path: string, trees: DocTree[]): DocTree | undefined => {
+  let target: DocTree | undefined
+  for (let i = 0; i < trees.length; i++) {
+    let tree = trees[i]
+    if (tree.path == path) {
+      target = tree
+    } else if (!isEmpty(tree.children)) {
+      target = getDocByPath(path, tree.children!)
+    }
+    if (target != undefined) {
+      break
+    }
+  }
+  return target
+}
+
+/**
  * 获取指定文档的所有父文档
  * @param id
  * @param trees

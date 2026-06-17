@@ -115,27 +115,15 @@
         <div v-if="curDoc.type === 'FOLDER'" @click="addFolderToDoc()"><span class="iconbl bl-folderadd-line"></span>新增文件夹</div>
         <div v-if="curDoc.type === 'FOLDER'" @click="addArticleToDoc()"><span class="iconbl bl-fileadd-line"></span>新增笔记</div>
         <div v-if="curDoc.type === 'ARTICLE'" @click=""><span class="iconbl bl-correlation-line"></span>复制双链引用</div>
-        <div v-if="curDoc.type === 'ARTICLE'" @click="star(1)"><span class="iconbl bl-star-line"></span>收藏{{ curDocType }}</div>
-        <div v-if="curDoc.type === 'ARTICLE'" @click="star(0)"><span class="iconbl bl-star-line"></span>取消收藏{{ curDocType }}</div>
+        <!-- <div v-if="curDoc.type === 'ARTICLE'" @click="star(1)"><span class="iconbl bl-star-line"></span>收藏{{ curDocType }}</div>
+        <div v-if="curDoc.type === 'ARTICLE'" @click="star(0)"><span class="iconbl bl-star-line"></span>取消收藏{{ curDocType }}</div> -->
 
         <!-- <div @mouseenter="handleHoverRightMenuLevel2($event, 2)" data-bl-prevet="true">
           <span class="iconbl bl-a-rightsmallline-line"></span>
           <span class="iconbl bl-apps-line"></span>更多
           <div class="tree-menu-level2" :style="rMenuLevel2">
-            <div v-if="curDoc.star === 0" @click="star(1)"><span class="iconbl bl-star-line"></span>收藏{{ curDocType }}</div>
-            <div v-if="curDoc.star === 1" @click="star(0)"><span class="iconbl bl-star-line"></span>取消收藏{{ curDocType }}</div>
             <div v-if="curDoc.ty === 3 && !curDoc.t.includes('toc')" @click="addArticleTag('toc')">
               <span class="iconbl bl-list-ordered"></span>设为专题目录
-            </div>
-            <div v-if="curDoc.ty === 3 && curDoc.t.includes('toc')" @click="addArticleTag('toc')">
-              <span class="iconbl bl-list-ordered"></span>取消专题目录
-            </div>
-
-            <div v-if="curDoc.ty !== 3 && !curDoc.t.includes('subject')" @click="addFolderTag('subject')">
-              <span class="iconbl bl-a-lowerrightpage-line"></span>设为专题
-            </div>
-            <div v-if="curDoc.ty !== 3 && curDoc.t.includes('subject')" @click="addFolderTag('subject')">
-              <span class="iconbl bl-a-lowerrightpage-line"></span>取消专题
             </div>
           </div>
         </div> -->
@@ -188,7 +176,7 @@ import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
 // util
 import { isEmpty } from 'lodash'
-import { joinPath, platformText, inValidateFileName, getParentDirPath } from '@renderer/assets/utils/util'
+import { pathJoin, platformText, inValidateFileName, getParentDirPath } from '@renderer/assets/utils/util'
 import { isNotNull, isNotBlank, isBlank, isNull } from '@renderer/assets/utils/obj'
 import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
@@ -511,15 +499,15 @@ const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: Dra
 
   if (dropType === 'inner') {
     if (drag.data.type === 'ARTICLE') {
-      req.newPath = joinPath(enter.data.path, drag.data.name)
+      req.newPath = pathJoin(enter.data.path, drag.data.name)
     } else if (drag.data.type === 'FOLDER') {
-      req.newPath = joinPath(enter.data.path, drag.data.name)
+      req.newPath = pathJoin(enter.data.path, drag.data.name)
     }
   } else if (dropType === 'before' || dropType === 'after') {
     if (drag.data.type === 'ARTICLE') {
-      req.newPath = joinPath(getParentDirPath(enter.data.path), drag.data.name)
+      req.newPath = pathJoin(getParentDirPath(enter.data.path), drag.data.name)
     } else if (drag.data.type === 'FOLDER') {
-      req.newPath = joinPath(getParentDirPath(enter.data.path), drag.data.name)
+      req.newPath = pathJoin(getParentDirPath(enter.data.path), drag.data.name)
     }
   }
   if (isNull(req)) {
@@ -664,7 +652,7 @@ const blurArticleNameInput = (doc: DocTree) => {
     notAllowDragId = ''
   }
 
-  params.newPath = joinPath(parentPath, newName + (doc.type === 'ARTICLE' ? '.md' : ''))
+  params.newPath = pathJoin(parentPath, newName + (doc.type === 'ARTICLE' ? '.md' : ''))
   if (params.oldPath === params.newPath) {
     resetUpdateState()
     return
@@ -719,7 +707,7 @@ const addArticleToDoc = () => addFile(curDoc.value.path, curDoc.value.children, 
  * @param parentPath 父目录
  */
 const addFile = (parentPath: string, docTree: DocTree[] | undefined, type: DocType, parentId?: string) => {
-  let newPath = joinPath(parentPath, type === 'ARTICLE' ? '新建文章' : '新建文件夹')
+  let newPath = pathJoin(parentPath, type === 'ARTICLE' ? '新建文章' : '新建文件夹')
   let folderSuffix: number = 1
 
   if (docTree && docTree.length > 0) {

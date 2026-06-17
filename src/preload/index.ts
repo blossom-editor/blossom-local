@@ -38,6 +38,7 @@ const rednerToIpc = {
   renameFile: (params: RenameFileReq): Promise<R<any>> => ipcRenderer.invoke('rename-file', params),
   selectDocLibFolderDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('select-doclib-folder-dialog'),
   openFileLocation: (filePath: string): Promise<R<void>> => ipcRenderer.invoke('open-file-location', filePath),
+
   //#region
 
   /**
@@ -126,14 +127,18 @@ const rednerToIpc = {
    * @param options
    * @returns
    */
-  openExtenal: (url: string, options?: OpenExternalOptions) => shell.openExternal(url, options)
-
+  openExtenal: (url: string, options?: OpenExternalOptions) => shell.openExternal(url, options),
+  /**
+   * 拼接路径, 依赖 path.join() 方法
+   * @param paths
+   */
+  pathJoin: (paths: string[]): string => {
+    return ipcRenderer.sendSync('path-join', paths)
+  }
   //#endregion
 }
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
+// Use `contextBridge` APIs to expose Electron APIs to renderer only if context isolation is enabled, otherwise just add to the DOM global.
 if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electronAPI', {

@@ -547,27 +547,19 @@ export type DocLibStatsNumber = {
 
 /**
  * 图片和 markdown 的对应结果, 一个图片对应多个 markdown
+ *
  */
-interface PicToMd {
-  mds: PicToMdItem[]
-}
-
-interface PicToMdItem {
-  id: string
-}
+interface PicToMd { mds: PicToMdItem[] } // prettier-ignore
+interface PicToMdItem { id: string; } //prettier-ignore
 
 /**
  * markdown 和图片的对应结果, 一个 markdown 对应多个图片
  */
-interface MdToPic {
-  pics: MdToPicItem[]
-}
+interface MdToPic { pics: MdToPicItem[] } // prettier-ignore
+interface MdToPicItem { picName: string; picPath: string; picMdRaw: string; } // prettier-ignore
 
-interface MdToPicItem {
-  picName: string
-  picPath: string
-  picMdRaw: string
-}
+interface MdToLink { links: MdToLinkItem[] } // prettier-ignore
+interface MdToLinkItem { linkPath: string; linkRaw: string } // prettier-ignore
 
 /**
  * 基础匹配信息（包含公共字段）
