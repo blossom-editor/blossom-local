@@ -136,6 +136,10 @@ export class PicNameMapping {
     this.addPath(path.join(newPath))
   }
 
+  public delete(picName: string) {
+    this.files.delete(picName)
+  }
+
   /**
    * 清空文件
    * @param id 文件ID

@@ -79,6 +79,13 @@ declare interface DocInfo {
   markdown?: string // 文章正文
 }
 
+declare interface DocListItem {
+  id: string
+  type: DocType
+  name: string
+  path: string
+}
+
 /**
  * 获取文件内容
  */
@@ -123,8 +130,11 @@ declare interface CreateFileRes {
   docTree: DocTree[]
 }
 
+/**
+ * 删除文件, 传入是文件夹时, 会将子文件全部删除
+ */
 declare interface DeleteFileReq extends Base {
-  path: string
+  id: string
 }
 
 /**

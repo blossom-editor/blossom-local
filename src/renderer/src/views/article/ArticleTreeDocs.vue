@@ -143,7 +143,7 @@
         <div v-if="curDoc.type === 'ARTICLE'" class="menu-item-divider"></div>
         <div v-if="curDoc.type === 'ARTICLE'" @click="openArticleWindow"><span class="iconbl bl-a-computerend-line"></span>新窗口查看</div>
         <div class="menu-item-divider"></div>
-        <div @click="delDoc()"><span class="iconbl bl-delete-line"></span>删除{{ curDocType }}</div>
+        <div @click="deleteDoc()"><span class="iconbl bl-delete-line"></span>删除{{ curDocType }}</div>
       </div>
     </div>
   </Teleport>
@@ -774,7 +774,7 @@ const renameNewFile = (id: string, parentId?: string) => {
 /**
  * 删除文档, 删除后将文档从树状节点中删除
  */
-const delDoc = () => {
+const deleteDoc = () => {
   let type = curDoc.value.type === 'ARTICLE' ? '文章' : '文件夹'
   ElMessageBox.confirm(
     `<strong>注意：</strong><br/>
@@ -788,7 +788,7 @@ const delDoc = () => {
       dangerouslyUseHTMLString: true
     }
   ).then(() => {
-    deleteFileApi({ path: curDoc.value.path }).then((resp) => {
+    deleteFileApi({ id: curDoc.value.id }).then((resp) => {
       docTreeCurrentExpandIdSet.value.delete(curDoc.value.id)
       let node: Node = DocTreeRef.value.getNode(curDoc.value.id)
       if (node.parent) {

@@ -4,13 +4,16 @@ import path from 'path'
 import R from '../../preload/r'
 import { IdMapping, FileItem } from '../doclib/idMapping'
 import { DocLibStatsManager } from '../doclib/docLibStatsManager'
-import { readDocTreeSort } from '../doclib/api'
+import { readDocList, readDocTreeSort } from '../doclib/api'
 import { timeToYMD } from '../date'
 import { getUniqueId } from '../utils'
+import { PicNameMapping } from '../doclib/picNameMapping'
 
 const idMapping = IdMapping.getInstance()
+const picNameMapping = PicNameMapping.getInstance()
 const docLibStatsManager = DocLibStatsManager.getInstance()
 
+//#region init
 export const initArticleApi = () => {
   console.log('   4.4 初始化文章接口 initArticleApi')
   initReadDocInfo()
@@ -21,12 +24,28 @@ export const initArticleApi = () => {
   initCreateMarkdown()
   initDeleteFile()
 }
-
 const initReadDocInfo = () => {
-  ipcMain.handle('read-doc-info', async (_event, req: GetFileContentReq): Promise<R<DocInfo>> => {
-    return await readDocInfo(req)
-  })
+  ipcMain.handle('read-doc-info', async (_event, req: GetFileContentReq): Promise<R<DocInfo>> => await readDocInfo(req))
 }
+const initRenameFile = () => {
+  ipcMain.handle('rename-file', async (_event, params: RenameFileReq) => renameFile(params.oldPath, params.newPath))
+}
+const initMoveFile = () => {
+  ipcMain.handle('move-file', async (_event, params: MoveFileReq) => moveFile(params))
+}
+const initSaveArticleContent = () => {
+  ipcMain.handle('save-article-content', (_event, req: SaveFileContentReq) => saveArticleContent(req))
+}
+const initCreateFolder = () => {
+  ipcMain.handle('create-folder', (_event, req: CreateFileReq) => createFolder(req))
+}
+const initCreateMarkdown = () => {
+  ipcMain.handle('create-markdown', (_event, req: CreateFileReq) => createMarkdown(req))
+}
+const initDeleteFile = () => {
+  ipcMain.handle('delete-file', (_event, req: DeleteFileReq) => deleteFile(req))
+}
+//#endregion
 
 /**
  * 异步读取文件内容并构建文档信息对象
@@ -61,13 +80,6 @@ export const readDocInfo = async (req: GetFileContentReq): Promise<R<DocInfo>> =
   }
 }
 
-const initRenameFile = () => {
-  ipcMain.handle('rename-file', async (_event, params: RenameFileReq) => {
-    console.log('重命名文件', params)
-    return renameFile(params.oldPath, params.newPath)
-  })
-}
-
 /**
  * 重命名文件
  *
@@ -92,12 +104,6 @@ const renameFile = async (oldPath: string, newPath: string): Promise<R<any>> => 
   }
 }
 
-const initMoveFile = () => {
-  ipcMain.handle('move-file', async (_event, params: MoveFileReq) => {
-    return moveFile(params)
-  })
-}
-
 /**
  * 移动文件, 同时会自动修改子文件夹下的文件路径, 不需要同步修改
  */
@@ -118,12 +124,6 @@ const moveFile = async (req: MoveFileReq): Promise<R<DocTree[]>> => {
   } catch (err) {
     return R.fail('50102', err)
   }
-}
-
-const initSaveArticleContent = () => {
-  ipcMain.handle('save-article-content', (_event, req: SaveFileContentReq) => {
-    return saveArticleContent(req)
-  })
 }
 
 /**
@@ -151,12 +151,6 @@ export const saveArticleContent = async (req: SaveFileContentReq): Promise<R<any
   }
 }
 
-const initCreateFolder = () => {
-  ipcMain.handle('create-folder', (_event, req: CreateFileReq) => {
-    return createFolder(req)
-  })
-}
-
 /**
  * 创建一个文件夹
  */
@@ -177,12 +171,6 @@ const createFolder = async (req: CreateFileReq): Promise<R<CreateFileRes>> => {
   } catch (err) {
     return R.fail('50301', err)
   }
-}
-
-const initCreateMarkdown = () => {
-  ipcMain.handle('create-markdown', (_event, req: CreateFileReq) => {
-    return createMarkdown(req)
-  })
 }
 
 /**
@@ -207,23 +195,52 @@ const createMarkdown = async (req: CreateFileReq): Promise<R<CreateFileRes>> => 
   }
 }
 
-const initDeleteFile = () => {
-  ipcMain.handle('delete-file', (_event, req: DeleteFileReq) => {
-    return deleteFile(req)
-  })
-}
-
 /**
  * 删除文件或文件夹, 文件夹下的所有文件也会被删除
+ *
+ * 同时删除文章关联的图片, 图片关联的文章
  */
 const deleteFile = async (req: DeleteFileReq): Promise<R<DocTree[]>> => {
   try {
-    if (!fs.existsSync(req.path)) {
+    const doc = idMapping.get(req.id)
+    if (!doc || !fs.existsSync(doc.path)) {
       return R.fail('文件不存在', '未找到对应的文件')
     }
 
-    await shell.trashItem(req.path)
-    console.log(`文件已移入回收站: ${req.path}`)
+    const stats = await fs.promises.stat(doc.path, { bigint: true })
+    if (stats.isDirectory()) {
+      const childFiles: DocListItem[] = []
+      // 读取删除文件夹下的所有文件, 包括文章和图片
+      await readDocList(doc.path, childFiles)
+
+      const articleIds = childFiles.filter((f) => f.type === 'ARTICLE').map((file) => file.id)
+      const pictureIds = childFiles.filter((f) => f.type === 'PICTURE').map((file) => file.id)
+      console.log(articleIds, pictureIds)
+
+      for (const articleId of articleIds) {
+        const article = idMapping.get(articleId)
+        if (article === undefined) {
+          continue
+        }
+        const mdStat = await fs.promises.stat(article.path, { bigint: true })
+        // 传入空内容, 会清空该文章的图片关系和链接关系
+        docLibStatsManager.updateM2P_P2M(mdStat, '')
+      }
+
+      for (const pictureId of pictureIds) {
+        // 删除图片名称映射
+        picNameMapping.delete(pictureId)
+      }
+    } else {
+      // 单独删除文章, 不需要删除图片映射
+      const mdStat = await fs.promises.stat(doc.path, { bigint: true })
+      docLibStatsManager.updateM2P_P2M(mdStat, '')
+    }
+
+    await shell.trashItem(doc.path)
+    console.log(`文件已移入回收站: ${doc.path}`)
+    docLibStatsManager.log()
+
     return R.ok(await readDocTreeSort({ ...req, ...{ type: 'ARTICLE' } }))
   } catch (err) {
     return R.fail('50102', err)

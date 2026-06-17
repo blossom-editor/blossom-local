@@ -288,16 +288,14 @@ export class DocLibStatsManager {
     const links = extractImagesAndLinksFast(mdContent)
     const linkMatch = links.filter((item): item is LinkMatch => item.type === 'link')
     const pictureMatch = links.filter((item): item is ImageMatch => item.type === 'picture')
-
     // 清空该文章的图片映射关系
-    this.mdToPicMap.set(markdownId, { pics: [] })
-
+    this.mdToPicMap.delete(markdownId)
     // ========================================================================
     // 一篇文章对应多个图片名称, 每次文章的映射重新赋值即可
     // ========================================================================
     for (const pic of pictureMatch) {
       const picName = extractFileName(pic.url) // 从链接中获取图片的文件名
-      let mdToPic: MdToPic = this.mdToPicMap.get(markdownId)!
+      let mdToPic: MdToPic = this.mdToPicMap.get(markdownId) || { pics: [] }
       mdToPic.pics.push({ picName: picName, picPath: pic.url, picMdRaw: pic.raw })
       this.mdToPicMap.set(markdownId, mdToPic)
     }
@@ -370,8 +368,8 @@ export class DocLibStatsManager {
         if (pic.picName === oldPicName) {
           const replace = { oldPicMdRaw: pic.picMdRaw, newPicMdRaw: '' }
           pic.picName = newPicName
-          pic.picPath = pic.picPath.replace(oldPicName, newPicName)
-          pic.picMdRaw = pic.picMdRaw.replace(oldPicName, newPicName)
+          pic.picPath = pic.picPath.replaceAll(oldPicName, newPicName)
+          pic.picMdRaw = pic.picMdRaw.replaceAll(oldPicName, newPicName)
           replace.newPicMdRaw = pic.picMdRaw
           result.pictures.push(replace)
         }
@@ -389,30 +387,18 @@ export class DocLibStatsManager {
   }
 
   public log() {
-    traceLog(
-      '\n\n\n\n==============================================================================================================================='
-    )
-    traceLog('* 文章对应的图片 / 图片对应的文章')
-    traceLog('===============================================================================================================================')
+    warnLog('\n\n\n\n===============================================================================================================================')
+    warnLog('* 文章对应的图片 / 图片对应的文章')
+    warnLog('===============================================================================================================================')
     this.mdToPicMap.forEach((m2p, key) => {
-      console.log(`文档: ${key}`)
-      console.log(`包含 ${m2p.pics.length} 张图片:`)
-      // 遍历当前文档下的所有图片项
-      m2p.pics.forEach((pic) => {
-        console.log(`  - 图片名称: ${pic.picName}, 路径: ${pic.picPath}, 结构: ${pic.picMdRaw}`)
-      })
+      console.log(`文档: [${key}] 包含 ${m2p.pics.length} 张图片:`)
+      m2p.pics.forEach((pic) => console.log(`  - 图片名称: ${pic.picName}  路径: ${pic.picPath}  结构: ${pic.picMdRaw}`))
       traceLog('------------------------------------------------------------------------------')
     })
-    warnLog('===============================================================================================================================')
-    warnLog('图片对应的文章')
-    warnLog('===============================================================================================================================')
+    warnLog('=====< 下列是图片对应的文章 >======================================================================================================')
     this.picToMdMap.forEach((p2m, key) => {
-      console.log(`图片: ${key}`)
-      console.log(`包含 ${p2m.mds.length} 个文章:`)
-      // 遍历当前文档下的所有图片项
-      p2m.mds.forEach((md) => {
-        console.log(`  - 文章: ${md.id}`)
-      })
+      console.log(`图片: [${key}] 包含 ${p2m.mds.length} 个文章:`)
+      p2m.mds.forEach((md) => console.log(`  - 文章ID: ${md.id}`))
       traceLog('------------------------------------------------------------------------------')
     })
   }

@@ -10,7 +10,7 @@ const picNameMapping = PicNameMapping.getInstance()
 export const BLOSSOM_PROTOCOL = 'blossom:\\'
 
 /**
- *
+ * 封装协议
  * @param str
  * @returns
  */

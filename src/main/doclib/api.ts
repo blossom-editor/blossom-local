@@ -152,6 +152,37 @@ const readDocTree = async (req: DocTreeReq, status: DocLibStatsNumber): Promise<
   return nodes
 }
 
+/**
+ * 递归读取 beginPath 下的所有文件, 并将所有文件作为列表返回
+ *
+ * @param beginPath 开始路径
+ * @param result 返回结果
+ * @returns 返回为集合, 非树状类表
+ */
+export const readDocList = async (beginPath: string, result: DocListItem[]): Promise<DocListItem[]> => {
+  // readdir 只读取文件夹
+  const files = await fs.promises.readdir(beginPath, { withFileTypes: true })
+  for (const file of files) {
+    const fullPath = path.join(file.path, file.name)
+    if (file.isDirectory()) {
+      readDocList(fullPath, result)
+    } else {
+      const stats = await fs.promises.stat(fullPath, { bigint: true })
+      const docListItem: DocListItem = {
+        id: getUniqueId(stats),
+        type: 'ARTICLE',
+        name: file.name,
+        path: fullPath
+      }
+      if (!file.name.endsWith('.md')) {
+        docListItem.type = 'PICTURE'
+      }
+      result.push(docListItem)
+    }
+  }
+  return result
+}
+
 //#endregion
 
 //#region ====================================< 文档选择弹窗 >====================================

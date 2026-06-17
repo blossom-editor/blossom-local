@@ -8,9 +8,9 @@
           <span>路径:{{ curArticle?.path }}</span>
         </div>
       </el-tooltip>
-      <!-- <el-tooltip :content="curArticle?.id" effect="light" placement="top" :hide-after="0" :show-after="500">
+      <el-tooltip :content="curArticle?.id" effect="light" placement="top" :hide-after="0" :show-after="500">
         <div v-show="curArticle" class="id">ID:{{ curArticle?.id }}</div>
-      </el-tooltip> -->
+      </el-tooltip>
     </bl-row>
     <bl-row just="flex-end" width="260px" height="100%" class="status-item-container-right">
       <div v-show="curArticle" class="button" @click="openArticleReferenceWindow"><span class="iconbl bl-correlation-line"></span>引用</div>

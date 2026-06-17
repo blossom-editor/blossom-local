@@ -6,7 +6,7 @@ import { IdMapping } from '../doclib/idMapping'
 import { cutSuffix, errorLog, generateUniqueId, getUniqueId, imagesSuffix, isImage, normalizeMarkdownImage, traceLog } from '../utils'
 import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
-import { PicItem, PicNameMapping } from '../doclib/picNameMapping'
+import { PicNameMapping } from '../doclib/picNameMapping'
 import { DocLibStatsManager, UpdatePicNameRes } from '../doclib/docLibStatsManager'
 import { protocolWrapper } from '../customProtocol'
 import { naturalCompare } from '../doclib/docLibUtil'
@@ -236,10 +236,6 @@ const initPictureList = () => {
     } else {
       return R.fail('文件不存在', '未找到对应的文件')
     }
-
-    // if (!folderPath) {
-    //   return R.fail('文件不存在', '未找到对应的文件')
-    // }
 
     const files = await fs.promises.readdir(folderPath, { withFileTypes: true })
 
@@ -502,8 +498,6 @@ const moveBatchPictures = async (req: PictureMoveBatchReq): Promise<R<DocTree[]>
 
     // 移动文件
     await fs.promises.rename(picturePath, targetPath)
-
-    // TODO: 修改文章中的图片路径
   }
 
   return R.ok(await readDocTreeSort({ docLibPath: req.docLibPath, type: 'PICTURE' }))

@@ -60,6 +60,12 @@ const sortDocTree = (node: DocTree): DocTree => {
   return node
 }
 
+/**
+ * 从树状节点中, 查询ID对应的节点
+ * @param root 根节点
+ * @param ids ID列表
+ * @returns 节点数组
+ */
 export function findNodesByIds(root: DocTree | DocTree[], ids: string[]): DocTree[] {
   if (!root || !ids.length) return []
 
