@@ -27,7 +27,7 @@
       <div class="iconbl bl-collimation" @click="collimationCurrentArticle()"></div>
     </el-tooltip>
     <div class="doc-tree-search" ref="DocTreeSearch" v-show="isShowTreeFilter">
-      <el-input v-model="treeFilterText" style="width: 180px" ref="DocTreeSearchInput">
+      <el-input v-model="treeFilterText" style="width: 180px" ref="DocTreeSearchInput" placeholder="搜索文件名">
         <template #append>
           <div ref="DocTreeSearchMove" style="cursor: move; border-right: 1px solid var(--el-border-color)">
             <el-icon><Rank /></el-icon>
@@ -45,20 +45,14 @@
     v-loading="docTreeLoading"
     element-loading-text="正在读取文档..."
     :style="{ fontSize: viewStyle.treeDocsFontSize }">
+    <!-- prettier-ignore -->
     <el-tree
-      v-if="docTreeData.length > 0"
-      ref="DocTreeRef"
-      class="doc-tree"
-      :data="docTreeData"
-      :allow-drag="handleAllowDrag"
-      :allow-drop="handleAllowDrop"
-      :highlight-current="true"
-      :indent="14"
-      :icon="ArrowRightBold"
+      v-if="docTreeData.length > 0" ref="DocTreeRef" class="doc-tree" node-key="id"
+      :data="docTreeData" :allow-drag="handleAllowDrag" :allow-drop="handleAllowDrop"
+      :highlight-current="true" :indent="14" :icon="ArrowRightBold"
       :default-expanded-keys="Array.from(docTreeCurrentExpandIdSet)"
       :filter-node-method="filterNode"
       :draggable="isBlank(treeFilterText)"
-      node-key="id"
       @nodeClick="clickCurDoc"
       @nodeExpand="handleNodeExpand"
       @nodeCollapse="handleNodeCollapse"
@@ -73,14 +67,11 @@
               <svg v-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
                 <use :xlink:href="'#' + data.icon"></use>
               </svg>
-              <el-input
-                v-if="data?.updn"
-                v-model="data.formatName"
-                :id="'article-doc-name-' + data.id"
-                @input="changeArticleNameInput(data)"
-                @blur="blurArticleNameInput(data)"
-                @keyup.enter="blurArticleNameInput(data)"
-                style="width: 95%"></el-input>
+              <!-- prettier-ignore -->
+              <el-input v-if="data?.updn" v-model="data.formatName" :id="'article-doc-name-' + data.id" style="width: 95%"
+                  @input="changeArticleNameInput(data)"
+                  @blur="blurArticleNameInput(data)"
+                  @keyup.enter="blurArticleNameInput(data)"></el-input>
               <div v-else class="name-wrapper" :style="{ maxWidth: isNotBlank(data.icon) ? 'calc(100% - 25px)' : '100%' }">
                 {{ data.formatName }}
               </div>
@@ -130,14 +121,8 @@
     </div>
   </Teleport>
 
-  <el-tooltip
-    :visible="renameTooltipVisible"
-    content='名称中不允许包含 <>\/:*?"|.'
-    placement="top"
-    effect="dark"
-    trigger="click"
-    virtual-triggering
-    :virtual-ref="renameTooltipRef" />
+  <!-- prettier-ignore -->
+  <el-tooltip :visible="renameTooltipVisible" content='名称中不允许包含 <>\/:*?"|.' placement="top" effect="dark" trigger="click" virtual-triggering :virtual-ref="renameTooltipRef" />
 </template>
 
 <script setup lang="ts">
@@ -279,16 +264,7 @@ const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: Mouse
     return
   }
   closeTreeDocsMenuShow(event)
-  setDocTreeCurrentKey(
-    {
-      id: tree.id,
-      parentId: node.parent.data.id,
-      type: tree.type
-    },
-    node,
-    treeNode,
-    event
-  )
+  setDocTreeCurrentKey({ id: tree.id, parentId: node.parent.data.id, type: tree.type }, node, treeNode, event)
   emits('clickDoc', tree)
 }
 
@@ -446,9 +422,7 @@ const collapseChild = (doc: DocTree) => {
 /**
  * 处理节点展开
  */
-const handleNodeExpand = (tree: DocTree, _node: Node) => {
-  docTreeCurrentExpandIdSet.value.add(tree.id)
-}
+const handleNodeExpand = (tree: DocTree, _node: Node) => docTreeCurrentExpandIdSet.value.add(tree.id)
 
 /**
  * 处理节点折叠, 同时清除所有子节点的展开状态
@@ -493,12 +467,8 @@ const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: Dra
     return
   }
   moveFileApi(req!)
-    .then((resp) => {
-      docTreeData.value = resp.data!
-    })
-    .catch(() => {
-      getDocTree()
-    })
+    .then((resp) => (docTreeData.value = resp.data!))
+    .catch(() => getDocTree())
 }
 
 const handleShowChildFileCount = () => {
@@ -513,11 +483,8 @@ const rMenu = ref<RightMenu>({ show: false, clientX: 0, clientY: 0 })
 const rMenuLevel2 = ref<RightMenuLevel2>({ top: '0px' })
 const ArticleDocTreeRightMenuRef = ref()
 const curDocType = computed(() => {
-  if (curDoc.value.type === 'FOLDER') {
-    return '文件夹'
-  } else {
-    return '文章'
-  }
+  if (curDoc.value.type === 'FOLDER') return '文件夹'
+  else return '文章'
 })
 
 /**

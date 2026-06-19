@@ -26,7 +26,7 @@
       <div class="iconbl bl-tier-line" @click="handleShowPictureRepeat()"></div>
     </el-tooltip>
     <div class="doc-tree-search" ref="DocTreeSearch" v-show="isShowTreeFilter">
-      <el-input v-model="treeFilterText" style="width: 180px" ref="DocTreeSearchInput">
+      <el-input v-model="treeFilterText" style="width: 180px" ref="DocTreeSearchInput" placeholder="搜索文件名">
         <template #append>
           <div ref="DocTreeSearchMove" style="cursor: move; border-right: 1px solid var(--el-border-color)">
             <el-icon><Rank /></el-icon>
@@ -115,14 +115,8 @@
     </div>
   </Teleport>
 
-  <el-tooltip
-    :visible="renameTooltipVisible"
-    content='名称中不允许包含 <>\/:*?"|.'
-    placement="top"
-    effect="dark"
-    trigger="click"
-    virtual-triggering
-    :virtual-ref="renameTooltipRef" />
+  <!-- prettier-ignore -->
+  <el-tooltip :visible="renameTooltipVisible" content='名称中不允许包含 <>\/:*?"|.' placement="top" effect="dark" trigger="click" virtual-triggering :virtual-ref="renameTooltipRef"/>
 </template>
 
 <script setup lang="ts">
