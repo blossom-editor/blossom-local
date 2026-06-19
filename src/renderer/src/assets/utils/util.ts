@@ -23,6 +23,14 @@ export const getNowTime = (): string => {
   return `${y}${m}${d}_${h}${min}${s}`
 }
 
+export const getTime = (): string => {
+  const now = new Date()
+  let h = formatNum(now.getHours())
+  let min = formatNum(now.getMinutes())
+  let s = formatNum(now.getSeconds())
+  return `${h}:${min}:${s}`
+}
+
 /**
  * 将毫秒转为时分秒的格式
  * @param time 毫秒

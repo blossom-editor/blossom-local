@@ -93,10 +93,8 @@ import Weather from '@renderer/components/Weather.vue'
 import ChartLineWords from './ChartLineWords.vue'
 import ChartHeatmap from './ChartHeatmap.vue'
 // articles
-import ArticleSubjects from './ArticleSubjects.vue'
 import ArticleStars from './ArticleStars.vue'
 import StatisticCard from './StatisticCard.vue'
-import TaskProgressSimpleVue from '../todo/TaskProgressSimple.vue'
 
 import { nowWhen } from '@renderer/assets/utils/util'
 

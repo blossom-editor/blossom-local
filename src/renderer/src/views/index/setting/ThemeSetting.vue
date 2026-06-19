@@ -2,7 +2,7 @@
   <div class="theme-setting-root" ref="ThemeSettingRef">
     <div class="title" ref="ThemeSettingTitleRef">
       <div>
-        🎨 主题样式
+        🎨 Blossom 设置
         <el-switch
           class="setting-switch"
           size="default"
@@ -143,7 +143,7 @@
                 </template>
               </el-input-number>
             </bl-row>
-            <div class="conf-tip">为防止渲染时卡顿, 文章正文超过该字数后将禁止自动渲染, 最大200,000字</div>
+            <div class="conf-tip">为防止渲染时卡顿, 文章超过该字数后将禁止渲染, 最大20万字</div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
@@ -180,7 +180,7 @@
               </div>
               <el-switch v-model="configPicStyleForm.isAddSuffix" size="default" style="margin-right: 10px" @change="changePicStyle" />
             </bl-row>
-            <div class="conf-tip">开启后，会自动为上传的图片增加后缀，如:<code>image_20230101_123015_000.png.</code></div>
+            <div class="conf-tip">开启后，若在文档库中重名图片, 会自动为上传的图片增加后缀，如:<code>image_20230101_123015_000.png.</code></div>
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
@@ -188,7 +188,7 @@
               </div>
               <el-radio-group v-model="configPicStyleForm.picLinkStyle" size="small" @change="changePicStyle">
                 <el-radio-button label="文件名" value="NAME" />
-                <el-radio-button label="绝对路径" value="ABSOLUTE_PATH" />
+                <el-radio-button label="绝对路径" value="ABSOLUTE_PATH" disabled />
                 <el-radio-button label="相对路径" value="ABSOLUTE_PATH" disabled />
               </el-radio-group>
             </bl-row>
@@ -201,12 +201,12 @@
 
             <div class="config-module-titile"><span class="iconbl bl-apps-line"></span>其他功能</div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
+            <!-- <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
                 <div class="prop-name">登录后进入首页</div>
               </div>
               <el-switch v-model="configViewStyleForm.isLoginToHomePage" size="default" style="margin-right: 10px" @change="changeViewStyle" />
-            </bl-row>
+            </bl-row> -->
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
@@ -222,47 +222,49 @@
 
         -->
 
-        <el-tab-pane name="keys" label="钥匙串"></el-tab-pane>
+        <el-tab-pane name="keys" label="天气">
+          <div class="tab-pane-content">
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">是否开启天气</div>
+              </div>
+              <el-switch
+                v-model="weatherConfigForm.enabled"
+                size="default"
+                style="margin-right: 10px"
+                @change="changeWeather"
+                inline-prompt
+                active-text="开启"
+                inactive-text="关闭" />
+            </bl-row>
+            <div class="conf-tip">当前只支持<a target="_blank" href="https://id.qweather.com/#/login">和风天气</a></div>
 
-        <el-tab-pane label="待办" name="todo" v-if="false">
-          <bl-row class="prop-row" just="flex-end">
-            <div class="prop-name" style="width: 80px; text-align: center">日间</div>
-            <el-divider direction="vertical" />
-            <div class="prop-name" style="width: 80px; text-align: center">夜间</div>
-          </bl-row>
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">未开始</div>
-              <bl-tag bg-color="var(--bl-todo-wait-color)" style="width: 30px"></bl-tag>
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop"><div class="prop-name">所在位置代码</div></div>
+              <el-input v-model="weatherConfigForm.location" size="default" @input="changeWeather"></el-input>
+            </bl-row>
+            <div class="conf-tip">
+              您所在的城市代码, 可以在<a target="_blank" href="https://github.com/qwd/LocationList/blob/master/China-City-List-latest.csv"
+                >中国城市代码</a
+              >中查看
             </div>
-            <!-- prettier-ignore -->
-            <el-input v-model="themeLight['--bl-todo-wait-color']" @input="(v: string) => setStyle('--bl-todo-wait-color', v, false)"></el-input>
-            <el-divider direction="vertical" />
-            <!-- prettier-ignore -->
-            <el-input v-model="themeDark['--bl-todo-wait-color']" @input="(v: string) => setStyle('--bl-todo-wait-color', v, true)"></el-input>
-          </bl-row>
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">进行中</div>
-              <bl-tag bg-color="var(--bl-todo-proc-color)" style="width: 30px"></bl-tag>
+
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop"><div class="prop-name">API Host</div></div>
+              <el-input v-model="weatherConfigForm.host" size="default" @input="changeWeather"></el-input>
+            </bl-row>
+            <div class="conf-tip">
+              和风天气的 API Host, 在<a target="_blank" href="https://console.qweather.com/setting?lang=zh">个人控制台的设置</a>中查看
             </div>
-            <!-- prettier-ignore -->
-            <el-input v-model="themeLight['--bl-todo-proc-color']" @input="(v: string) => setStyle('--bl-todo-proc-color', v, false)"></el-input>
-            <el-divider direction="vertical" />
-            <!-- prettier-ignore -->
-            <el-input v-model="themeDark['--bl-todo-proc-color']" @input="(v: string) => setStyle('--bl-todo-proc-color', v, true)"></el-input>
-          </bl-row>
-          <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">已完成</div>
-              <bl-tag bg-color="var(--bl-todo-comp-color)" style="width: 30px"></bl-tag>
+
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop"><div class="prop-name">Key</div></div>
+              <el-input v-model="weatherConfigForm.key" size="default" @input="changeWeather"></el-input>
+            </bl-row>
+            <div class="conf-tip">
+              和风天气的 Key, 在<a target="_blank" href="https://console.qweather.com/project?lang=zh">个人控制台的项目管理</a>中查看
             </div>
-            <!-- prettier-ignore -->
-            <el-input v-model="themeLight['--bl-todo-comp-color']" @input="(v: string) => setStyle('--bl-todo-comp-color', v, false)"></el-input>
-            <el-divider direction="vertical" />
-            <!-- prettier-ignore -->
-            <el-input v-model="themeDark['--bl-todo-comp-color']" @input="(v: string) => setStyle('--bl-todo-comp-color', v, true)"></el-input>
-          </bl-row>
+          </div>
         </el-tab-pane>
       </el-tabs>
       <!--  -->
@@ -276,7 +278,7 @@ import { useConfigStore } from '@renderer/stores/config'
 import { Sunny, Moon } from '@element-plus/icons-vue'
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useThemeStore } from '@renderer/stores/theme'
-import type { EditorStyle, ViewStyle, PicStyle } from '@renderer/stores/config'
+import type { EditorStyle, ViewStyle, PicStyle, WeatherConfig } from '@renderer/stores/config'
 import { isDark, getTheme, changeTheme, setPrimaryColor, setStyleItem, setStyleItemObj, resetStyleItems } from '@renderer/scripts/global-theme'
 import { setZoomLevel, resetZoomLevel, openDevTools } from '@renderer/assets/utils/electron'
 import { isElectron } from '@renderer/assets/utils/util'
@@ -287,6 +289,7 @@ const configStore = useConfigStore()
 const configEditorStyleForm = ref<EditorStyle>(configStore.editorStyle)
 const configViewStyleForm = ref<ViewStyle>(configStore.viewStyle)
 const configPicStyleForm = ref<PicStyle>(configStore.picStyle)
+const weatherConfigForm = ref<WeatherConfig>(configStore.weatherConfig)
 
 //#region 主题设置
 
@@ -302,7 +305,6 @@ const presetsLight = [
   { color: 'rgb(119, 150, 73)', name: '碧山' },
   { color: 'rgb(128, 164, 146)', name: '缈碧' },
   { color: 'rgb(110, 155, 197)', name: '挼蓝' },
-  // { color: 'rgb(173, 140, 242)', name: '亮紫' },
   { color: 'rgb(97, 94, 168)', name: '优昙瑞' },
   { color: 'rgb(178, 182, 182)', name: '月魄' },
   { color: 'rgb(199, 198, 183)', name: '霜地' },
@@ -364,6 +366,9 @@ const changePicStyle = () => {
   configStore.setPicStyle(configPicStyleForm.value)
 }
 
+const changeWeather = () => {
+  configStore.setWeather(weatherConfigForm.value)
+}
 //#endregion
 
 //#region

@@ -5,6 +5,7 @@ export const VIEW_STYLE_KEY = 'viewStyle'
 export const PIC_STYLE_KEY = 'picStyle'
 export const EDITOR_STYLE_KEY = 'editorStyle'
 export const KEYMAP_KEY = 'keymapConfig'
+export const WEATHER_KEY = 'weatherConfig'
 
 /**
  * 页面样式
@@ -95,6 +96,16 @@ export interface PicStyle {
 export interface KeymapConfig {}
 
 /**
+ * 天气配置
+ */
+export interface WeatherConfig {
+  enabled: boolean // 是否开启, 默认关闭
+  location: string
+  host: string
+  key: string
+  jsonWebToken: string
+}
+/**
  * Blossom 设置
  */
 export interface BlConfig {
@@ -102,6 +113,7 @@ export interface BlConfig {
   picStyle: PicStyle
   editorStyle: EditorStyle
   keymapConfig: KeymapConfig
+  weatherConfig: WeatherConfig
 }
 
 /**
@@ -159,7 +171,11 @@ export const useConfigStore = defineStore('configStore', {
       ...Local.get(VIEW_STYLE_KEY)
     },
     // 快捷键
-    keymapConfig: {}
+    keymapConfig: {},
+    weatherConfig: {
+      ...{ enabled: false, location: '', host: '', key: '', jsonWebToken: '' },
+      ...Local.get(WEATHER_KEY)
+    }
   }),
   /**
    * 因为配置涉及到 LOCAL_STORAGE 的持久化, 所以无法通过响应式进行修改
@@ -176,6 +192,10 @@ export const useConfigStore = defineStore('configStore', {
     setPicStyle(picStyle: PicStyle) {
       this.picStyle = picStyle
       Local.set(PIC_STYLE_KEY, this.picStyle)
+    },
+    setWeather(weather: WeatherConfig) {
+      this.weatherConfig = weather
+      Local.set(WEATHER_KEY, this.weatherConfig)
     }
   }
 })
