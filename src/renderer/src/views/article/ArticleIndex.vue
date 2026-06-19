@@ -166,9 +166,10 @@
 import { ref, provide, onMounted, onBeforeUnmount, onActivated, onDeactivated, defineAsyncComponent, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useConfigStore } from '@renderer/stores/config'
+import { useDocLibStore } from '@renderer/stores/docLib'
 import { articleInfoApi, saveArticleContentApi } from '@renderer/api/blossom'
 // utils
-import { isBlank, isNull } from '@renderer/assets/utils/obj'
+import { isBlank, isNotBlank, isNull } from '@renderer/assets/utils/obj'
 import { sleep, isElectron, isBase64Img, isHttp } from '@renderer/assets/utils/util'
 import { openExtenal, writeText, readText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 import { formartMarkdownTable } from '@renderer/assets/utils/format-table'
@@ -200,6 +201,8 @@ import { openFileLocation } from '@renderer/api/docLib.js'
 
 //#region -- mounted
 
+const docLibStore = useDocLibStore()
+const { editorStyle } = useConfigStore()
 const PictureViewerInfo = defineAsyncComponent(() => import('@renderer/views/picture/PictureViewerInfo.vue'))
 const EditorStatus = defineAsyncComponent(() => import('./EditorStatus.vue'))
 let isMounted = false
@@ -232,9 +235,16 @@ onDeactivated(() => {
   exitView()
   unbindKeys()
 })
-
-const { editorStyle } = useConfigStore()
-
+watch(
+  () => docLibStore.cur?.path,
+  (newPath, _oldPath) => {
+    if (isNotBlank(newPath)) {
+      setNewState('')
+      curDoc.value = undefined
+      curArticle.value = undefined
+    }
+  }
+)
 
 //#endregion
 
@@ -389,7 +399,6 @@ const curDoc = ref<DocInfo>() // 当前选中的文档, 包含文件夹和文章
 const curArticle = ref<DocInfo>() // 当前选中的文章, 用于在编辑器中展示
 // 自定保存间隔, 5分钟不编辑则自动保存
 const authSaveMs = 5 * 60 * 1000
-// 非绑定数据
 // 文章是否在解析中
 let articleParseing = false
 // 编辑器内容是否有变更, 防止在没有变更时频繁保存导致请求接口和版本号的无意义变更, 如果为 true, 则文章允许保存, 为 false 时跳过保存
@@ -401,7 +410,6 @@ let autoSaveInterval: NodeJS.Timeout
 // 文章加载延迟遮罩
 let editorLoadingTimeout: NodeJS.Timeout
 
-provide(provideKeyDocInfo, curDoc)
 provide(provideKeyCurArticleInfo, curArticle)
 
 /**
@@ -577,7 +585,6 @@ const setNewState = (md: string, words: number = 0): void => {
       () => {
         articleChanged = true
         articleParseing = true
-        allwaysBottom()
         debounceParse(parse, 300)
       },
       saveCurArticleContent,
@@ -613,18 +620,6 @@ const appendEditorHolder = () => {
   EditorRef.value.appendChild(editorHeightHolder)
 }
 
-/**
- * 编辑器滚动条永远置底
- */
-const allwaysBottom = async () => {
-  // const clientHeight = EditorRef.value.clientHeight
-  // const scrollTop = EditorRef.value.scrollTop
-  // const scrollHeight = EditorRef.value.scrollHeight
-  // let a = clientHeight + scrollTop
-  // if (a >= scrollHeight - 100) {
-  //   scrollWrapper.toBottom()
-  // }
-}
 //#endregion
 
 //#region ----------------------------------------< marked/preview >-------------------------------

@@ -1,11 +1,11 @@
 <template>
   <div class="article-index-placeholder-root">
     <bl-row just="center" align="flex-end">
-      <div class="iconbl bl-delete-line">
+      <!-- <div class="iconbl bl-delete-line">
         <div class="desc-line">
           <div class="desc-text">文章回收站</div>
         </div>
-      </div>
+      </div> -->
       <!-- <div class="iconbl bl-search-line">
         <div class="desc-line">
           <div class="desc-text">全文搜索</div>
@@ -16,11 +16,11 @@
           <div class="desc-text">新增文档</div>
         </div>
       </div> -->
-      <div class="iconbl bl-correlation-line">
+      <!-- <div class="iconbl bl-correlation-line">
         <div class="desc-line">
           <div class="desc-text">引用知识网络</div>
         </div>
-      </div>
+      </div> -->
     </bl-row>
     <!-- <bl-row just="center"> -->
     <div class="keymaps-container">

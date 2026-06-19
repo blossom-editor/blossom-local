@@ -1,21 +1,6 @@
 import { invoke } from './ipc-wrapper'
 
-/**
- * 打开文档库选择框, 此时未选择文档库, 不使用拦截器填充 docLibPath
- */
-export const selectDocLibFolderDialog = (): Promise<R<DocLibItem>> => {
-  //@ts-ignore
-  return window.electronAPI.selectDocLibFolderDialog()
-}
-
-/**
- * 通用文件选择框
- * 通常会默认填充 docLibPath, 但设置文档库的图标时, 需要手动添加文档库路径
- */
-export const selectFileAndMoveDialog = (req: SelectFileAndMoveReq): Promise<R<SelectFileAndMoveRes>> => {
-  return invoke('select-file-and-move-dialog', req)
-}
-
+//@region 未选择文档库时的请求
 /**
  * 打开文件所在目录
  */
@@ -25,18 +10,30 @@ export const openFileLocation = (filePath: string): Promise<R<void>> => {
 }
 
 /**
+ * 打开文档库选择框, 此时未选择文档库, 不使用拦截器填充 docLibPath
+ */
+export const selectDocLibFolderDialogApi = (): Promise<R<DocLibItem>> => {
+  //@ts-ignore
+  return window.electronAPI.selectDocLibFolderDialog()
+}
+/**
  * 检查文档库的配置文件
  */
-export const checkDocLibConfig = (req?: Base): Promise<R<DocTree[]>> => {
-  return invoke('check-doclib-config', req)
+export const checkDocLibConfigApi = (req: Base): Promise<R<void>> => {
+  //@ts-ignore
+  return window.electronAPI.checkDocLibConfig(req)
 }
 
 /**
- * 文章数和文章字数统计
+ * 选择文档库的图标
  */
-export const doclibStatsApi = (req?: Base): Promise<R<any>> => {
-  return invoke('doclib-stats', req)
+export const selectDocLibIconDialogApi = (req: SelectDocLibIconReq): Promise<R<SelectFileAndMoveRes>> => {
+  //@ts-ignore
+  return window.electronAPI.selectDocLibIconDialog(req)
 }
+
+//#endregion
+
 /**
  * 获取文档树
  */
@@ -45,6 +42,13 @@ export const docTreeApi = (req: DocTreeReq): Promise<R<DocTree[]>> => {
 }
 
 //#region 统计
+
+/**
+ * 文章数和文章字数统计
+ */
+export const doclibStatsApi = (req?: Base): Promise<R<any>> => {
+  return invoke('doclib-stats', req)
+}
 
 /**
  * 文章字数折线图

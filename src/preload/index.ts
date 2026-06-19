@@ -30,9 +30,18 @@ const ipcToRender = {
  * 渲染进程调用主进程方法
  */
 const rednerToIpc = {
+  /**
+   * 通常把无法从 store 中获取 docLibPath 的请求写在这里, 不通过 invoke 拦截器调用
+   */
   invoke: (channel: string, ...args: any): Promise<R<any>> => ipcRenderer.invoke(channel, ...args),
-  selectDocLibFolderDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('select-doclib-folder-dialog'),
+  /** 打开本地文件 */
   openFileLocation: (filePath: string): Promise<R<void>> => ipcRenderer.invoke('open-file-location', filePath),
+  /** 选择文档库文件夹 */
+  selectDocLibFolderDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('select-doclib-folder-dialog'),
+  /** 选择文档库文件夹 */
+  selectDocLibIconDialog: (req: SelectDocLibIconReq): Promise<R<SelectFileAndMoveRes | null>> => ipcRenderer.invoke('select-doclib-icon-dialog', req),
+  /** 检查文档库文件夹 */
+  checkDocLibConfig: (req: Base): Promise<R<void>> => ipcRenderer.invoke('check-doclib-config', req),
 
   /**
    * 窗口操作

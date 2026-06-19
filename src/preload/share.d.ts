@@ -138,14 +138,7 @@ declare interface DeleteFileReq extends Base {
 /**
  * 选择系统中的文件并移动到文档库
  */
-declare interface SelectFileAndMoveReq extends Base {
-  // 将选择的文件保存到指定位置
-  targetFilePath: string,
-  // 是否覆盖同名文件
-  replace: boolean,
-  // 是否将文件名重命名
-  newFileName: string
-}
+declare interface SelectDocLibIconReq extends Base {}
 
 /**
  * 选择系统中的文件并移动到文档库

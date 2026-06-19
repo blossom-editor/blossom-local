@@ -61,7 +61,8 @@ export class DocLibStatsManager {
    */
   public async statsBegin(docLibPath: string): Promise<void> {
     // 三十秒一次
-    if (this.docLibPath === docLibPath && new Date().getTime() - this.lastInitStatsTime < 30 * 1000) {
+    // if (this.docLibPath === docLibPath && new Date().getTime() - this.lastInitStatsTime < 30 * 1000) {
+    if (this.docLibPath === docLibPath) {
       return
     }
 

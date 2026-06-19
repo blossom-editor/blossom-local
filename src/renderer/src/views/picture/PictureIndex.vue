@@ -145,39 +145,52 @@
 </template>
 <script setup lang="ts">
 // vue
-import { ref, provide, computed, StyleValue } from 'vue'
+import { ref, provide, computed, StyleValue, watch } from 'vue'
 import { ElMessageBox } from 'element-plus'
+import { useDocLibStore } from '@renderer/stores/docLib'
 import { treeToInfo, provideKeyDocInfo } from '@renderer/views/doc/doc'
-import { isEmpty, isNull } from '@renderer/assets/utils/obj'
+import { doclibStatsApi, openFileLocation } from '@renderer/api/docLib'
+import { picCacheWrapper, picCacheRefresh, copyMarkdownUrl, copyUrl, pictureUseNotify } from './scripts/picture'
+import { pictureDeleteBatchApi, pictureInfoApi, pictureListApi } from '@renderer/api/picture'
+// utils
+import Notify from '@renderer/scripts/notify'
+import { isEmpty, isNotBlank, isNull } from '@renderer/assets/utils/obj'
 import { formatFileSize, getFilePrefix, getFileSuffix, isImage } from '@renderer/assets/utils/util'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
-import { pictureDeleteBatchApi, pictureInfoApi, pictureListApi } from '@renderer/api/picture'
-
 // component
-import { picCacheWrapper, picCacheRefresh, copyMarkdownUrl, copyUrl, pictureUseNotify } from './scripts/picture'
+import errorImg from '@renderer/assets/imgs/img_error.png'
 import PictureTreeDocs from './PictureTreeDocs.vue'
 import PictureViewerInfo from './PictureViewerInfo.vue'
 import PictureBatchDel from './PictureBatchDel.vue'
 import PictureTransfer from './PictureTransfer.vue'
-import errorImg from '@renderer/assets/imgs/img_error.png'
-import Notify from '@renderer/scripts/notify'
-import { doclibStatsApi, openFileLocation } from '@renderer/api/docLib'
 
-// 是否替换上传
-const cardSize = ref('mini')
+const docLibStore = useDocLibStore()
 
-const cardClass = computed(() => {
-  if (cardSize.value == 'large') return 'picutre-card-large'
-  return 'picutre-card-mini'
-})
+watch(
+  () => docLibStore.cur?.path,
+  (newPath, _oldPath) => {
+    if (isNotBlank(newPath)) {
+      curFolder.value = undefined
+      picPageParam.value = { pageNum: 1, pageSize: 15, name: '' }
+      picPages.value = []
+      picChecks.value.clear()
+      checkedAll.value = false
+    }
+  }
+)
+
+//#region ----------------------------------------< 文档列表 >----------------------------------------
 
 const PictureTreeDocsRef = ref()
-
+/**
+ * 刷新统计
+ */
 const refreshStats = async () => {
   doclibStatsApi().then((resp) => {
     picStat.value.global = { pictureTotal: resp.data!.pictureTotal, pictureTotalSize: formatFileSize(resp.data!.pictureTotalSize) }
   })
 }
+//#endregion
 
 //#region ----------------------------------------< 当前文件 >----------------------------------------
 type PageParam = { pageNum: number; pageSize: number; name: string } // 分页对象类型
@@ -283,11 +296,14 @@ const refreshPage = () => {
 
 //#region ----------------------------------------< 图片卡片操作 >--------------------------------
 const PictureViewerInfoRef = ref()
+const cardSize = ref('mini')
+const cardClass = computed(() => {
+  if (cardSize.value == 'large') return 'picutre-card-large'
+  return 'picutre-card-mini'
+})
 
 const showPicInfo = (pic: Picture) => {
-  if (!PictureViewerInfoRef.value || !isImage(pic.path)) {
-    return
-  }
+  if (!PictureViewerInfoRef.value || !isImage(pic.path)) return
   PictureViewerInfoRef.value.showPicInfo(pic, pic.id)
 }
 
@@ -382,9 +398,9 @@ const handleBenchworkStyle = () => {
 
 // 图片多选
 const picChecks = ref<Set<string>>(new Set())
-
 /** 选中全部图片 */
 const checkedAll = ref(false)
+
 const handlCheckedAll = (checked: boolean) => {
   if (checked) {
     picPages.value.forEach((ele) => {
@@ -453,7 +469,6 @@ const deleted = (ids: Array<string>) => {
 //#endregion
 
 //#region ----------------------------------------< 移动至其他文件夹 >----------------------------------
-
 const isShowTransferDialog = ref(false)
 
 const transfer = () => {

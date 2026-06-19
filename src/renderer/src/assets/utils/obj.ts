@@ -7,7 +7,7 @@ export const isNull = (val: any): boolean => {
   }
 
   // 控制
-  if (val == null || val === 'undefined' || val === undefined || val === '') {
+  if (val == null || val === undefined || val === 'undefined' || val === '') {
     return true
   }
 

@@ -17,25 +17,58 @@ const docLibStatsManager = DocLibStatsManager.getInstance()
 const curDocLibManager = CurDocLibManager.getInstance()
 const picNameMapping = PicNameMapping.getInstance()
 
+//#region Init
 export const initDocLibApi = () => {
   console.log('   4.3 初始化文档库接口 initDocLibApi')
   initReadDocTree()
+  //
   initSelectDocLibFolderDialog()
+  initSelectDocLibIconDialog()
   initcheckDocLibConfig()
   initDocLibStatWords()
   initDocLibStatWordsChatLine()
   initDocLibStatWordsChatHeatmap()
   initFileLocation()
-  initSelectFileAndMoveDialog()
 }
-
-//#region ====================================< 文档列表 >====================================
-
 const initReadDocTree = () => {
   ipcMain.handle('read-doc-tree', async (_event, req: DocTreeReq) => {
     return R.ok(await readDocTreeSort(req))
   })
 }
+/**
+ * 打开文件位置
+ */
+const initFileLocation = () => {
+  ipcMain.handle('open-file-location', (_event, filePath: string) => {
+    shell.showItemInFolder(filePath)
+  })
+}
+/**
+ * 打开一个文档选择器
+ */
+const initSelectDocLibFolderDialog = () => {
+  ipcMain.handle('select-doclib-folder-dialog', () => {
+    return selectDocLibFolderDialog()
+  })
+}
+const initSelectDocLibIconDialog = () => {
+  ipcMain.handle('select-doclib-icon-dialog', (_event, req: SelectDocLibIconReq) => {
+    return selectDocLibIconDialog(req)
+  })
+}
+
+/**
+ * 启动时检查文档库的配置文件
+ */
+const initcheckDocLibConfig = () => {
+  ipcMain.handle('check-doclib-config', (_event, base: Base) => {
+    return checkDocLibConfig(base)
+  })
+}
+
+//#endregion
+
+//#region ====================================< 文档列表 >====================================
 
 /**
  * 获取文档数并最终排序
@@ -197,23 +230,6 @@ export const readDocList = async (beginPath: string, result: DocListItem[]): Pro
 //#endregion
 
 //#region ====================================< 文档选择弹窗 >====================================
-/**
- * 打开文件位置
- */
-const initFileLocation = () => {
-  ipcMain.handle('open-file-location', (_event, filePath: string) => {
-    shell.showItemInFolder(filePath)
-  })
-}
-
-/**
- * 打开一个文档选择器
- */
-const initSelectDocLibFolderDialog = () => {
-  ipcMain.handle('select-doclib-folder-dialog', () => {
-    return selectDocLibFolderDialog()
-  })
-}
 
 /**
  * 打开文件夹选择窗口, 将选择的文件夹作为文档库使用, 文档库内容的保存在渲染进程, 并不在主进程持久化到文件中
@@ -254,48 +270,28 @@ const selectDocLibFolderDialog = async (): Promise<R<DocLibItem>> => {
   }
 }
 
-const initSelectFileAndMoveDialog = () => {
-  ipcMain.handle('select-file-and-move-dialog', (_event, params: SelectFileAndMoveReq) => {
-    return selectFileAndMoveDialog(params)
-  })
-}
-
 /**
  * 选择一个文件, 并复制到选定为止, 然后将文件在新位置的路径返回
  */
-const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<SelectFileAndMoveRes | null>> => {
-  // 检查文档库的路径, 如果目标文件路径不包含文档库路径, 则自动添加
-  if (params.targetFilePath.indexOf(params.docLibPath!) === -1) {
-    params.targetFilePath = path.join(params.docLibPath!, params.targetFilePath)
+const selectDocLibIconDialog = async (req: SelectDocLibIconReq): Promise<R<SelectFileAndMoveRes | null>> => {
+  if (!req.docLibPath) {
+    return R.fail('DOC_LIB_PATH_ERROR', '未选择文档库')
   }
-
+  const iconName = 'doclib-icon'
+  const iconPath = path.join(req.docLibPath!, '.blossom')
   const choiseFile = await dialog.showOpenDialog({
     properties: ['openFile'],
-    title: '选择文件上传',
+    title: '选择文档库图标',
     // 可选：限制文件类型
     filters: [
       { name: 'Images', extensions: imagesSuffix },
       { name: 'All Files', extensions: ['*'] }
     ]
   })
-
   if (choiseFile.canceled) {
     return R.ok(null)
   }
-
-  // 路径为文档库路径 + 原始文件名 + 原始扩展名
-  let targetFilePath = path.join(params.targetFilePath, path.basename(choiseFile.filePaths[0]))
-
-  // 如果重命名文件, 路径为文档库路径 + 文件名 + 扩展名
-  if (params.newFileName && params.newFileName !== '' && params.newFileName.length > 0) {
-    targetFilePath = path.join(params.targetFilePath, params.newFileName + path.extname(choiseFile.filePaths[0]))
-  }
-
-  // 如果不覆盖文件, 先检查文件是否存在
-  if (!params.replace && fs.existsSync(targetFilePath)) {
-    return R.fail('50101', `文件已存在: ${targetFilePath}`)
-  }
-
+  const targetFilePath = path.join(iconPath, iconName + path.extname(choiseFile.filePaths[0]))
   fs.copyFileSync(choiseFile.filePaths[0], targetFilePath)
   const res: SelectFileAndMoveRes = {
     filePath: targetFilePath,
@@ -309,15 +305,6 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
 //#region ====================================< 文档库的配置文件 >====================================
 
 /**
- * 启动时检查文档库的配置文件
- */
-const initcheckDocLibConfig = () => {
-  ipcMain.handle('check-doclib-config', (_event, base: Base) => {
-    return checkDocLibConfig(base)
-  })
-}
-
-/**
  * 检查并补全系统配置文件
  * @param docLibPath 文档库的根路径
  */
@@ -325,19 +312,17 @@ export const checkDocLibConfig = async (base: Base) => {
   if (base === undefined || base === null || base.docLibPath === undefined || base.docLibPath === null || base.docLibPath === '') {
     return R.fail('DOCLIB_PATH_NOT_EXIST', '文档库不存在')
   }
-  // 创建系统文件夹
   const systemPath = path.join(base.docLibPath, sysFolder)
-  // 创建文件夹
+  // 创建创建文件夹
   await fs.promises.mkdir(systemPath, { recursive: true })
-  // 检查文档库统计文件
+  // 创建检查文档库统计文件
   await checkdocLibStatsFileFile(base.docLibPath)
-  // 文章拓展信息文件
+  // 创建文章拓展信息文件
   await checkArticleExtensionFileFile(base.docLibPath)
   // 开始统计
   docLibStatsManager.statsBegin(base.docLibPath)
   // 变更文档库的路径, curDocLibManager 用于在全局获取当前文档库路径
   curDocLibManager.change(base.docLibPath)
-  // 统计所有文章的字数
   return R.ok('')
 }
 

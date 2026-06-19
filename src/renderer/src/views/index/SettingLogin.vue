@@ -51,7 +51,7 @@
 import router from '@renderer/router'
 import { useDocLibStore } from '@renderer/stores/docLib'
 import { isNotBlank, isNotNull, isNull } from '@renderer/assets/utils/obj'
-import { checkDocLibConfig, openFileLocation, selectDocLibFolderDialog, selectFileAndMoveDialog } from '@renderer/api/docLib'
+import { checkDocLibConfigApi, openFileLocation, selectDocLibFolderDialogApi, selectDocLibIconDialogApi } from '@renderer/api/docLib'
 import { ElMessageBox } from 'element-plus'
 import { picCacheRefresh, picCacheWrapper, protocolWrapper } from '../picture/scripts/picture'
 
@@ -70,7 +70,7 @@ const sortDocLib = (list: DocLibItem[]) => {
 }
 
 const openDocLib = () => {
-  selectDocLibFolderDialog().then((resp) => {
+  selectDocLibFolderDialogApi().then((resp) => {
     if (isNotNull(resp.data) || isNotBlank(resp.data!.name)) {
       docLibStore.addDocItem(resp.data!)
     }
@@ -78,13 +78,8 @@ const openDocLib = () => {
 }
 
 const selectIcon = (docLib: DocLibItem) => {
-  const params: SelectFileAndMoveReq = {
-    targetFilePath: '.blossom',
-    docLibPath: docLib.path,
-    replace: true,
-    newFileName: 'doclib-icon'
-  }
-  selectFileAndMoveDialog(params).then((resp) => {
+  const params: SelectDocLibIconReq = { docLibPath: docLib.path }
+  selectDocLibIconDialogApi(params).then((resp) => {
     if (isNull(resp.data)) {
       return
     }
@@ -125,10 +120,13 @@ const toTop = (docLib: DocLibItem) => {
 }
 
 const toEditor = (docLib: DocLibItem) => {
-  checkDocLibConfig()
-  docLibStore.setCurDoc(docLib)
-
-  router.push('/articleIndex')
+  // 主进程切换文档库成功后, 渲染进程切换文档库
+  checkDocLibConfigApi({ docLibPath: docLib.path }).then((resp) => {
+    if (resp.ok) {
+      docLibStore.setCurDoc(docLib)
+      router.push('/articleIndex')
+    }
+  })
 }
 
 const stopPropagation = (event: MouseEvent) => {

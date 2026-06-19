@@ -164,7 +164,8 @@ watch(
   () => docLibStore.cur?.path,
   (_newVal, _oldVal) => {
     if (isNotBlank(_newVal)) {
-      getDocTree()
+      docTreeCurrentChoiseId.value = ''
+      docTreeCurrentExpandIdSet.value.clear()
     }
   }
 )

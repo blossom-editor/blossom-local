@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, provide, onBeforeUnmount, nextTick, computed, watch } from 'vue'
+import { ref, onBeforeUnmount, nextTick, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useConfigStore } from '@renderer/stores/config'
 import { useDocLibStore } from '@renderer/stores/docLib'
@@ -152,8 +152,9 @@ import type { NodeDropType } from 'element-plus/es/components/tree/src/tree.type
 import Node from 'element-plus/es/components/tree/src/model/node'
 import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 // ts
+import { docTreeApi, openFileLocation } from '@renderer/api/docLib'
 import { deleteFileApi, articleUpdNameApi, moveFileApi, createFolderApi, createMarkdownApi } from '@renderer/api/blossom'
-import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
+import { DefaultDocTree } from '@renderer/views/doc/doc'
 import { getChildFileCountColor } from '@renderer/views/doc/doc-tree'
 import { isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
@@ -161,11 +162,10 @@ import { useDraggable } from '@renderer/scripts/draggable'
 // util
 import { isEmpty } from 'lodash'
 import { pathJoin, platformText, inValidateFileName } from '@renderer/assets/utils/util'
-import { isNotNull, isNotBlank, isBlank } from '@renderer/assets/utils/obj'
+import { isNotBlank, isBlank, isNull } from '@renderer/assets/utils/obj'
 import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
 import ArticleTreeWorkbench from './ArticleTreeWorkbench.vue'
-import { docTreeApi, openFileLocation } from '@renderer/api/docLib'
 
 const route = useRoute()
 const docLibStore = useDocLibStore()
@@ -173,18 +173,20 @@ const configStore = useConfigStore()
 const { viewStyle } = useConfigStore()
 
 useLifecycle(
-  () => getDocTree(getRouteQueryParams),
-  () => getDocTree(getRouteQueryParams)
+  () => getDocTree(),
+  () => getDocTree()
 )
 onBeforeUnmount(() => {
   document.body.removeEventListener('click', closeTreeDocsMenuShow)
   document.body.removeEventListener('contextmenu', closeTreeDocsMenuShow)
 })
 watch(
-  () => docLibStore.cur?.path,
+  () => docLibStore.cur!.path,
   (_newVal, _oldVal) => {
     if (isNotBlank(_newVal)) {
-      getDocTree()
+      articleCurrnetChoiseId.value = ''
+      docTreeCurrentChoiseId.value = ''
+      docTreeCurrentExpandIdSet.value.clear()
     }
   }
 )
@@ -194,25 +196,27 @@ let editorLoadingTimeout: NodeJS.Timeout
 const DocTreeRef = ref()
 const docTreeLoading = ref(true) // 文档菜单的加载动画
 const docTreeData = ref<DocTree[]>([]) // 文档菜单
-provide(provideKeyDocTree, docTreeData) // 提供菜单列表依赖注入, 主要用于在详情中选择上级文件夹, 避免二次查询
 
-/** 获取路由参数 */
+/**
+ * 获取路由参数, 用于从外部点击时跳转至文章, 如收藏列表等
+ */
 const getRouteQueryParams = () => {
   let routeArticleId = route.query.articleId
-  if (isNotNull(routeArticleId)) {
-    const articleId = routeArticleId as string
-    const docTree: DocTree = new DefaultDocTree()
-    emits('clickDoc', docTree)
-    nextTick(() => {
-      docTreeCurrentChoiseId.value = articleId
-      const parentNode = DocTreeRef.value.getNode(articleId).parent
-      setDocTreeCurrentKey({ id: articleId, parentId: parentNode.data.id, type: 'ARTICLE' })
-      const ele = document.getElementById('article-doc-wrapper-' + articleId)
-      if (ele) {
-        ;(DocTreeContainer.value as Element).scrollTop = ele.offsetTop
-      }
-    })
+  if (isNull(routeArticleId)) {
+    return
   }
+  const articleId = routeArticleId as string
+  const docTree: DocTree = new DefaultDocTree()
+  emits('clickDoc', docTree)
+  nextTick(() => {
+    docTreeCurrentChoiseId.value = articleId
+    const parentNode = DocTreeRef.value.getNode(articleId).parent
+    setDocTreeCurrentKey({ id: articleId, parentId: parentNode.data.id, type: 'ARTICLE' })
+    const ele = document.getElementById('article-doc-wrapper-' + articleId)
+    if (ele) {
+      ;(DocTreeContainer.value as Element).scrollTop = ele.offsetTop
+    }
+  })
 }
 
 /**
