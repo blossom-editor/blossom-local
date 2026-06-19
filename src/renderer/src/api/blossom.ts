@@ -69,7 +69,7 @@ export const saveArticleContentApi = (params: SaveFileContentReq): Promise<R<any
 /**
  * 修改文章名称
  */
-export const articleUpdNameApi = (params: RenameFileReq): Promise<R<any>> => {
+export const articleUpdNameApi = (params: RenameFileReq): Promise<R<DocTree[]>> => {
   return invoke('rename-file', params)
 }
 

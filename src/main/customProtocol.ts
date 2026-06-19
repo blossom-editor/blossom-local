@@ -35,11 +35,6 @@ export const initProtocol = () => {
 
     const params = parseQueryParams(url)
     const picName = extractFileName(url)
-
-    // if (params) {
-    //   console.log(`${url}, params: ${Object.entries(params)}`)
-    // }
-
     // 忽略文档库校验, 可以访问全部图片
     if (params && params['blossom_pic_ignore']) {
       return fetch(request, url)
@@ -65,12 +60,8 @@ export const initProtocol = () => {
 
 const fetch = (_request: Request, url: string): Promise<GlobalResponse> => {
   try {
-    // console.log(`${_request.url}`)
-    // console.log(url)
-    // console.log('============================================================================')
     return net.fetch(url)
   } catch (error) {
-    console.log('error', error)
     throw error
   }
 }

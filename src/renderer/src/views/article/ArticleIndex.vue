@@ -149,7 +149,7 @@
         <div class="content-view" :style="editorStyle">
           {{ articleReferenceView.html }}
         </div>
-        <bl-row class="workbench" just="space-between">
+        <bl-row v-if="articleReferenceView.articleId !== '' && articleReferenceView.path !== ''" class="workbench" just="space-between">
           <div class="btns">
             <div @click="openArticleWindow(articleReferenceView.articleId)">新窗口打开</div>
             <div @click="openFileLocation(articleReferenceView.path)">查看原文件</div>
@@ -627,13 +627,13 @@ const appendEditorHolder = () => {
  * 编辑器滚动条永远置底
  */
 const allwaysBottom = async () => {
-  const clientHeight = EditorRef.value.clientHeight
-  const scrollTop = EditorRef.value.scrollTop
-  const scrollHeight = EditorRef.value.scrollHeight
-  let a = clientHeight + scrollTop
-  if (a >= scrollHeight - 100) {
-    scrollWrapper.toBottom()
-  }
+  // const clientHeight = EditorRef.value.clientHeight
+  // const scrollTop = EditorRef.value.scrollTop
+  // const scrollHeight = EditorRef.value.scrollHeight
+  // let a = clientHeight + scrollTop
+  // if (a >= scrollHeight - 100) {
+  //   scrollWrapper.toBottom()
+  // }
 }
 //#endregion
 

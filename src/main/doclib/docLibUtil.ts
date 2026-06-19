@@ -1,3 +1,5 @@
+import { Dirent } from 'fs'
+
 /**
  * Windows风格的自然排序（忽略大小写、数字按数值比较）
  * 例如：["文章5", "文章41"] → ["文章5", "文章41"]
@@ -100,4 +102,10 @@ export function findNodesByIds(root: DocTree | DocTree[], ids: string[]): DocTre
   }
 
   return result
+}
+
+export const getType = (file: Dirent): DocType => {
+  if (file.isDirectory()) return 'FOLDER'
+  if (file.name.endsWith('.md')) return 'ARTICLE'
+  return 'PICTURE'
 }

@@ -102,17 +102,15 @@ declare interface SaveFileContentReq extends Base {
 /**
  * 重命名文件
  */
-declare interface RenameFileReq extends Base {
-  oldPath: string
-  newPath: string
-}
+declare interface RenameFileReq extends Base { id: string; newName: string }
 
 /**
  * 移动文件
  */
 declare interface MoveFileReq extends Base {
-  oldPath: string
-  newPath: string
+  id: string,
+  targetId: string,
+  dropType: 'before' | 'after' | 'inner' | 'none'
 }
 
 /**

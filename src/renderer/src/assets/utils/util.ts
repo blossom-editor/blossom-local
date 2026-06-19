@@ -372,55 +372,25 @@ export const isElectron = () => {
  * @returns 规范化后的路径字符串
  */
 export function pathJoin(...paths: string[]): string {
-  // 检测当前平台分隔符
   const isWin = isWindows()
   const sep = isWin ? '\\' : '/'
 
-  // 内部统一使用 '/' 处理逻辑，最后再转换分隔符
-  const stack: string[] = []
-  let isAbsolute = false
+  // 1. 将所有反斜杠统一转为正斜杠，方便内部处理
+  const normalized = paths.map((p) => p.replace(/\\/g, '/'))
 
-  for (let p of paths) {
-    if (p === '') continue
-
-    // 将 Windows 反斜杠转换为正斜杠，统一处理
-    const normalized = p.replace(/\\/g, '/')
-
-    // 若以 '/' 开头，重置栈（绝对路径）
-    if (normalized.startsWith('/')) {
-      stack.length = 0
-      isAbsolute = true
-    }
-
-    const segments = normalized.split('/')
-    for (const seg of segments) {
-      if (seg === '' || seg === '.') continue
-
-      if (seg === '..') {
-        if (stack.length > 0 && stack[stack.length - 1] !== '..') {
-          stack.pop()
-        } else if (!isAbsolute) {
-          stack.push('..')
-        }
-        // 绝对路径下的 '..' 忽略
-      } else {
-        stack.push(seg)
-      }
-    }
+  // 2. 过滤掉空字符串（避免产生多余分隔符）
+  const nonEmpty = normalized.filter((p) => p !== '')
+  if (nonEmpty.length === 0) {
+    return '' // 无任何有效片段，返回空串
   }
 
-  // 无有效段
-  if (stack.length === 0) {
-    return isAbsolute ? '/' : '.'
-  }
+  // 3. 用 '/' 拼接
+  let result = nonEmpty.join('/')
 
-  // 用 '/' 连接，并补绝对前缀
-  let result = stack.join('/')
-  if (isAbsolute) {
-    result = '/' + result
-  }
+  // 4. 将连续多个 '/' 合并为单个（保留开头的斜杠，如 '/a' 不变）
+  result = result.replace(/\/+/g, '/')
 
-  // 转换为目标平台分隔符
+  // 5. 按目标平台转换分隔符
   if (sep === '\\') {
     result = result.replace(/\//g, '\\')
   }
@@ -512,7 +482,7 @@ export const isHttp = (url: string | null | undefined) => {
   if (url === undefined || url == null) {
     return false
   }
-  return url!.startsWith('http://') || url!.startsWith('https://')
+  return url.startsWith('http://') || url.startsWith('https://')
 }
 
 /**

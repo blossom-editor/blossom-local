@@ -25,6 +25,15 @@
   text-decoration: none;
 }
 
+.bl-preview a.inner-link .bl-a-closeline-line {
+  font-size: 13px;
+}
+
+.bl-preview a.error-link {
+  color: var(--el-color-danger);
+  border: 1px solid var(--el-color-danger);
+}
+
 .bl-preview img {
   border-radius: var(--bl-preview-border-radius);
   max-width: 100%;
@@ -160,7 +169,7 @@ h6 {
   border-bottom: 0;
 }
 
-/* 
+/*
 table container
 */
 

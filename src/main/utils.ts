@@ -39,14 +39,11 @@ export const cutSuffix = (filename: string): string => {
  */
 export const extractFileName = (pathOrUrl: string): string => {
   if (!pathOrUrl) return ''
-
   // 1. 将反斜杠统一替换为正斜杠，便于处理
   let normalized = pathOrUrl.replace(/\\/g, '/')
-
   // 2. 找到最后一个斜杠的位置，提取后面的部分
   const lastSlashIndex = normalized.lastIndexOf('/')
   let fileName = lastSlashIndex !== -1 ? normalized.substring(lastSlashIndex + 1) : normalized
-
   // 3. 去掉 URL 中的查询参数（?...）和锚点（#...）
   const queryIndex = fileName.indexOf('?')
   if (queryIndex !== -1) {
@@ -56,11 +53,21 @@ export const extractFileName = (pathOrUrl: string): string => {
   if (hashIndex !== -1) {
     fileName = fileName.substring(0, hashIndex)
   }
-
   return fileName
 }
 
 /**
+ * 推翻链接地址
+ * 将所有反斜杠替换成正斜杠
+ *
+ * @param url 链接
+ */
+export const normalizeUrlToForwardSlash = (url: string) => {
+  return url.replace(/\\/g, '/')
+}
+
+/**
+ * 规范图片链接
  * 去除图片的 ![]() 标记, 以符合 markdown 语法规范
  */
 export const normalizeMarkdownImage = (text: string) => {
@@ -131,6 +138,58 @@ export function generateUniqueId(): string {
   const fullTime = timePart.padStart(3, '0')
   const fullCounter = counterPart.padStart(3, '0')
   return fullTime + fullCounter
+}
+
+/**
+ * 是否 http/https 协议开头的 url
+ * @param url
+ * @returns
+ */
+export const isHttp = (url: string | null | undefined) => {
+  if (url === undefined || url == null) {
+    return false
+  }
+  return url.startsWith('http://') || url.startsWith('https://')
+}
+
+export function createDefaultBigIntStats() {
+  const ZERO = 0n // 所有数值属性用 bigint 的 0
+  const DEFAULT_DATE = new Date(0) // 时间属性的默认值（1970-01-01）
+
+  return {
+    // ---- 所有属性均为 bigint 类型 ----
+    dev: ZERO,
+    ino: ZERO,
+    mode: ZERO,
+    nlink: ZERO,
+    uid: ZERO,
+    gid: ZERO,
+    rdev: ZERO,
+    size: ZERO,
+    blksize: ZERO,
+    blocks: ZERO,
+    atimeMs: ZERO,
+    mtimeMs: ZERO,
+    ctimeMs: ZERO,
+    birthtimeMs: ZERO,
+    atime: DEFAULT_DATE,
+    mtime: DEFAULT_DATE,
+    ctime: DEFAULT_DATE,
+    birthtime: DEFAULT_DATE,
+    atimeNs: 0n,
+    mtimeNs: 0n,
+    ctimeNs: 0n,
+    birthtimeNs: 0n,
+
+    // ---- 必须实现的方法（根据业务需求返回布尔值） ----
+    isFile: () => false,
+    isDirectory: () => false,
+    isBlockDevice: () => false,
+    isCharacterDevice: () => false,
+    isSymbolicLink: () => false,
+    isFIFO: () => false,
+    isSocket: () => false
+  }
 }
 
 //#region 染色日志

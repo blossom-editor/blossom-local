@@ -146,7 +146,7 @@ import { useLifecycle } from '@renderer/scripts/lifecycle'
 // util
 import { isEmpty } from 'lodash'
 import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
-import { getFilePrefix, inValidateFileName, pathJoin, platformText } from '@renderer/assets/utils/util.js'
+import { getFilePrefix, inValidateFileName, platformText } from '@renderer/assets/utils/util.js'
 // components
 import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
@@ -594,7 +594,7 @@ const rename = () => {
  * 重命名文章失去焦点
  */
 const blurArticleNameInput = (doc: DocTree) => {
-  const req = { oldPath: doc.path, newPath: '' }
+  const req: RenameFileReq = { id: doc.id, newName: '' }
   if (!changeArticleNameInput(doc)) {
     getDocTree()
     notAllowDragId = ''
@@ -602,24 +602,26 @@ const blurArticleNameInput = (doc: DocTree) => {
     return
   }
 
-  const newName = doc.name
-  const parentPath = doc.folderPath
-
+  req.newName = doc.name
   function resetUpdateState() {
     doc.updn = false
     notAllowDragId = ''
   }
 
-  req.newPath = pathJoin(parentPath, newName)
   // 路径相同, 则未重命名
-  if (req.oldPath === req.newPath) {
+  if (getFilePrefix(req.newName) === doc.formatName) {
     resetUpdateState()
     return
   }
-  pictureRenameApi(req).then((resp) => {
-    resetUpdateState()
-    docTreeData.value = resp.data!
-  })
+  pictureRenameApi(req)
+    .then((resp) => {
+      resetUpdateState()
+      docTreeData.value = resp.data!
+    })
+    .catch(() => {
+      resetUpdateState()
+      getDocTree()
+    })
 }
 
 /**

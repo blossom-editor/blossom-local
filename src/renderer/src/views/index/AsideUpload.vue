@@ -41,9 +41,7 @@ const docLibStore = useDocLibStore()
  * 上传方法
  * @param options
  */
-const upload = (options: UploadRequestOptions) => {
-  console.log('upload', options)
-}
+const upload = (options: UploadRequestOptions) => {}
 
 /**
  *

@@ -10,7 +10,7 @@ import { isSysFile } from '../doclib/docLibManager'
 import { getUniqueId, cutSuffix, imagesSuffix, warnLog } from '../utils'
 import { IdMapping, FileItem } from '../doclib/idMapping'
 import { PicNameMapping, PicItem } from '../doclib/picNameMapping'
-import { findNodesByIds, sortDocTreeList } from './docLibUtil'
+import { findNodesByIds, getType, sortDocTreeList } from './docLibUtil'
 
 const idMapping = IdMapping.getInstance()
 const docLibStatsManager = DocLibStatsManager.getInstance()
@@ -59,7 +59,6 @@ export const readDocTreeSort = async (req: DocTreeReq): Promise<DocTree[]> => {
   // 读取后置数据
   docLibStatsManager.updateStatsNumber(stats)
   docLibStatsManager.save(req.docLibPath!)
-  picNameMapping.log()
   if (req.type === 'PICTURE') {
     const repeat: PicItem[] = picNameMapping.getRepeatPic()
     const ids: string[] = repeat.map((item) => item.id)
@@ -82,9 +81,14 @@ const readDocTree = async (req: DocTreeReq, status: DocLibStatsNumber): Promise<
   const files = await fs.promises.readdir(req.docLibPath!, { withFileTypes: true })
   const nodes: DocTree[] = []
 
-  for (const file of files) {
+  // 一次查询多个 stats
+  const statPromises = files.map((file) => fs.promises.stat(path.join(req.docLibPath!, file.name), { bigint: true }))
+  const statsArray = await Promise.all(statPromises)
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
+    const stats = statsArray[i]
     const fullPath = path.join(req.docLibPath!, file.name)
-    const stats: BigIntStats = await fs.promises.stat(fullPath, { bigint: true })
     const doc: DocTree = {
       id: getUniqueId(stats),
       type: req.type,
@@ -153,7 +157,7 @@ const readDocTree = async (req: DocTreeReq, status: DocLibStatsNumber): Promise<
 }
 
 /**
- * 递归读取 beginPath 下的所有文件, 并将所有文件作为列表返回
+ * 递归读取 beginPath 下的所有文件, 并将所有文件作为列表返回, 同时会刷新 idMapping
  *
  * @param beginPath 开始路径
  * @param result 返回结果
@@ -162,12 +166,19 @@ const readDocTree = async (req: DocTreeReq, status: DocLibStatsNumber): Promise<
 export const readDocList = async (beginPath: string, result: DocListItem[]): Promise<DocListItem[]> => {
   // readdir 只读取文件夹
   const files = await fs.promises.readdir(beginPath, { withFileTypes: true })
-  for (const file of files) {
+
+  const statPromises = files.map((file) => fs.promises.stat(path.join(beginPath, file.name), { bigint: true }))
+  const statsArray = await Promise.all(statPromises)
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i]
     const fullPath = path.join(file.path, file.name)
+    const stats = statsArray[i]
+    idMapping.add(new FileItem(getUniqueId(stats), fullPath, getType(file)))
+
     if (file.isDirectory()) {
-      readDocList(fullPath, result)
+      await readDocList(fullPath, result)
     } else {
-      const stats = await fs.promises.stat(fullPath, { bigint: true })
       const docListItem: DocListItem = {
         id: getUniqueId(stats),
         type: 'ARTICLE',
@@ -269,7 +280,6 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
   })
 
   if (choiseFile.canceled) {
-    console.log('选中的文件:', choiseFile.filePaths)
     return R.ok(null)
   }
 
@@ -291,7 +301,6 @@ const selectFileAndMoveDialog = async (params: SelectFileAndMoveReq): Promise<R<
     filePath: targetFilePath,
     fileName: path.basename(targetFilePath)
   }
-  console.log(res)
   return R.ok(res)
 }
 
@@ -398,7 +407,6 @@ const initDocLibStatWordsChatLine = () => {
 
       const wordsByMonth: Record<string, number> = (await docLibStatsManager.getStats(base.docLibPath!)).wordsByMonth
       Object.entries(wordsByMonth).sort(([a], [b]) => a.localeCompare(b))
-      console.log(wordsByMonth)
       const entries = Object.entries(wordsByMonth)
       entries.forEach(([month, words], _index) => {
         result.statDates.push(month)

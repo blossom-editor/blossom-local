@@ -5,7 +5,7 @@ import { BigIntStats } from 'fs'
 import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
-import { extractFileName, getUniqueId, traceLog, warnLog } from '../utils'
+import { createDefaultBigIntStats, extractFileName, getUniqueId, isHttp, normalizeUrlToForwardSlash, traceLog, warnLog } from '../utils'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -18,11 +18,13 @@ export class DocLibStatsManager {
   private docLibPath: string = ''
 
   /** 图片对应文章 picName: markdown 的 ID 集合 */
-  private picToMdMap: Map<string, PicToMd> = new Map()
+  private p2m: Map<string, PicToMd> = new Map()
   /** 文章对应图片 articleId: { picName: string;  picPath: string;  picMdRaw: string; } */
-  private mdToPicMap: Map<string, MdToPic> = new Map()
+  private m2p: Map<string, MdToPic> = new Map()
+  /** 文章对应的链接, articleId: { linkPath: string;  linkMdRaw: string; } */
+  private m2m: Map<string, MdToLink> = new Map()
 
-  // TODO: 文章和链接的关系
+  private fileStatMap: Map<string, BigIntStats> = new Map()
 
   private static instance: DocLibStatsManager
   public static getInstance(): DocLibStatsManager {
@@ -48,7 +50,7 @@ export class DocLibStatsManager {
    * @returns
    */
   public getMdsByPic(picName: string): PicToMdItem[] {
-    return this.picToMdMap.get(picName)?.mds || []
+    return this.p2m.get(picName)?.mds || []
   }
 
   /**
@@ -72,8 +74,10 @@ export class DocLibStatsManager {
       return
     }
 
-    this.mdToPicMap.clear()
-    this.picToMdMap.clear()
+    this.m2p.clear()
+    this.p2m.clear()
+    this.m2m.clear()
+    this.fileStatMap.clear()
 
     const temp: DocLibStats = {
       wordsByMonth: {},
@@ -91,6 +95,7 @@ export class DocLibStatsManager {
       this.stats!.pictureTotalSize = temp.pictureTotalSize
       this.stats!.wordsByMonth[nowYM()] = temp.articleTotalWords
       this.save(docLibPath)
+      this.fileStatMap.clear()
     })
   }
 
@@ -132,7 +137,6 @@ export class DocLibStatsManager {
       return
     }
     fs.writeFileSync(path.join(docLibPath, sysFolder, docLibStatsFile), JSON.stringify(this.stats, null, 2))
-    // console.log(this.stats)
   }
 
   /**
@@ -140,7 +144,7 @@ export class DocLibStatsManager {
    * @param stats
    * @returns
    */
-  public updateStatsNumber(stats: DocLibStatsNumber) {
+  public async updateStatsNumber(stats: DocLibStatsNumber) {
     if (this.stats === undefined) return
     this.stats.articleTotal = stats.articleTotal
     this.stats.pictureTotal = stats.pictureTotal
@@ -167,10 +171,10 @@ export class DocLibStatsManager {
       } else if (file.name.endsWith('.md')) {
         const mdPath = path.join(docLibPath, file.name)
         const mdContent = await fs.promises.readFile(mdPath, 'utf8')
-        const mdStat = await fs.promises.stat(mdPath, { bigint: true })
+        const mdStat = await this.stat(mdPath)
 
         // 提取图片和链接
-        this.extracImagesAndLinks(mdStat, mdContent)
+        await this.initExtracImagesAndLinks(mdStat, mdContent)
 
         // let start1 = new Date().getTime()
         let count = countWords(mdContent)
@@ -182,9 +186,9 @@ export class DocLibStatsManager {
         // console.log('=============================================================================================')
       } else {
         const fullPath = path.join(docLibPath, file.name)
-        const stats = await fs.promises.stat(fullPath)
+        const stats = await this.stat(fullPath)
         temp.pictureTotal += 1
-        temp.pictureTotalSize += stats.size
+        temp.pictureTotalSize += Number(stats.size)
       }
     }
     return temp
@@ -221,19 +225,17 @@ export class DocLibStatsManager {
    * @param mdStat 统计信息
    * @param mdContent 文章内容
    */
-  public extracImagesAndLinks(mdStat: BigIntStats, mdContent: string) {
-    const start = new Date().getTime()
-
+  private async initExtracImagesAndLinks(mdStat: BigIntStats, mdContent: string) {
     // ================= 提取链接 ================
     const markdownId = getUniqueId(mdStat)
     const links = extractImagesAndLinksFast(mdContent)
-    const linkMatch = links.filter((item): item is LinkMatch => item.type === 'link')
-    const pictureMatch = links.filter((item): item is ImageMatch => item.type === 'picture')
+    const linkMatch = links.filter((item): item is LinkMatch => item.type === 'LINK')
+    const pictureMatch = links.filter((item): item is ImageMatch => item.type === 'PICTURE')
 
-    // 清空该文章的图片映射关系
-    this.mdToPicMap.set(markdownId, { pics: [] })
+    this.m2p.set(markdownId, { pics: [] }) // 清空该文章的图片映射关系
+    this.m2m.set(markdownId, { links: [] }) // 清空该文章的链接映射关系
     this.initM2P_P2M(pictureMatch, markdownId)
-    // TODO: 更新文章和链接的关系
+    await this.initM2M(linkMatch, markdownId)
   }
 
   /**
@@ -249,16 +251,15 @@ export class DocLibStatsManager {
       // 一篇文章对应多个图片名称, 每次文章的映射重新赋值即可
       // ========================================================================
       // 文章ID: 图片[]
-      let mdToPic: MdToPic = this.mdToPicMap.get(markdownId)!
+      let mdToPic: MdToPic = this.m2p.get(markdownId)!
       mdToPic.pics.push({ picName: picName, picPath: pic.url, picMdRaw: pic.raw })
-      this.mdToPicMap.set(markdownId, mdToPic)
+      this.m2p.set(markdownId, mdToPic)
 
       // ========================================================================
       // 一张图片映射多个文章ID
       // ========================================================================
-
       // 图片名称: 文章[]
-      let picToMd: PicToMd | undefined = this.picToMdMap.get(picName)
+      let picToMd: PicToMd | undefined = this.p2m.get(picName)
       if (picToMd === undefined) {
         picToMd = { mds: [] }
       }
@@ -272,43 +273,89 @@ export class DocLibStatsManager {
         picToMd.mds.push({ id: markdownId })
       }
 
-      this.picToMdMap.set(picName, picToMd)
+      this.p2m.set(picName, picToMd)
     }
   }
 
   /**
-   * 更新处理文章和图片的相互对应关系, 通常用在文章正文被修改时
+   * 初始化文章和链接的关系
+   * @param links 该文章的链接
+   * @param markdownId 文章ID
+   */
+  private async initM2M(links: LinkMatch[], markdownId: string) {
+    for (const link of links) {
+      let m2m: MdToLink = this.m2m.get(markdownId)!
+      let fullPath: string
+      if (isHttp(link.url) || link.url.startsWith(this.docLibPath)) {
+        fullPath = link.url
+      } else {
+        fullPath = path.join(this.docLibPath, link.url)
+      }
+      const stats = await this.stat(fullPath)
+      m2m.links.push({ markdownId: getUniqueId(stats), linkFullPath: fullPath, linkUrl: link.url, linkRaw: link.raw })
+      this.m2m.set(markdownId, m2m)
+    }
+  }
+
+  /**
+   * 文章正文被修改时, 更新文章和图片的相互对应关系
    * 文章对应图片的关系与初始化时一样, 只有图片的逻辑不同
    *
    * @param pic 图片项
    * @param mdPath 文章的路径
    */
-  public updateM2P_P2M(mdStat: BigIntStats, mdContent: string) {
+  public updateM2P_P2M_M2M(mdStat: BigIntStats, mdContent: string) {
     const markdownId = getUniqueId(mdStat)
     const links = extractImagesAndLinksFast(mdContent)
-    const linkMatch = links.filter((item): item is LinkMatch => item.type === 'link')
-    const pictureMatch = links.filter((item): item is ImageMatch => item.type === 'picture')
-    // 清空该文章的图片映射关系
-    this.mdToPicMap.delete(markdownId)
+    const linkMatch = links.filter((item): item is LinkMatch => item.type === 'LINK')
+    const pictureMatch = links.filter((item): item is ImageMatch => item.type === 'PICTURE')
+
     // ========================================================================
-    // 一篇文章对应多个图片名称, 每次文章的映射重新赋值即可
+    // 一篇文章对应多个链接名称, 每次文章修改时重新赋值即可
+    // ========================================================================
+    this.m2m.delete(markdownId)
+    for (const link of linkMatch) {
+      let m2m: MdToLink = this.m2m.get(markdownId) || { links: [] }
+      let fullPath: string
+      if (isHttp(link.url) || link.url.startsWith(this.docLibPath)) {
+        fullPath = link.url
+      } else {
+        fullPath = path.join(this.docLibPath, link.url)
+      }
+      let stats: fs.BigIntStats
+      try {
+        stats = fs.statSync(fullPath, { bigint: true })
+      } catch (e) {
+        stats = createDefaultBigIntStats()
+      }
+      m2m.links.push({ markdownId: getUniqueId(stats), linkFullPath: fullPath, linkUrl: link.url, linkRaw: link.raw })
+      this.m2m.set(markdownId, m2m)
+    }
+
+    // 清空该文章的图片映射关系
+    this.m2p.delete(markdownId)
+    // ========================================================================
+    // 一篇文章对应多个图片名称, 每次文章修改时重新赋值即可
     // ========================================================================
     for (const pic of pictureMatch) {
       const picName = extractFileName(pic.url) // 从链接中获取图片的文件名
-      let mdToPic: MdToPic = this.mdToPicMap.get(markdownId) || { pics: [] }
-      mdToPic.pics.push({ picName: picName, picPath: pic.url, picMdRaw: pic.raw })
-      this.mdToPicMap.set(markdownId, mdToPic)
+      let m2p: MdToPic = this.m2p.get(markdownId) || { pics: [] }
+      m2p.pics.push({ picName: picName, picPath: pic.url, picMdRaw: pic.raw })
+      this.m2p.set(markdownId, m2p)
     }
 
     // ========================================================================
     // 一张图片映射多个文章ID
     // ========================================================================
-    // 1. 先删除没有关联该文章的图片中, 记录的文章ID
+    // 文章变更后, 关联的图片名称
     const newPicNames: string[] = pictureMatch.map((p) => extractFileName(p.url))
-    const oldPicNames: string[] = findKeysByMarkdownId(this.picToMdMap, markdownId)
+    // 文章修改前, 关联的图片名称
+    const oldPicNames: string[] = findPicNamesByMarkdownId(this.p2m, markdownId)
+    // 变更后, 如果删除了某个图片, 获取删除的图片名
     const deletePicNames = oldPicNames.filter((oldPicName) => !newPicNames.includes(oldPicName))
+    // 被删除的图片, 不再关联此文章
     for (const deletePicName of deletePicNames) {
-      const markdowns: PicToMd | undefined = this.picToMdMap.get(deletePicName)
+      const markdowns: PicToMd | undefined = this.p2m.get(deletePicName)
       if (!markdowns || !markdowns.mds || markdowns.mds.length === 0) {
         continue
       }
@@ -318,10 +365,10 @@ export class DocLibStatsManager {
       }
     }
 
-    // 2. 图片中增加该文章ID
+    // 新引用的图片, 添加到图片的关联文章中
     for (const picName of newPicNames) {
       // 图片名称: 文章[]
-      let picToMd: PicToMd | undefined = this.picToMdMap.get(picName)
+      let picToMd: PicToMd | undefined = this.p2m.get(picName)
       if (picToMd === undefined) {
         picToMd = { mds: [] }
       }
@@ -334,18 +381,70 @@ export class DocLibStatsManager {
       } else {
         picToMd.mds.push({ id: markdownId })
       }
-      this.picToMdMap.set(picName, picToMd)
+      this.p2m.set(picName, picToMd)
     }
   }
 
   /**
-   * TODO:
+   * 重命名, 移动时调用
+   *
+   * @param mdId 被重命名的文章ID
+   * @param oldMdPath 被重命名的文章旧路径
+   * @param newMdPath 被重命名的文章新路径
+   */
+  public updateMdName(mdId: string, oldMdPath: string, newMdPath: string): UpdateMdNameRes[] {
+    // 文章本身引用其他的路径不修改
+    // const links: MdToLink | undefined = this.m2m.get(mdId)
+    // 关联该文章的文章, 路径要进行修改
+    const relativeOldPath = path.relative(this.docLibPath, oldMdPath) // 旧路径的相对文档库绝对路径
+    const relativeNewPath = path.relative(this.docLibPath, newMdPath) // 新路径的相对文档库绝对路径
+
+    const results: UpdateMdNameRes[] = []
+    // 所有使用了旧路径的文章, 引用该文章的图片路径也要进行修改
+    this.m2m.forEach((links, _mdId) => {
+      if (links.links.length === 0) {
+        return
+      }
+
+      const result: UpdateMdNameRes = {
+        markdownId: _mdId,
+        markdowns: []
+      }
+
+      for (const link of links.links) {
+        // 如果被引用的文章路径等于本次修改的文章路径
+        if (link.markdownId === mdId) {
+          // 如果被引用的文章ID等于本次修改的文章ID
+          result.markdowns.push({
+            oldLinkRaw: link.linkRaw,
+            newLinkRaw: path.normalize(link.linkRaw).replaceAll(relativeOldPath, relativeNewPath)
+          })
+        }
+      }
+
+      if (result.markdowns.length > 0) {
+        results.push(result)
+      }
+    })
+    return results
+  }
+
+  /**
+   * 文章删除
+   * 清空文章 ID 为 key 的所有信息
+   * 删除文章完整路径被关联的信息
+   */
+  public deleteM2M() {}
+
+  /**
+   * 修改图片名称时调用
+   *
    * @param oldPicName
    * @param newPicName
    * @return 图片对应的文章ID
    */
   public updatePicName(oldPicName: string, newPicName: string): UpdatePicNameRes[] | undefined {
-    const markdowns: PicToMd | undefined = this.picToMdMap.get(oldPicName)
+    const markdowns: PicToMd | undefined = this.p2m.get(oldPicName)
     if (markdowns === undefined) {
       return
     }
@@ -353,13 +452,13 @@ export class DocLibStatsManager {
     const results: UpdatePicNameRes[] = []
 
     // 1. 将文章关联到新图片名称
-    this.picToMdMap.delete(oldPicName)
-    this.picToMdMap.set(newPicName, markdowns)
+    this.p2m.delete(oldPicName)
+    this.p2m.set(newPicName, markdowns)
 
     // 2. 修改文章中对应的图片名称和地址
     const markdownIds: string[] = markdowns.mds.map((md) => md.id)
     for (const markdownId of markdownIds) {
-      const mdToPic: MdToPic | undefined = this.mdToPicMap.get(markdownId)
+      const mdToPic: MdToPic | undefined = this.m2p.get(markdownId)
       if (mdToPic === undefined) {
         continue
       }
@@ -380,37 +479,68 @@ export class DocLibStatsManager {
   }
 
   /**
-   * 删除图片对应的文章信息, 发生在图片删除和图片重命名时
+   * 删除图片对应的文章信息, 只发生在图片删除时
+   *
+   * 由于图片有关联的文章时, 不允许删除, 所以删除图片时直接清除图片对应的文章信息即可
    */
   public deleteP2M(picName: string) {
-    this.picToMdMap.delete(picName)
+    this.p2m.delete(picName)
   }
 
   public log() {
     warnLog('\n\n\n\n===============================================================================================================================')
     warnLog('* 文章对应的图片 / 图片对应的文章')
     warnLog('===============================================================================================================================')
-    this.mdToPicMap.forEach((m2p, key) => {
-      console.log(`文档: [${key}] 包含 ${m2p.pics.length} 张图片:`)
-      m2p.pics.forEach((pic) => console.log(`  - 图片名称: ${pic.picName}  路径: ${pic.picPath}  结构: ${pic.picMdRaw}`))
+    warnLog('=====< 下列是文章对应的链接 >======================================================================================================')
+    this.m2m.forEach((m2m, key) => {
+      console.log(`文档: [${key}] 包含 ${m2m.links.length} 个链接:`)
+      m2m.links.forEach((link) => console.log(`  - ID: ${link.markdownId} 地址: ${link.linkFullPath}, 链接: ${link.linkUrl}  结构: ${link.linkRaw}`))
       traceLog('------------------------------------------------------------------------------')
     })
-    warnLog('=====< 下列是图片对应的文章 >======================================================================================================')
-    this.picToMdMap.forEach((p2m, key) => {
-      console.log(`图片: [${key}] 包含 ${p2m.mds.length} 个文章:`)
-      p2m.mds.forEach((md) => console.log(`  - 文章ID: ${md.id}`))
-      traceLog('------------------------------------------------------------------------------')
-    })
+    // warnLog('=====< 下列是文章对应的图片 >======================================================================================================')
+    // this.m2p.forEach((m2p, key) => {
+    //   console.log(`文档: [${key}] 包含 ${m2p.pics.length} 张图片:`)
+    //   m2p.pics.forEach((pic) => console.log(`  - 名称: ${pic.picName}  路径: ${pic.picPath}  结构: ${pic.picMdRaw}`))
+    //   traceLog('------------------------------------------------------------------------------')
+    // })
+    // warnLog('=====< 下列是图片对应的文章 >======================================================================================================')
+    // this.p2m.forEach((p2m, key) => {
+    //   console.log(`图片: [${key}] 包含 ${p2m.mds.length} 个文章:`)
+    //   p2m.mds.forEach((md) => console.log(`  - 文章: ${md.id}`))
+    //   traceLog('------------------------------------------------------------------------------')
+    // })
+  }
+
+  /**
+   * 获取文件信息, 并缓存
+   */
+  private async stat(path: string): Promise<fs.BigIntStats> {
+    if (this.fileStatMap.has(path)) {
+      return this.fileStatMap.get(path)!
+    }
+    try {
+      const stat = await fs.promises.stat(path, { bigint: true })
+      this.fileStatMap.set(path, stat)
+      return stat
+    } catch {
+      return new Promise((resolve) => resolve(createDefaultBigIntStats()))
+    }
   }
 }
 
-function findKeysByMarkdownId(map: Map<string, PicToMd>, markdownId: string): string[] {
+/**
+ * 获取 markdownId 使用的所有图片名
+ *
+ * @param map
+ * @param markdownId
+ * @returns
+ */
+function findPicNamesByMarkdownId(map: Map<string, PicToMd>, markdownId: string): string[] {
   const keys: string[] = []
-  for (const [key, value] of map.entries()) {
-    // 检查值对象中是否包含目标值（根据需求自定义检查逻辑）
+  for (const [picName, value] of map.entries()) {
     for (const p2cItem of value.mds) {
       if (p2cItem.id === markdownId) {
-        keys.push(key)
+        keys.push(picName)
       }
     }
   }
@@ -505,7 +635,7 @@ export const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkM
     const endIdx = i + 1 // 包含 ')'
 
     results.push({
-      type: isPicture ? 'picture' : 'link',
+      type: isPicture ? 'PICTURE' : 'LINK',
       raw: markdown.slice(startIdx, endIdx),
       start: startIdx,
       end: endIdx,
@@ -558,8 +688,12 @@ interface PicToMdItem { id: string; } //prettier-ignore
 interface MdToPic { pics: MdToPicItem[] } // prettier-ignore
 interface MdToPicItem { picName: string; picPath: string; picMdRaw: string; } // prettier-ignore
 
+/**
+ * markdown 和链接的对应结果, 一个 markdown 对应多个链接
+ * 链接的主键为拼接了文档库路径的 linkPath
+ */
 interface MdToLink { links: MdToLinkItem[] } // prettier-ignore
-interface MdToLinkItem { linkPath: string; linkRaw: string } // prettier-ignore
+interface MdToLinkItem { markdownId: string, linkFullPath: string; linkUrl: string ; linkRaw: string } // prettier-ignore
 
 /**
  * 基础匹配信息（包含公共字段）
@@ -577,7 +711,7 @@ interface BaseMatch {
  * 链接匹配结果
  */
 export interface LinkMatch extends BaseMatch {
-  type: 'link'
+  type: 'LINK'
   /** 链接显示文本（方括号内的内容） */
   text: string
   /** 链接 URL（圆括号内的第一个 token） */
@@ -590,7 +724,7 @@ export interface LinkMatch extends BaseMatch {
  * 图片匹配结果
  */
 export interface ImageMatch extends BaseMatch {
-  type: 'picture'
+  type: 'PICTURE'
   /** 图片 alt 文本 */
   alt: string
   /** 图片 URL */
@@ -606,4 +740,10 @@ export interface UpdatePicNameRes {
   markdownId: string
   pictures: { oldPicMdRaw: string; newPicMdRaw: string }[]
 }
+
+export interface UpdateMdNameRes {
+  markdownId: string
+  markdowns: { oldLinkRaw: string; newLinkRaw: string }[]
+}
+
 //#endreginn

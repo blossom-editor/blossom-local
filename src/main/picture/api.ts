@@ -2,7 +2,7 @@ import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
-import { IdMapping } from '../doclib/idMapping'
+import { FileItem, IdMapping } from '../doclib/idMapping'
 import { cutSuffix, errorLog, generateUniqueId, getUniqueId, imagesSuffix, isImage, normalizeMarkdownImage, traceLog } from '../utils'
 import { picSuffix, timeToYMD } from '../date'
 import { isSysFile } from '../doclib/docLibManager'
@@ -89,7 +89,6 @@ const selectPicAndMoveDialog = async (req: SelectPicAndMoveReq): Promise<R<Selec
   })
 
   if (choiseFile.canceled) {
-    console.log('选中的文件:', choiseFile.filePaths)
     return R.ok(null)
   }
   const res = moveFile(choiseFile.filePaths[0], targetFolder)
@@ -343,14 +342,20 @@ const initPictureInfoByName = () => {
  */
 const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
   try {
-    if (fs.existsSync(req.newPath)) return R.fail('文件名重复', '已存在相同名称的文件')
-    if (!fs.existsSync(req.oldPath)) return R.fail('文件不存在', '被重命名的文件不存在')
+    const doc: FileItem | undefined = idMapping.get(req.id)
+    if (doc === undefined) return R.fail('文件不存在', '被重命名的文件不存在')
 
-    const oldName = path.basename(req.oldPath)
-    const newName = path.basename(req.newPath)
+    const oldPath = doc.path
+    const newPath = path.join(path.dirname(oldPath), req.newName)
 
-    const oldFolderPath = path.dirname(req.oldPath)
-    const newFolderPath = path.dirname(req.newPath)
+    if (!fs.existsSync(oldPath)) return R.fail('文件不存在', '被重命名的文件不存在')
+    if (fs.existsSync(newPath)) return R.fail('文件名重复', '已存在相同名称的文件')
+
+    const oldName = path.basename(oldPath)
+    const newName = path.basename(newPath)
+
+    const oldFolderPath = path.dirname(oldPath)
+    const newFolderPath = path.dirname(newPath)
 
     // 固定的业务逻辑校验, 重命名文件时不允许移动路径
     if (oldFolderPath !== newFolderPath) return R.fail('文件路径错误', '重命名不允许修改路径')
@@ -359,14 +364,14 @@ const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
       return R.fail('文件名重复', '文档库中不允许图片名称重复')
     }
 
-    await fs.promises.rename(req.oldPath, req.newPath)
+    await fs.promises.rename(oldPath, newPath)
 
     /*
      * 重命名图片时, 修改文章正文中的图片链接
      */
-    const result: UpdatePicNameRes[] | undefined = docLibStatsManager.updatePicName(oldName, newName)
-    if (result) {
-      for (const markdown of result) {
+    const updateDocs: UpdatePicNameRes[] | undefined = docLibStatsManager.updatePicName(oldName, newName)
+    if (updateDocs) {
+      for (const markdown of updateDocs) {
         const article = idMapping.get(markdown.markdownId)
         if (!article) {
           continue
@@ -385,7 +390,7 @@ const renamePicture = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
           await saveArticleContent({ id: article.id, content: newContent })
         }
       }
-      const markdownIds = result.map((item) => item.markdownId)
+      const markdownIds = updateDocs.map((item) => item.markdownId)
       mainWindow.webContents.send('replace-content-article-id', markdownIds)
     }
 

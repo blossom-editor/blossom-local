@@ -21,7 +21,6 @@ export class ArticleExtensionManager {
   public async init(docLibPath: string) {
     const rawString = await fs.promises.readFile(path.join(docLibPath, sysFolder, articleExtensionFile), 'utf-8')
     this.articles = JSON.parse(rawString) as ArticleExtension // 类型断言
-    console.log('文章扩展信息初始化完成', this.articles)
   }
 
   /**
@@ -51,7 +50,6 @@ export class ArticleExtensionManager {
       this.articles[id] = { words: { [ym]: newWords } }
     }
 
-    console.log(this.articles)
     fs.writeFileSync(path.join(docLibPath, sysFolder, articleExtensionFile), JSON.stringify(this.articles, null, 2))
   }
 

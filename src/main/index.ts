@@ -163,7 +163,7 @@ function createMainWindow(): void {
   initOnUtil()
   // 注册各类业务接口
   initDocLibApi()
-  initArticleApi()
+  initArticleApi(mainWindow)
   initPictureApi(mainWindow)
   // 注册全局快捷键 printScreen:截屏快捷键
   new ShortcutRegistrant(mainWindow).printScreen()
@@ -358,25 +358,19 @@ const initOnMainWindow = (mainWindow: BrowserWindow): void => {
    * @param webContents
    */
   mainWindow.webContents.session.on('will-download', (_event, item, _webContents) => {
-    console.log('准备下载文件')
     // 无参数时弹出文件选择框
     item.setSavePath('')
     item.on('updated', (_event, state) => {
       if (state === 'interrupted') {
-        console.log('Download is interrupted but can be resumed')
       } else if (state === 'progressing') {
         if (item.isPaused()) {
-          console.log('Download is paused')
         } else {
-          console.log(`Received bytes: ${item.getReceivedBytes()}`)
         }
       }
     })
     item.once('done', (_event, state) => {
       if (state === 'completed') {
-        console.log('Download successfully')
       } else {
-        console.log(`Download failed: ${state}`)
       }
     })
   })

@@ -114,7 +114,7 @@
         </div>
         <div v-if="curDoc.type === 'FOLDER'" @click="addFolderToDoc()"><span class="iconbl bl-folderadd-line"></span>新增文件夹</div>
         <div v-if="curDoc.type === 'FOLDER'" @click="addArticleToDoc()"><span class="iconbl bl-fileadd-line"></span>新增笔记</div>
-        <div v-if="curDoc.type === 'ARTICLE'" @click=""><span class="iconbl bl-correlation-line"></span>复制双链引用</div>
+        <div v-if="curDoc.type === 'ARTICLE'" @click="createUrlLink()"><span class="iconbl bl-correlation-line"></span>复制双链引用</div>
         <!-- <div v-if="curDoc.type === 'ARTICLE'" @click="star(1)"><span class="iconbl bl-star-line"></span>收藏{{ curDocType }}</div>
         <div v-if="curDoc.type === 'ARTICLE'" @click="star(0)"><span class="iconbl bl-star-line"></span>取消收藏{{ curDocType }}</div> -->
 
@@ -184,16 +184,13 @@ import ArticleTreeWorkbench from './ArticleTreeWorkbench.vue'
 import { openFileLocation } from '@renderer/api/docLib'
 
 const route = useRoute()
-const user = useUserStore()
 const docLibStore = useDocLibStore()
 const configStore = useConfigStore()
 const { viewStyle } = useConfigStore()
 
 useLifecycle(
-  () => {
-    getDocTree(getRouteQueryParams)
-  },
-  () => getRouteQueryParams()
+  () => getDocTree(getRouteQueryParams),
+  () => getDocTree(getRouteQueryParams)
 )
 onBeforeUnmount(() => {
   document.body.removeEventListener('click', closeTreeDocsMenuShow)
@@ -290,6 +287,9 @@ const getDocTree = (callback?: () => void) => {
  * @param event 点击事件
  */
 const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: MouseEvent) => {
+  if (tree.id === notAllowDragId) {
+    return
+  }
   closeTreeDocsMenuShow(event)
   setDocTreeCurrentKey(
     {
@@ -395,7 +395,7 @@ const filterNode = (value: string, data: DocTree) => {
 
 /**
  * 判断是否允许被拖拽
- * 1. 正在重命名的节点不允许被拖拽
+ * 正在重命名的节点不允许被拖拽
  *
  * @param node 拖动的节点
  * @return boolean 节点是否允许被拖动
@@ -495,28 +495,22 @@ const closeParentIfNoChild = (pid: string) => {}
  * 拖拽后处理各个节点排序
  */
 const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: DragEvents) => {
-  const req: MoveFileReq = { oldPath: drag.data.path, newPath: '' }
-
-  if (dropType === 'inner') {
-    if (drag.data.type === 'ARTICLE') {
-      req.newPath = pathJoin(enter.data.path, drag.data.name)
-    } else if (drag.data.type === 'FOLDER') {
-      req.newPath = pathJoin(enter.data.path, drag.data.name)
-    }
-  } else if (dropType === 'before' || dropType === 'after') {
-    if (drag.data.type === 'ARTICLE') {
-      req.newPath = pathJoin(getParentDirPath(enter.data.path), drag.data.name)
-    } else if (drag.data.type === 'FOLDER') {
-      req.newPath = pathJoin(getParentDirPath(enter.data.path), drag.data.name)
-    }
+  const req: MoveFileReq = {
+    id: drag.data.id,
+    targetId: enter.data.id,
+    dropType: dropType
   }
-  if (isNull(req)) {
+  if (dropType === 'none') {
     getDocTree()
     return
   }
-  moveFileApi(req!).finally(() => {
-    getDocTree()
-  })
+  moveFileApi(req!)
+    .then((resp) => {
+      docTreeData.value = resp.data!
+    })
+    .catch(() => {
+      getDocTree()
+    })
 }
 
 const handleShowChildFileCount = () => {
@@ -540,8 +534,8 @@ const curDocType = computed(() => {
 
 /**
  * 显示右键菜单
- * @param doc 文档
  * @param event 事件
+ * @param doc 右键点击的文档
  */
 const handleClickRightMenu = (event: MouseEvent, doc: DocTree) => {
   event.preventDefault()
@@ -565,8 +559,6 @@ const handleClickRightMenu = (event: MouseEvent, doc: DocTree) => {
 
 /**
  * 关闭右键菜单, 有子菜单时, 点击菜单不会关闭
- *
- * @param event 点击事件
  */
 const closeTreeDocsMenuShow = (event?: MouseEvent) => {
   if (event && event?.target) {
@@ -635,8 +627,9 @@ const changeArticleNameInput = (data: DocTree): boolean => {
  * 重命名文章失去焦点
  */
 const blurArticleNameInput = (doc: DocTree) => {
-  const params = { oldPath: doc.path, newPath: '' }
+  const req: RenameFileReq = { id: doc.id, newName: '' }
 
+  // 文件名不合法时, 刷新列表汇
   if (!changeArticleNameInput(doc)) {
     getDocTree()
     notAllowDragId = ''
@@ -644,40 +637,36 @@ const blurArticleNameInput = (doc: DocTree) => {
     return
   }
 
-  const newName = doc.formatName
-  const parentPath = doc.folderPath
-
   function resetUpdateState() {
     doc.updn = false
     notAllowDragId = ''
   }
 
-  params.newPath = pathJoin(parentPath, newName + (doc.type === 'ARTICLE' ? '.md' : ''))
-  if (params.oldPath === params.newPath) {
+  req.newName = doc.formatName + (doc.type === 'ARTICLE' ? '.md' : '')
+
+  // 新旧文件名称相同
+  if (req.newName === doc.name) {
     resetUpdateState()
     return
   }
 
-  if (doc.type === 'ARTICLE') {
-    articleUpdNameApi(params).then((_resp) => {
+  articleUpdNameApi(req)
+    .then((resp) => {
+      resetUpdateState()
+      docTreeData.value = resp.data!
+    })
+    .catch(() => {
       resetUpdateState()
       getDocTree()
     })
-  } else {
-    folderUpdNameApi(params).then((_resp) => {
-      resetUpdateState()
-      getDocTree()
-    })
-  }
 }
 
 /**
  * 复制双链引用
- * @param name : 文章名称
- * @param id   : 文章ID
+ * @param path : 文章的路径
  */
-const createUrlLink = (name: string, id: string) => {
-  let url = `[${name}](${user.userParams.WEB_ARTICLE_URL + id} "${grammar}${id}${grammar}")`
+const createUrlLink = () => {
+  let url = `[${curDoc.value.name}](${curDoc.value.path.replace(docLibStore.cur!.path, '')} )`
   writeText(url)
 }
 
