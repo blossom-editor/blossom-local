@@ -28,7 +28,7 @@ const initCurDocLib = (): DocLibItem => {
  */
 export const useDocLibStore = defineStore('docLibStore', {
   state: (): LibItems => ({
-    items: Local.get(DOC_LIB_LIST_KEY) || [],
+    items: (Local.get(DOC_LIB_LIST_KEY) as DocLibItem[]) || ([] as DocLibItem[]),
     cur: {
       ...{
         name: '未选择文档库',
@@ -56,7 +56,7 @@ export const useDocLibStore = defineStore('docLibStore', {
   },
   actions: {
     setCurDoc(docItem: DocLibItem) {
-      this.cur = docItem
+      this.cur = { ...docItem }
       Local.set(DOC_LIB_CUR_KEY, docItem)
     },
     /**
@@ -70,8 +70,8 @@ export const useDocLibStore = defineStore('docLibStore', {
         return
       }
       let has = false
-      for (const item in this.items) {
-        const doc = this.items[item]
+      for (const index in this.items) {
+        const doc = this.items[index]
         if (doc.path === docItem.path) {
           doc.name = docItem.name
           doc.icon = docItem.icon
@@ -139,10 +139,13 @@ export const useDocLibStore = defineStore('docLibStore', {
       if (isNull(docItem) || isNull(docItem.name) || isNull(docItem.path)) {
         return
       }
+
+      docItem.isTop = !docItem.isTop
+
       for (const i in this.items) {
         const doc = this.items[i]
-        if (doc.path === docItem.path) {
-          doc.isTop = !doc.isTop
+        if (docItem.path === doc.path) {
+          this.items[i] = { ...docItem }
         }
       }
       Local.set(DOC_LIB_LIST_KEY, this.items)

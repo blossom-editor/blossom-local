@@ -312,6 +312,11 @@ export const checkDocLibConfig = async (base: Base) => {
   if (base === undefined || base === null || base.docLibPath === undefined || base.docLibPath === null || base.docLibPath === '') {
     return R.fail('DOCLIB_PATH_NOT_EXIST', '文档库不存在')
   }
+
+  if (!fs.existsSync(base.docLibPath)) {
+    return R.fail('DOCLIB_PATH_NOT_EXIST', `文档库不存在: ${base.docLibPath}`)
+  }
+
   const systemPath = path.join(base.docLibPath, sysFolder)
   // 创建创建文件夹
   await fs.promises.mkdir(systemPath, { recursive: true })

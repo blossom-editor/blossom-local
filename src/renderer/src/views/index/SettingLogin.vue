@@ -1,10 +1,10 @@
 <template>
   <div class="doclib-root">
     <div class="doclib-container">
-      <div v-for="docLib in sortDocLib(docLibStore.items)" :key="docLib.path" class="doclib-item" @click="toEditor(docLib)">
+      <div v-for="docLib in sortDocLib(items)" :key="docLib.path" class="doclib-item" @click="toEditor(docLib)">
         <img :class="['pin', docLib.isTop ? '' : 'pin-hidden']" src="@renderer/assets/imgs/note/pin.png" />
         <div class="avatar-wrapper">
-          <img v-if="docLib.icon != ''" class="avatar" :src="docLib.icon + '&blossom_pic_ignore=true'" />
+          <img v-if="docLib.icon != ''" class="avatar" :src="docLib.icon + '&blossom_pic_ignore=true'" @error="onErrorImg" />
           <img v-else class="avatar" src="@renderer/assets/imgs/default_user_avatar.jpg" style="scale: 110%" />
         </div>
         <el-tooltip :content="docLib.name" transition="none" effect="light" placement="top" :show-after="300" :hide-after="0">
@@ -49,13 +49,17 @@
 
 <script setup lang="ts">
 import router from '@renderer/router'
+import { storeToRefs } from 'pinia'
 import { useDocLibStore } from '@renderer/stores/docLib'
 import { isNotBlank, isNotNull, isNull } from '@renderer/assets/utils/obj'
 import { checkDocLibConfigApi, openFileLocation, selectDocLibFolderDialogApi, selectDocLibIconDialogApi } from '@renderer/api/docLib'
 import { ElMessageBox } from 'element-plus'
 import { picCacheRefresh, picCacheWrapper, protocolWrapper } from '../picture/scripts/picture'
+import Notify from '@renderer/scripts/notify'
+import errorImg from '@renderer/assets/imgs/img_error.png'
 
 const docLibStore = useDocLibStore()
+const { items } = storeToRefs(docLibStore)
 
 const sortDocLib = (list: DocLibItem[]) => {
   return list.sort((a, b) => {
@@ -92,7 +96,7 @@ const selectIcon = (docLib: DocLibItem) => {
 const delDocLibItem = (event: MouseEvent, docLib: DocLibItem) => {
   ElMessageBox.confirm(
     `<strong>删除文档库不会删除源文件</strong><br/>
-    是否继续删除《${docLib.name}》？<br/>
+    是否删除文档库《${docLib.name}》？<br/>
     <div style="
     width: 350px;
     border-radius: 5px;
@@ -125,12 +129,28 @@ const toEditor = (docLib: DocLibItem) => {
     if (resp.ok) {
       docLibStore.setCurDoc(docLib)
       router.push('/articleIndex')
+    } else {
+      Notify.error(resp.msg, '打开文档库失败')
     }
   })
 }
 
 const stopPropagation = (event: MouseEvent) => {
   event.stopPropagation()
+}
+
+const onErrorImg = (a: Event) => {
+  let imgEle = a.target as HTMLImageElement
+  if (imgEle) {
+    imgEle.src = errorImg
+    imgEle.classList.add('img-error')
+    imgEle.style.width = '62px'
+    imgEle.style.height = 'auto'
+    if (imgEle.parentNode) {
+      let imgWrapper: HTMLElement = imgEle.parentNode as HTMLElement
+      imgWrapper.style.backgroundColor = 'var(--bl-bg-color)'
+    }
+  }
 }
 </script>
 
