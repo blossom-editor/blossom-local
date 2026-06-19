@@ -50,11 +50,10 @@
 <script setup lang="ts">
 import router from '@renderer/router'
 import { useDocLibStore } from '@renderer/stores/docLib'
-import { selectDocLibFolderDialog, selectFileAndMoveDialog } from '@renderer/api/blossom'
 import { isNotBlank, isNotNull, isNull } from '@renderer/assets/utils/obj'
-import { openFileLocation } from '@renderer/api/docLib'
+import { checkDocLibConfig, openFileLocation, selectDocLibFolderDialog, selectFileAndMoveDialog } from '@renderer/api/docLib'
 import { ElMessageBox } from 'element-plus'
-import { picCacheWrapper, protocolWrapper } from '../picture/scripts/picture'
+import { picCacheRefresh, picCacheWrapper, protocolWrapper } from '../picture/scripts/picture'
 
 const docLibStore = useDocLibStore()
 
@@ -89,6 +88,7 @@ const selectIcon = (docLib: DocLibItem) => {
     if (isNull(resp.data)) {
       return
     }
+    picCacheRefresh()
     docLib.icon = protocolWrapper(picCacheWrapper(resp.data?.filePath as string))
     docLibStore.updItem(docLib)
   })
@@ -125,7 +125,9 @@ const toTop = (docLib: DocLibItem) => {
 }
 
 const toEditor = (docLib: DocLibItem) => {
+  checkDocLibConfig()
   docLibStore.setCurDoc(docLib)
+
   router.push('/articleIndex')
 }
 

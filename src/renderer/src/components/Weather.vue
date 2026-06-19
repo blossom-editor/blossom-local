@@ -1,5 +1,5 @@
 <template>
-  <div v-if="userStore.sysParams.HEFENG_ENABLED === '0'" class="weather-root">
+  <div v-if="false" class="weather-root">
     <div class="placeholder">
       <div class="remark">未启用天气</div>
     </div>
@@ -91,7 +91,6 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useUserStore } from '@renderer/stores/user'
 import { getAll, refreshApi } from '@renderer/api/weather'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
@@ -106,7 +105,6 @@ useLifecycle(
   }
 )
 
-const userStore = useUserStore()
 
 const getImgUrl = (name: string) => {
   let iconValue = replacePrefix(name)
@@ -142,7 +140,7 @@ const weather = ref({
 })
 
 const getWeather = () => {
-  getAll({ location: userStore.userinfo.location }).then((resp) => {
+  getAll({ location: 'userStore.userinfo.location' }).then((resp) => {
     if (resp.data.now) {
       if (resp.data.now.iconValue === '#wt-qing') {
         let nowHours = new Date().getHours()

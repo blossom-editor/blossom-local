@@ -1,8 +1,5 @@
-import { defaultRequest as rq } from './request'
-import type { R } from './request'
-
-export const getAll = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/weather', { params })
+export const getAll = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 /**
@@ -11,5 +8,5 @@ export const getAll = (params?: object): Promise<R<any>> => {
  * @returns
  */
 export const refreshApi = (): Promise<R<any>> => {
-  return rq.post<R<any>>('/thirdparty/scheduled/weather')
+  return new Promise(() => {})
 }

@@ -11,6 +11,9 @@ export interface LibItems {
   cur?: DocLibItem
 }
 
+/**
+ * @deprecated
+ */
 const initCurDocLib = (): DocLibItem => {
   // 从浏览器 storage 中获取保存的最近一次文档库, 作为默认文档库
   const cur = Local.get(DOC_LIB_CUR_KEY)
@@ -34,7 +37,7 @@ export const useDocLibStore = defineStore('docLibStore', {
         desc: '',
         isTop: false,
         creTime: ''
-      },
+      }
       // ...initCurDocLib()
     }
   }),
@@ -55,7 +58,6 @@ export const useDocLibStore = defineStore('docLibStore', {
     setCurDoc(docItem: DocLibItem) {
       this.cur = docItem
       Local.set(DOC_LIB_CUR_KEY, docItem)
-      checkDocLibConfig()
     },
     /**
      * 添加一个文档库到 store 中, 并设为当前文档库.

@@ -32,7 +32,6 @@ import { ref, nextTick } from 'vue'
 import { useConfigStore } from '@renderer/stores/config'
 import type { ViewStyle } from '@renderer/stores/config'
 import { articleListApi } from '@renderer/api/blossom'
-import { useUserStore } from '@renderer/stores/user'
 import { openExtenal } from '@renderer/assets/utils/electron'
 import { isEmpty } from 'lodash'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
@@ -44,13 +43,14 @@ useLifecycle(
   () => getArticleListApi()
 )
 
-const userStore = useUserStore()
 const articles = ref<any>([])
 
 const getArticleListApi = () => {
   articles.value = []
   articleListApi({ starStatus: 1 }).then((resp) => {
-    articles.value = resp.data
+    if (resp) {
+      articles.value = resp.data
+    }
   })
 }
 
@@ -60,7 +60,7 @@ const toRoute = (articleId: number) => {
 
 const toWebOrRoute = (article: any) => {
   if (article.openStatus === 1) {
-    openExtenal(userStore.userinfo.userParams.WEB_ARTICLE_URL + article.id)
+    openExtenal(article.id)
   } else {
     toRoute(article.id)
   }

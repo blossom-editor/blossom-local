@@ -26,12 +26,8 @@
 </template>
 
 <script setup lang="ts">
-import { inject } from 'vue'
 // import { UploadRawFile } from 'element-plus'
 // import { uploadFileApiUrl } from '@renderer/api/blossom'
-import { useUserStore } from '@renderer/stores/user'
-import { useServerStore } from '@renderer/stores/server'
-import { provideKeyDocInfo } from '@renderer/views/doc/doc'
 // import { beforeUpload, onUploadSeccess, onError, uploadDate } from '@renderer/views/picture/scripts/picture'
 
 const porps = defineProps({
@@ -41,12 +37,7 @@ const porps = defineProps({
   }
 })
 
-// 当前菜单中选择的文档
-const curFolder = inject(provideKeyDocInfo)
-
 //#region ----------------------------------------< panin store >--------------------------------------
-const userStore = useUserStore()
-const serverStore = useServerStore()
 //#endregion
 </script>
 

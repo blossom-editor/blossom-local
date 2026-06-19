@@ -1,26 +1,23 @@
-import { defaultRequest as rq } from './request'
-import type { R } from './request'
-
-export const planListDayApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/plan/list/day', { params })
+export const planListDayApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
-export const planListDailyApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/plan/list/daily', { params })
+export const planListDailyApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
-export const planAddDailyApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/plan/add/daily', data)
+export const planAddDailyApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
-export const planAddDayApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/plan/add/day', data)
+export const planAddDayApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
-export const planDelApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/plan/del', data)
+export const planDelApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
-export const planUpdDayApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/plan/upd/day', data)
+export const planUpdDayApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }

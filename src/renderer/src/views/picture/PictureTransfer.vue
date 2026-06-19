@@ -42,12 +42,12 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import { docTreeApi } from '@renderer/api/blossom'
 import { isNotBlank, isNull } from '@renderer/assets/utils/obj'
 import { useDocLibStore } from '@renderer/stores/docLib'
 import { buildDocLibRootFolder } from '../doc/doc-tree'
 import { pictureMoveBatchApi } from '@renderer/api/picture'
 import Notify from '@renderer/scripts/notify'
+import { docTreeApi } from '@renderer/api/docLib'
 
 const defaultProps = { children: 'children', label: 'formatName' }
 const docLibStore = useDocLibStore()

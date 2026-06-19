@@ -43,7 +43,6 @@ import { useRoute } from 'vue-router'
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useDark } from '@vueuse/core'
 import { articleRefListApi } from '@renderer/api/blossom'
-import { useUserStore } from '@renderer/stores/user'
 
 // echarts
 import * as echarts from 'echarts/core'
@@ -59,7 +58,6 @@ echarts.use([TitleComponent, TooltipComponent, LegendComponent, GraphChart, Canv
 const isDark = useDark()
 
 const route = useRoute()
-const userStore = useUserStore()
 
 // -------------------- data
 const showOutsideName = ref(false)
@@ -191,8 +189,8 @@ const renderChart = () => {
         if (!params.data.inner) {
           url = `<div>地址: <a target="_blank" href="${params.data.artUrl}">${params.data.artUrl}</a></div>`
         } else {
-          url = `<div>地址: <a target="_blank" href="${userStore.userinfo.userParams.WEB_ARTICLE_URL + params.data.artId}">${
-            userStore.userinfo.userParams.WEB_ARTICLE_URL + params.data.artId
+          url = `<div>地址: <a target="_blank" href="${'userStore.userinfo.userParams.WEB_ARTICLE_URL' + params.data.artId}">${
+            'userStore.userinfo.userParams.WEB_ARTICLE_URL' + params.data.artId
           }</a></div>`
         }
         let type = ''

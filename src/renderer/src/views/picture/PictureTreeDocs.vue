@@ -137,7 +137,6 @@ import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 import Node from 'element-plus/es/components/tree/src/model/node'
 // ts
 import { pictureDeleteBatchApi, pictureInfoApi, pictureMoveBatchApi, pictureRenameApi, selectMultiPicAndMoveDialog } from '@renderer/api/picture'
-import { docTreeApi } from '@renderer/api/blossom'
 import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
 import { isShowImg, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { DOC_LIB_ROOT_FOLDER_ID, getChildFileCountColor } from '@renderer/views/doc/doc-tree'
@@ -150,7 +149,7 @@ import { getFilePrefix, inValidateFileName, platformText } from '@renderer/asset
 // components
 import Notify from '@renderer/scripts/notify'
 import Workbench from './PictureTreeWorkbench.vue'
-import { openFileLocation } from '@renderer/api/docLib'
+import { docTreeApi, openFileLocation } from '@renderer/api/docLib'
 import { copyMarkdownUrl, copyUrl, pictureUseNotify } from './scripts/picture.js'
 
 const docLibStore = useDocLibStore()

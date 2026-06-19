@@ -3,7 +3,7 @@
     <img
       v-if="docLibStore.cur && docLibStore.cur?.icon != ''"
       :class="['avatar-img', viewStyle.isShowAsideSimple ? 'simple' : '']"
-      :src="docLibStore.cur?.icon" />
+      :src="docLibStore.cur?.icon + '&blossom_pic_ignore=true'" />
     <img v-else :class="['avatar-img', viewStyle.isShowAsideSimple ? 'simple' : '']" src="@renderer/assets/imgs/default_user_avatar.jpg" />
   </div>
 </template>

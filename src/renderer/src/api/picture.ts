@@ -1,17 +1,21 @@
 import { invoke } from './ipc-wrapper'
 
 /**
- * 通用文件选择框, 用于选择图片等
+ * 选择文件并移动到指定位置
  */
 export const selectPicAndMoveDialog = (req: SelectPicAndMoveReq): Promise<R<SelectFileAndMoveRes>> => {
   return invoke('select-pic-and-move-dialog', req)
 }
+
+/**
+ * 选择多个文件并移动到指定位置
+ */
 export const selectMultiPicAndMoveDialog = (req: SelectPicAndMoveReq): Promise<R<SelectFileAndMoveRes>> => {
   return invoke('select-multi-pic-and-move-dialog', req)
 }
 
 /**
- * 通用文件选择框, 用于选择图片等
+ * 通过文件缓冲保存图片
  */
 export const fileBuffSave = (req: FileBuffSaveReq): Promise<R<SelectFileAndMoveRes>> => {
   return invoke('file-buffer-save', req)
@@ -47,8 +51,6 @@ export const pictureDeleteBatchApi = (req: PictureDeleteBatchReq): Promise<R<Pic
 
 /**
  * 移动图片
- * @param params {id:id}
- * @returns
  */
 export const pictureMoveBatchApi = (req: PictureMoveBatchReq): Promise<R<DocTree[]>> => {
   return invoke('picture-move-batch', req)

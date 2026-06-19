@@ -165,11 +165,10 @@
 // vue
 import { ref, provide, onMounted, onBeforeUnmount, onActivated, onDeactivated, defineAsyncComponent, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
-import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
 import { articleInfoApi, saveArticleContentApi } from '@renderer/api/blossom'
 // utils
-import { isBlank, isNotNull, isNull } from '@renderer/assets/utils/obj'
+import { isBlank, isNull } from '@renderer/assets/utils/obj'
 import { sleep, isElectron, isBase64Img, isHttp } from '@renderer/assets/utils/util'
 import { openExtenal, writeText, readText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 import { formartMarkdownTable } from '@renderer/assets/utils/format-table'
@@ -234,17 +233,8 @@ onDeactivated(() => {
   unbindKeys()
 })
 
-const userStore = useUserStore()
 const { editorStyle } = useConfigStore()
 
-watch(
-  () => userStore.userinfo.id,
-  (_newId: string, _oldId: string) => {
-    curDoc.value = undefined
-    curArticle.value = undefined
-    setNewState('')
-  }
-)
 
 //#endregion
 

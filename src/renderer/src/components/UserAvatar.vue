@@ -4,7 +4,7 @@
       v-if="docLibStore.cur?.icon != ''"
       ref="AcatorInnerRef"
       :class="['avatar-img', viewStyle.isGlobalShadow ? 'img-shadow' : '']"
-      :src="docLibStore.cur?.icon"
+      :src="docLibStore.cur?.icon + '&blossom_pic_ignore=true'"
       :style="innerStyle" />
     <img
       v-else
@@ -24,9 +24,7 @@ const configStore = useConfigStore()
 const docLibStore = useDocLibStore()
 const { viewStyle } = configStore
 
-onMounted(() => {
-  mouse.setOrigin(AvatorWrapperRef.value)
-})
+onMounted(() => mouse.setOrigin(AvatorWrapperRef.value))
 
 const innerStyle = ref<any>({})
 const AvatorWrapperRef = ref()

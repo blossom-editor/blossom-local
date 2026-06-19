@@ -1,7 +1,7 @@
 import { protocol, net } from 'electron'
 import { CurDocLibManager } from './doclib/curDocLibManager'
 import { PicItem, PicNameMapping } from './doclib/picNameMapping'
-import { extractFileName } from './utils'
+import { extractFileName, traceLog } from './utils'
 
 const curDocLibManager = CurDocLibManager.getInstance()
 const picNameMapping = PicNameMapping.getInstance()
@@ -60,6 +60,9 @@ export const initProtocol = () => {
 
 const fetch = (_request: Request, url: string): Promise<GlobalResponse> => {
   try {
+    // traceLog(_request.url)
+    // traceLog(url)
+    // traceLog('===============================================================================')
     return net.fetch(url)
   } catch (error) {
     throw error

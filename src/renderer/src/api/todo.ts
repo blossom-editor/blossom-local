@@ -1,18 +1,17 @@
-import { defaultRequest as rq } from './request'
-import type { R } from './request'
+
 
 /**
  * 任务统计
  */
-export const taskStatApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/todo/task/stat', { params })
+export const taskStatApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 /**
  * 事项统计
  */
-export const todoStatApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/todo/stat', { params })
+export const todoStatApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 //#region ---------------------------------------- todo ----------------------------------------
@@ -20,50 +19,50 @@ export const todoStatApi = (params?: object): Promise<R<any>> => {
 /**
  * 事项列表
  */
-export const todosApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/todo/list', { params })
+export const todosApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 /**
  * 事项列表
  */
-export const countTaskApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/todo/task/count', { params })
+export const countTaskApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 /**
  * 新增阶段性事项
  */
 export const addPhasedApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/add/phased', data)
+  return new Promise(() => {})
 }
 
 /**
  * 修改阶段性事项的名称
  */
 export const updTodoNameApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/upd/name', data)
+  return new Promise(() => {})
 }
 
 /**
  * 完成阶段性事项
  */
 export const openTodoApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/open', data)
+  return new Promise(() => {})
 }
 
 /**
  * 完成阶段性事项
  */
 export const completedTodoApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/completed', data)
+  return new Promise(() => {})
 }
 
 /**
  * 完成阶段性事项
  */
-export const exportTodoApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/todo/export', { params })
+export const exportTodoApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 //#endregion
@@ -72,67 +71,67 @@ export const exportTodoApi = (params?: object): Promise<R<any>> => {
 /**
  * 某天或某个事项的任务列表
  */
-export const tasksApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/todo/task/list', { params })
+export const tasksApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 /**
  * 某天或某个事项的任务列表
  */
-export const taskInfoApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/todo/task/info', { params })
+export const taskInfoApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 /**
  * 新增任务
  */
 export const addTaskApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/task/add', data)
+  return new Promise(() => {})
 }
 
 /**
  * 修改任务的主要信息
  */
 export const updTaskApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/task/upd', data)
+  return new Promise(() => {})
 }
 
 /**
  * 移动到 waiting
  */
 export const toWaitingApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/task/waiting', data)
+  return new Promise(() => {})
 }
 
 /**
  * 移动到 processing
  */
 export const toProcessingApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/task/processing', data)
+  return new Promise(() => {})
 }
 
 /**
  * 移动到 completed
  */
 export const toCompletedApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/task/completed', data)
+  return new Promise(() => {})
 }
 
 /**
  * 删除节点
  */
 export const delTaskApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/task/del', data)
+  return new Promise(() => {})
 }
 
 /**
  * 标签集合
  */
-export const taskTagsApi = (params?: object): Promise<R<any>> => {
-  return rq.get<R<any>>('/todo/task/tags', { params })
+export const taskTagsApi = (req?: object): Promise<R<any>> => {
+  return new Promise(() => {})
 }
 
 export const taskTransferApi = (data?: object): Promise<R<any>> => {
-  return rq.post<R<any>>('/todo/task/transfer', data)
+  return new Promise(() => {})
 }
 //#endregion

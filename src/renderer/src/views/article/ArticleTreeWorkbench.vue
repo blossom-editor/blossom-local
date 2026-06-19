@@ -11,7 +11,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import { openNewArticleReferenceWindow } from '@renderer/assets/utils/electron'
 
 const openArticleReferenceWindow = () => {

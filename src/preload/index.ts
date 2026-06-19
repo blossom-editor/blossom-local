@@ -31,15 +31,8 @@ const ipcToRender = {
  */
 const rednerToIpc = {
   invoke: (channel: string, ...args: any): Promise<R<any>> => ipcRenderer.invoke(channel, ...args),
-  readFile: (): any => ipcRenderer.invoke('read-file'),
-  writeFile: (path: string, id: string, content: string): any => ipcRenderer.invoke('write-file', path, id, content),
-  docTreeApi: (docPath: string): Promise<R<DocTree[]>> => ipcRenderer.invoke('read-doc-tree', docPath),
-  articleUpdContentApi: (params: SaveFileContentReq): Promise<any> => ipcRenderer.invoke('write-file', params),
-  renameFile: (params: RenameFileReq): Promise<R<any>> => ipcRenderer.invoke('rename-file', params),
   selectDocLibFolderDialog: (): Promise<R<DocLibItem>> => ipcRenderer.invoke('select-doclib-folder-dialog'),
   openFileLocation: (filePath: string): Promise<R<void>> => ipcRenderer.invoke('open-file-location', filePath),
-
-  //#region
 
   /**
    * 窗口操作

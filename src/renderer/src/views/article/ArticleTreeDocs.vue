@@ -85,12 +85,6 @@
                 {{ data.formatName }}
               </div>
             </div>
-            <div
-              v-if="viewStyle.isShowArticleType"
-              v-for="(line, index) in tagLins(data)"
-              :key="line"
-              :class="[line]"
-              :style="{ left: -1 * (index + 1.5) * 4 + 'px' }"></div>
           </div>
         </div>
       </template>
@@ -149,7 +143,6 @@
 <script setup lang="ts">
 import { ref, provide, onBeforeUnmount, nextTick, computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useUserStore } from '@renderer/stores/user'
 import { useConfigStore } from '@renderer/stores/config'
 import { useDocLibStore } from '@renderer/stores/docLib'
 // element plus
@@ -159,29 +152,20 @@ import type { NodeDropType } from 'element-plus/es/components/tree/src/tree.type
 import Node from 'element-plus/es/components/tree/src/model/node'
 import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 // ts
-import {
-  folderUpdNameApi,
-  deleteFileApi,
-  articleUpdNameApi,
-  docTreeApi,
-  moveFileApi,
-  createFolderApi,
-  createMarkdownApi
-} from '@renderer/api/blossom'
-import { grammar } from './scripts/markedjs'
+import { deleteFileApi, articleUpdNameApi, moveFileApi, createFolderApi, createMarkdownApi } from '@renderer/api/blossom'
 import { DefaultDocTree, provideKeyDocTree } from '@renderer/views/doc/doc'
 import { getChildFileCountColor } from '@renderer/views/doc/doc-tree'
-import { tagLins, isShowSvg } from '@renderer/views/doc/doc-tree-detail'
+import { isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
 // util
 import { isEmpty } from 'lodash'
-import { pathJoin, platformText, inValidateFileName, getParentDirPath } from '@renderer/assets/utils/util'
-import { isNotNull, isNotBlank, isBlank, isNull } from '@renderer/assets/utils/obj'
+import { pathJoin, platformText, inValidateFileName } from '@renderer/assets/utils/util'
+import { isNotNull, isNotBlank, isBlank } from '@renderer/assets/utils/obj'
 import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
 import ArticleTreeWorkbench from './ArticleTreeWorkbench.vue'
-import { openFileLocation } from '@renderer/api/docLib'
+import { docTreeApi, openFileLocation } from '@renderer/api/docLib'
 
 const route = useRoute()
 const docLibStore = useDocLibStore()
