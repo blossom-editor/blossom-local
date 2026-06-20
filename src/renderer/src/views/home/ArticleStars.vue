@@ -31,7 +31,6 @@ import router from '@renderer/router'
 import { ref, nextTick } from 'vue'
 import { useConfigStore } from '@renderer/stores/config'
 import type { ViewStyle } from '@renderer/stores/config'
-import { articleListApi } from '@renderer/api/blossom'
 import { openExtenal } from '@renderer/assets/utils/electron'
 import { isEmpty } from 'lodash'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
@@ -47,11 +46,20 @@ const articles = ref<any>([])
 
 const getArticleListApi = () => {
   articles.value = []
-  articleListApi({ starStatus: 1 }).then((resp) => {
-    if (resp) {
-      articles.value = resp.data
-    }
-  })
+  articles.value = [
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 },
+    { name: 'Blossom 开发进度', uv: 0, words: 0, openStatus: 0 }
+  ]
 }
 
 const toRoute = (articleId: number) => {

@@ -17,6 +17,7 @@
 
     &:hover {
       @include themeBg(#efefef, #393939);
+      color: var(--el-color-primary);
       border-radius: 4px;
     }
   }

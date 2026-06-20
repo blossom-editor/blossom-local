@@ -561,6 +561,10 @@ const setStyle = (name: string, value: string, themeDark: boolean) => {
       margin: 0 5px;
       user-select: text;
     }
+
+    a {
+      color: var(--el-color-primary);
+    }
   }
 }
 

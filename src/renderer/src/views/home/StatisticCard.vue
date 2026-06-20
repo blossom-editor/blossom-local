@@ -2,7 +2,7 @@
   <div>
     <div class="statistic-article-root">
       <div class="statistic">
-        <div class="main-stat"><span style="font-size: 20px">A</span>{{ formartNumber(stats.articleTotal) }}</div>
+        <div class="main-stat"><span style="font-size: 20px">A</span>{{ stats.articleTotal }}</div>
         <div class="sub-stat"><span class="iconbl bl-pen-line"></span> {{ formartNumber(stats.articleTotalWords) }}</div>
       </div>
       <div class="iconbl bl-a-texteditorhighlightcolor-line icon"></div>
@@ -11,7 +11,7 @@
 
     <div class="statistic-picture-root">
       <div class="statistic">
-        <div class="main-stat"><span style="font-size: 20px">P</span>{{ formartNumber(stats.pictureTotal) }}</div>
+        <div class="main-stat"><span style="font-size: 20px">P</span>{{ stats.pictureTotal }}</div>
         <div class="sub-stat"><span class="iconbl bl-a-cloudstorage-line"></span> Size {{ formatFileSize(stats.pictureTotalSize) }}</div>
       </div>
       <div class="iconbl bl-image--line icon"></div>

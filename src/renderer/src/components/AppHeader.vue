@@ -24,7 +24,7 @@
         ref="ButtonRef"
         v-click-outside="onClickOutside"></div> -->
 
-      <el-tooltip content="主题配置" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
+      <el-tooltip content="Blossom 设置" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
         <div v-if="!props.simple" class="iconbl bl-a-colorpalette-line" @click="themeStrore.show()"></div>
       </el-tooltip>
 
@@ -32,9 +32,9 @@
         <div v-if="!props.simple" class="iconbl bl-a-radiochoose-line" @click="toRoute('/iconListIndex')"></div>
       </el-tooltip>
 
-      <el-tooltip content="网页收藏" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
+      <!-- <el-tooltip content="网页收藏" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
         <div v-if="!props.simple" class="iconbl bl-folding-line" @click="isShowWebDrawer = !isShowWebDrawer"></div>
-      </el-tooltip>
+      </el-tooltip> -->
 
       <el-tooltip content="最佳窗口大小" popper-class="is-small" transition="none" effect="light" placement="top" :show-after="0" :hide-after="0">
         <div v-if="isElectron()" :class="['iconbl bl-computer-line', isWindows() ? '' : 'electron-mac-last']" @click="setBestSize"></div>
@@ -52,7 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, unref } from 'vue'
+import { onMounted, onUnmounted, ref, unref } from 'vue'
 import { ClickOutside as vClickOutside } from 'element-plus'
 import { toRoute } from '@renderer/router'
 import { useThemeStore } from '@renderer/stores/theme'

@@ -21,12 +21,12 @@ export const renderChart = async (chart: any, chartData: ChartLineWordsData, cal
   let primaryColor = getPrimaryColor()
   getMom(chartData)
   chart.setOption({
-    grid: { top: 30, left: 60, right: 20, bottom: 35 },
+    grid: { top: 30, left: 65, right: 20, bottom: 35 },
     legend: {
       ...echartTheme.legend(),
       ...{
         top: 15,
-        left: 65,
+        left: 75,
         selected: { Words: true, 'Month On Month': true }
       }
     },

@@ -1,5 +1,8 @@
 <template>
   <div class="global-home-root">
+    <div class="left"></div>
+    <div class="doclib-name">{{ doclibStore.cur!.name }}游戏开发</div>
+    <div class="logo">Blossom</div>
     <div class="main">
       <bl-row class="greetings" height="65px"> Good {{ now }}. </bl-row>
       <!--  -->
@@ -8,13 +11,11 @@
           <div class="now-time">
             <DateLine></DateLine>
           </div>
-          <div class="user-name"></div>
           <Laptop></Laptop>
         </div>
         <Weather></Weather>
         <UserAvatar style="margin-left: 20px"></UserAvatar>
       </bl-row>
-      <div style="height: 10px"></div>
       <!-- 统计 -->
       <div class="chart-container">
         <bl-row class="container-name">字数统计</bl-row>
@@ -40,18 +41,19 @@
           每日编辑文章数
           <span class="iconbl bl-refresh-smile" @click="loadArticleHeapmap"></span>
         </bl-row>
-        <bl-row width="870px" height="260px">
+        <bl-row width="870px" height="265px">
           <ChartHeatmap ref="ChartHeatmapRef"></ChartHeatmap>
         </bl-row>
       </div>
     </div>
+    <div class="right"></div>
 
     <!--
       =======================================================
       middle
       =======================================================
      -->
-    <div
+    <!-- <div
       :class="['middle', viewStyle.webCollectExpand ? 'expand' : 'fold']"
       :style="{ width: viewStyle.webCollectExpand ? 'calc(100% - 1px - 0px - 10px - 910px - 420px)' : 'calc(100% - 1px - 0px - 10px - 910px)' }">
       <div v-if="!viewStyle.webCollectExpand" class="web-show iconbl bl-left-line" @click="expand"></div>
@@ -60,14 +62,14 @@
       <bl-col width="100%" height="calc(100% - 20px)">
         <ArticleStars></ArticleStars>
       </bl-col>
-    </div>
+    </div> -->
 
     <!--
       =======================================================
       right
       =======================================================
      -->
-    <div
+    <!-- <div
       :class="[
         'web-container',
         viewStyle.webCollectExpand ? 'expand' : 'fold',
@@ -76,7 +78,7 @@
       :style="{ width: viewStyle.webCollectExpand ? '420px' : '0px', opacity: viewStyle.webCollectExpand ? 1 : 0 }">
       <div v-if="viewStyle.webCollectExpand" class="web-hide iconbl bl-right-line" @click="fold"></div>
       <WebCollect></WebCollect>
-    </div>
+    </div> -->
   </div>
 </template>
 
@@ -97,7 +99,9 @@ import ArticleStars from './ArticleStars.vue'
 import StatisticCard from './StatisticCard.vue'
 
 import { nowWhen } from '@renderer/assets/utils/util'
+import { useDocLibStore } from '@renderer/stores/docLib.js'
 
+const doclibStore = useDocLibStore()
 const ChartLineWordsRef = ref()
 const ChartHeatmapRef = ref()
 
@@ -128,7 +132,7 @@ const fold = () => {
 .global-home-root {
   @include box(100%, 100%);
   @include flex(row, space-between, center);
-
+  position: relative;
   $border-middle: 1px;
 
   $margin-web: 30px 0 50px 0px;
@@ -137,6 +141,47 @@ const fold = () => {
   $width-main: 910px;
   $width-web: 420px;
   $width-middle: calc(100% - #{$border-middle} - 0px - 10px - #{$width-main} - #{$width-web});
+
+  .left,
+  .right {
+    height: 100%;
+    width: calc((100% - #{$width-main}) / 2 - 100px);
+    max-width: 336px;
+
+    background:
+      linear-gradient(90deg, #0000 0, #0000 23px, #EAEAEA 24px) 0 0 / 24px 24px,
+      linear-gradient(#0000 0, #0000 23px, #EAEAEA 24px) 0 0 / 24px 24px,
+      var(--bl-html-color);
+
+    [class='dark'] & {
+      background:
+        linear-gradient(90deg, #0000 0, #0000 23px, #303030 24px) 0 0 / 24px 24px,
+        linear-gradient(#0000 0, #0000 23px, #303030 24px) 0 0 / 24px 24px,
+        var(--bl-html-color);
+    }
+  }
+  .right {
+    rotate: 180deg;
+  }
+  .doclib-name {
+    @include font(50px, 700);
+    @include themeColor(var(--el-color-primary-light-9), var(--el-color-primary-light-9));
+    position: absolute;
+    top: 0px;
+    word-break: break-all;
+    writing-mode: vertical-lr;
+    text-orientation: mixed;
+  }
+  .logo {
+    @include font(80px, 700);
+    @include themeColor(var(--el-color-primary-light-9), var(--el-color-primary-light-9));
+    position: absolute;
+    right: -10px;
+    bottom: 10px;
+    rotate: 180deg;
+    z-index: 2;
+    writing-mode: vertical-lr;
+  }
 
   .main {
     @include box($width-main, 100%, $width-main, $width-main);
@@ -147,13 +192,6 @@ const fold = () => {
     .image-container {
       @include box(200px, 100%);
       @include themeBrightness(100%, 80%);
-
-      .user-name {
-        @include font(25px, 700);
-        @include themeColor(#5c5c5c, var(--el-color-primary));
-        text-shadow: var(--bl-text-shadow);
-        height: 30px;
-      }
     }
 
     .greetings {
@@ -170,7 +208,7 @@ const fold = () => {
     }
 
     .chart-container {
-      @include box(100%, calc(100% - 315px));
+      @include box(100%, calc(100% - 320px));
       overflow-x: hidden;
       overflow-y: scroll;
     }
@@ -232,6 +270,12 @@ const fold = () => {
   /** 小于1440时 */
   @media screen and (max-width: 1140px) {
     .web-container {
+      opacity: 0 !important;
+    }
+    .left,
+    .right,
+    .logo,
+    .doclib-name {
       opacity: 0 !important;
     }
   }
