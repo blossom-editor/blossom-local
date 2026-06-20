@@ -6,7 +6,7 @@
   </div>
   <div v-else class="weather-root">
     <bl-row class="location" just="flex-end">
-      上次更新 {{ lastRefreshTime }} / {{ weather.location.adm1 }} {{ weather.location.adm2 }}
+      上次刷新 {{ lastRefreshTime }} / {{ weather.location.adm1 }} {{ weather.location.adm2 }}
       <el-tooltip placement="top" effect="light" :show-after="1000" :hide-after="0" :auto-close="3000">
         <span class="iconbl bl-refresh-smile" @click="refresh()"></span>
         <template #content>
@@ -98,6 +98,7 @@ import { isBlank } from '@renderer/assets/utils/obj'
 import { getTime } from '@renderer/assets/utils/util'
 
 const configStore = useConfigStore()
+const { weatherConfig } = configStore
 const request = new Request()
 // ==================== 生命周期 ====================
 
@@ -117,10 +118,20 @@ const getImgUrl = (name: string) => {
   return new URL(`../assets/imgs/weather/${iconValue}.png`, import.meta.url).href
 }
 
+const alreadyConfigured = (): boolean => {
+  if (!weatherConfig.enabled) {
+    return false
+  }
+  if (isBlank(weatherConfig.location) || isBlank(weatherConfig.host) || isBlank(weatherConfig.key)) {
+    return false
+  }
+  return true
+}
+
 // ==================== 响应式数据 ====================
-const lastRefreshTime = ref()
+const lastRefreshTime = ref('无')
 const weather = ref<WeatherRes>({
-  location: { name: '', id: '', adm1: '', adm2: '未配置天气' },
+  location: { name: '', id: '', adm1: '', adm2: alreadyConfigured() ? '请刷新' : '未配置天气' },
   now: { temp: '0', text: '晴', icon: '100' },
   hourly: { temp: '', text: '0', icon: '100' },
   daily: [
@@ -134,12 +145,13 @@ const weather = ref<WeatherRes>({
  * 获取地址
  */
 const getLocaltion = () => {
-  if (!configStore.weatherConfig.enabled) return
-  if (isBlank(configStore.weatherConfig.location) || isBlank(configStore.weatherConfig.host) || isBlank(configStore.weatherConfig.key)) return
-  const API_lookup = `${configStore.weatherConfig.host}/geo/v2/city/lookup`
+  if (!alreadyConfigured()) {
+    return
+  }
+  const API_lookup = `${weatherConfig.host}/geo/v2/city/lookup`
 
-  const key = configStore.weatherConfig.key
-  const location = configStore.weatherConfig.location
+  const key = weatherConfig.key
+  const location = weatherConfig.location
   // 城市
   request.get(API_lookup, { params: { location: location, key: key } }).then((resp) => {
     if (resp.data.code === '200') {
@@ -152,15 +164,16 @@ const getLocaltion = () => {
  * 获取天气信息
  */
 const getWeather = async (): Promise<void> => {
-  if (!configStore.weatherConfig.enabled) return
-  if (isBlank(configStore.weatherConfig.location) || isBlank(configStore.weatherConfig.host) || isBlank(configStore.weatherConfig.key)) return
+  if (!alreadyConfigured()) {
+    return
+  }
   lastRefreshTime.value = getTime()
   console.warn('刷新天气信息')
-  const API____now = `${configStore.weatherConfig.host}/v7/weather/now`
-  const API____24h = `${configStore.weatherConfig.host}/v7/weather/24h`
-  const API_____3d = `${configStore.weatherConfig.host}/v7/weather/3d`
-  const key = configStore.weatherConfig.key
-  const location = configStore.weatherConfig.location
+  const API____now = `${weatherConfig.host}/v7/weather/now`
+  const API____24h = `${weatherConfig.host}/v7/weather/24h`
+  const API_____3d = `${weatherConfig.host}/v7/weather/3d`
+  const key = weatherConfig.key
+  const location = weatherConfig.location
 
   // 当前
   request.get(API____now, { params: { location: location, key: key } }).then((resp) => {
