@@ -1,7 +1,7 @@
 import { protocol, net } from 'electron'
 import { CurDocLibManager } from './doclib/curDocLibManager'
 import { PicItem, PicNameMapping } from './doclib/picNameMapping'
-import { extractFileName, traceLog } from './utils'
+import { extractFileName } from './utils'
 
 const curDocLibManager = CurDocLibManager.getInstance()
 const picNameMapping = PicNameMapping.getInstance()

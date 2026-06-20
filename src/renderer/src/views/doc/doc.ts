@@ -142,21 +142,21 @@ export const getDocByPath = (path: string, trees: DocTree[]): DocTree | undefine
  * @param trees
  * @returns
  */
-export const getPDocsByPid = (id: string, trees: DocTree[], result?: DocInfo[]): DocInfo[] => {
-  let target: DocTree | undefined = getDocById(id, trees)
-  if (!target) {
-    return []
-  }
-  if (isEmpty(result)) {
-    result = [treeToInfo(target)]
-  } else {
-    result!.push(treeToInfo(target))
-  }
-  if (target.p !== '0') {
-    getPDocsByPid(target.p, trees, result)
-  }
-  return result!
-}
+// export const getPDocsByPid = (id: string, trees: DocTree[], result?: DocInfo[]): DocInfo[] => {
+//   let target: DocTree | undefined = getDocById(id, trees)
+//   if (!target) {
+//     return []
+//   }
+//   if (isEmpty(result)) {
+//     result = [treeToInfo(target)]
+//   } else {
+//     result!.push(treeToInfo(target))
+//   }
+//   if (target.p !== '0') {
+//     getPDocsByPid(target.p, trees, result)
+//   }
+//   return result!
+// }
 
 /**
  * 递归从文档树状列表中获取指定文档ID的子文档

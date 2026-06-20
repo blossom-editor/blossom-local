@@ -91,7 +91,8 @@ const renderer = {
     return renderImage(href, title, text)
   },
   link(href: string, title: string | null | undefined, text: string): string {
-    let { link, ref } = renderLink(href, title, text, [])
+    // let { link, ref } = renderLink(href, title, text, [])
+    let { link } = renderLink(href, title, text, [])
     return link
   }
 }

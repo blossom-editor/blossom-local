@@ -52,7 +52,7 @@ export const lastDayOfThisMonth = (): string => {
  * @param dateStr yyyy-mm-dd 格式字符串
  */
 export const firstDayOfMonth = (dateStr: string): string => {
-  const [year, month, day] = dateStr.split('-').map(Number)
+  const [year, month, _day] = dateStr.split('-').map(Number)
   return dateToYMD(new Date(year, month - 1, 1))
 }
 

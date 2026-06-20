@@ -30,12 +30,12 @@
 // import { uploadFileApiUrl } from '@renderer/api/blossom'
 // import { beforeUpload, onUploadSeccess, onError, uploadDate } from '@renderer/views/picture/scripts/picture'
 
-const porps = defineProps({
-  repeatUpload: {
-    type: Boolean,
-    default: false
-  }
-})
+// const porps = defineProps({
+//   repeatUpload: {
+//     type: Boolean,
+//     default: false
+//   }
+// })
 
 //#region ----------------------------------------< panin store >--------------------------------------
 //#endregion

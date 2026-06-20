@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { Local } from '@renderer/assets/utils/storage'
-import { isBlank, isNotBlank, isNull } from '@renderer/assets/utils/obj'
-import { checkDocLibConfigApi } from '@renderer/api/docLib'
+import { isNotBlank, isNull } from '@renderer/assets/utils/obj'
 
 export const DOC_LIB_LIST_KEY = 'docLib_list'
 export const DOC_LIB_CUR_KEY = 'docLib_cur'
@@ -11,17 +10,17 @@ export interface LibItems {
   cur?: DocLibItem
 }
 
-/**
- * @deprecated
- */
-const initCurDocLib = (): DocLibItem => {
-  // 从浏览器 storage 中获取保存的最近一次文档库, 作为默认文档库
-  const cur = Local.get(DOC_LIB_CUR_KEY)
-  if (cur && !isBlank(cur.path)) {
-    checkDocLibConfigApi({ docLibPath: cur.path })
-  }
-  return cur
-}
+// /**
+//  * @deprecated
+//  */
+// const initCurDocLib = (): DocLibItem => {
+//   // 从浏览器 storage 中获取保存的最近一次文档库, 作为默认文档库
+//   const cur = Local.get(DOC_LIB_CUR_KEY)
+//   if (cur && !isBlank(cur.path)) {
+//     checkDocLibConfigApi({ docLibPath: cur.path })
+//   }
+//   return cur
+// }
 
 /**
  * 文档库配置

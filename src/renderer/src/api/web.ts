@@ -1,12 +1,12 @@
 
-export const webAllApi = (req?: object): Promise<R<any>> => {
+export const webAllApi = (_req?: object): Promise<R<any>> => {
   return new Promise(() => {})
 }
 
-export const webSaveApi = (req?: object): Promise<R<any>> => {
+export const webSaveApi = (_req?: object): Promise<R<any>> => {
   return new Promise(() => {})
 }
 
-export const webDelApi = (req?: object): Promise<R<any>> => {
+export const webDelApi = (_req?: object): Promise<R<any>> => {
   return new Promise(() => {})
 }

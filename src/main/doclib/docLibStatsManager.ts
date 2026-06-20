@@ -5,7 +5,7 @@ import { BigIntStats } from 'fs'
 import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
-import { createDefaultBigIntStats, extractFileName, getUniqueId, isHttp, normalizeUrlToForwardSlash, traceLog, warnLog } from '../utils'
+import { createDefaultBigIntStats, extractFileName, getUniqueId, isHttp, traceLog, warnLog } from '../utils'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -14,7 +14,6 @@ import { createDefaultBigIntStats, extractFileName, getUniqueId, isHttp, normali
 export class DocLibStatsManager {
   /** 统计字段 */
   private stats: DocLibStats | undefined
-  private lastInitStatsTime: number = 0
   private docLibPath: string = ''
 
   /** 图片对应文章 picName: markdown 的 ID 集合 */
@@ -67,7 +66,6 @@ export class DocLibStatsManager {
     }
 
     this.docLibPath = docLibPath
-    this.lastInitStatsTime = new Date().getTime()
     if (!this.stats) {
       await this.init(docLibPath)
     }

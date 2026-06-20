@@ -12,7 +12,6 @@ async function benchmarkStat() {
     console.log(`准备测试 ${targetFiles.length} 个文件...`)
 
     const start = Date.now()
-    const stats = await Promise.all(targetFiles.map((file) => fs.stat(path.join(testDir, file))))
     const end = Date.now()
 
     console.log(`完成 ${targetFiles.length} 次 fs.promises.stat 调用，耗时 ${end - start} 毫秒。`)

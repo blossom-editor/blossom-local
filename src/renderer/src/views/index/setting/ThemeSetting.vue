@@ -279,7 +279,7 @@ import { Sunny, Moon } from '@element-plus/icons-vue'
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useThemeStore } from '@renderer/stores/theme'
 import type { EditorStyle, ViewStyle, PicStyle, WeatherConfig } from '@renderer/stores/config'
-import { isDark, getTheme, changeTheme, setPrimaryColor, setStyleItem, setStyleItemObj, resetStyleItems } from '@renderer/scripts/global-theme'
+import { isDark, changeTheme, setPrimaryColor, setStyleItemObj, resetStyleItems } from '@renderer/scripts/global-theme'
 import { setZoomLevel, resetZoomLevel, openDevTools } from '@renderer/assets/utils/electron'
 import { isElectron } from '@renderer/assets/utils/util'
 
@@ -389,12 +389,12 @@ const zoomReset = () => {
 
 //#region 文档设置
 
-const themeLight = ref(getTheme(false))
-const themeDark = ref(getTheme(true))
+// const themeLight = ref(getTheme(false))
+// const themeDark = ref(getTheme(true))
 
-const setStyle = (name: string, value: string, themeDark: boolean) => {
-  setStyleItem(name, value, themeDark)
-}
+// const setStyle = (name: string, value: string, themeDark: boolean) => {
+//   setStyleItem(name, value, themeDark)
+// }
 
 //#endregion
 </script>

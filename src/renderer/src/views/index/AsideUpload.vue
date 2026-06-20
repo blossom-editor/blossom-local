@@ -41,7 +41,7 @@ const docLibStore = useDocLibStore()
  * 上传方法
  * @param options
  */
-const upload = (options: UploadRequestOptions) => {}
+const upload = (_options: UploadRequestOptions) => {}
 
 /**
  *
@@ -66,7 +66,7 @@ const beforeUpload: UploadProps['beforeUpload'] = (_rawFile) => {
  * @param resp
  * @param _file
  */
-const onUploadSeccess: UploadProps['onSuccess'] = (resp, _file?) => {
+const onUploadSeccess: UploadProps['onSuccess'] = (_resp, _file?) => {
   return true
   // if (resp.code === '20000') {
   //   Notify.success('上传成功')

@@ -84,18 +84,15 @@
 
 <script setup lang="ts">
 import { ref, onActivated } from 'vue'
-import { useConfigStore } from '@renderer/stores/config'
 // components
 import Laptop from '@renderer/components/Laptop.vue'
 import DateLine from '@renderer/components/DateLine.vue'
-import WebCollect from '@renderer/components/WebCollect.vue'
 import UserAvatar from '@renderer/components/UserAvatar.vue'
 import Weather from '@renderer/components/Weather.vue'
 // charts
 import ChartLineWords from './ChartLineWords.vue'
 import ChartHeatmap from './ChartHeatmap.vue'
 // articles
-import ArticleStars from './ArticleStars.vue'
 import StatisticCard from './StatisticCard.vue'
 
 import { nowWhen } from '@renderer/assets/utils/util'
@@ -114,16 +111,16 @@ const loadArticleHeapmap = () => ChartHeatmapRef.value.reload()
 const now = ref(nowWhen())
 
 //#region ----------------------------------------< 网页收藏 >--------------------------------------
-const config = useConfigStore()
-const { viewStyle } = config
-const expand = () => {
-  viewStyle.webCollectExpand = true
-  config.setViewStyle(viewStyle)
-}
-const fold = () => {
-  viewStyle.webCollectExpand = false
-  config.setViewStyle(viewStyle)
-}
+// const config = useConfigStore()
+// const { viewStyle } = config
+// const expand = () => {
+//   viewStyle.webCollectExpand = true
+//   config.setViewStyle(viewStyle)
+// }
+// const fold = () => {
+//   viewStyle.webCollectExpand = false
+//   config.setViewStyle(viewStyle)
+// }
 //#endregion
 </script>
 
@@ -149,8 +146,8 @@ const fold = () => {
     max-width: 336px;
 
     background:
-      linear-gradient(90deg, #0000 0, #0000 23px, #EAEAEA 24px) 0 0 / 24px 24px,
-      linear-gradient(#0000 0, #0000 23px, #EAEAEA 24px) 0 0 / 24px 24px,
+      linear-gradient(90deg, #0000 0, #0000 23px, #eaeaea 24px) 0 0 / 24px 24px,
+      linear-gradient(#0000 0, #0000 23px, #eaeaea 24px) 0 0 / 24px 24px,
       var(--bl-html-color);
 
     [class='dark'] & {

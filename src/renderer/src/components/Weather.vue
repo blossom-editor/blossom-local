@@ -204,10 +204,10 @@ const refresh = async (): Promise<void> => {
 /**
  * 定时刷新天气任务（每30分钟刷新一次）
  */
-const refreshWeatherTask = (): void => {
-  const TWENTY_MINUTES = 1000 * 60 * 30
-  setInterval(getWeather, TWENTY_MINUTES)
-}
+// const refreshWeatherTask = (): void => {
+//   const TWENTY_MINUTES = 1000 * 60 * 30
+//   setInterval(getWeather, TWENTY_MINUTES)
+// }
 </script>
 
 <style scoped lang="scss">

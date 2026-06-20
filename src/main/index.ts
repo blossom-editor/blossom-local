@@ -3,13 +3,11 @@ import { join } from 'path'
 import { electronApp, optimizer, is, platform } from '@electron-toolkit/utils'
 import { initArticleApi } from './article/api'
 import { initDocLibApi } from './doclib/api'
-import { pathToFileURL } from 'url'
 import icon from '../../resources/imgs/icon.ico?asset'
 import printScreen from './printScreen'
 import ShortcutRegistrant from './shortcut'
 import { initProtocol } from './customProtocol'
 import { initPictureApi } from './picture/api'
-import { errorLog } from './utils'
 
 // 主窗口
 let mainWindow: BrowserWindow | undefined

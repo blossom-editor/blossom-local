@@ -52,8 +52,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, unref } from 'vue'
-import { ClickOutside as vClickOutside } from 'element-plus'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { toRoute } from '@renderer/router'
 import { useThemeStore } from '@renderer/stores/theme'
 import { useDocLibStore } from '@renderer/stores/docLib'
@@ -99,14 +98,6 @@ const handleResize = () => {
 //#region 快捷配置
 
 const ButtonRef = ref()
-const PopoverRef = ref()
-
-/**
- * 点击外部时关闭
- */
-const onClickOutside = () => {
-  unref(PopoverRef).popperRef?.delayHide?.()
-}
 
 //#endregion
 </script>

@@ -67,12 +67,11 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ElMessageBox, UploadProps } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { WarnTriangleFilled } from '@element-plus/icons-vue'
-import { DefaultPicture, picCacheWrapper, picCacheRefresh } from './scripts/picture'
-import { formatFileSize, isHttp } from '@renderer/assets/utils/util'
+import { DefaultPicture, picCacheWrapper } from './scripts/picture'
+import { formatFileSize } from '@renderer/assets/utils/util'
 import { writeText } from '@renderer/assets/utils/electron'
-import Notify from '@renderer/scripts/notify'
 import { isEmpty } from '@renderer/assets/utils/obj'
 
 // 是否显示图片 viewer
@@ -115,18 +114,18 @@ const deletePicture = () => {
 /**
  * 替换上传成功
  */
-const onUploadSeccess: UploadProps['onSuccess'] = (resp, _file?) => {
-  if (resp.code === '20000') {
-    Notify.success('图片替换成功')
-    emits('saved')
-    closePicInfo()
-    picCacheRefresh()
-    return true
-  } else {
-    Notify.error(resp.msg, '图片替换失败')
-    return false
-  }
-}
+// const onUploadSeccess: UploadProps['onSuccess'] = (resp, _file?) => {
+//   if (resp.code === '20000') {
+//     Notify.success('图片替换成功')
+//     emits('saved')
+//     closePicInfo()
+//     picCacheRefresh()
+//     return true
+//   } else {
+//     Notify.error(resp.msg, '图片替换失败')
+//     return false
+//   }
+// }
 
 defineExpose({ showPicInfo })
 

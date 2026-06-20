@@ -408,7 +408,7 @@ export const renderImage = (href: string | null, title: string | null, text: str
  */
 export const renderLink = (
   href: string,
-  title: string | null | undefined,
+  _title: string | null | undefined,
   text: string,
   docTrees: DocTree[]
 ): { link: string; ref: ArticleReference } => {

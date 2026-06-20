@@ -55,7 +55,7 @@ export const doclibStatsApi = (req?: Base): Promise<R<any>> => {
  * @param req
  * @returns
  */
-export const articleWordLineApi = (req?: object): Promise<R<any>> => {
+export const articleWordLineApi = (_req?: object): Promise<R<any>> => {
   return invoke('doclib-stats-words-chatline')
 }
 
@@ -64,7 +64,7 @@ export const articleWordLineApi = (req?: object): Promise<R<any>> => {
  * @param req
  * @returns
  */
-export const articleHeatmapApi = (req?: object): Promise<R<any>> => {
+export const articleHeatmapApi = (_req?: object): Promise<R<any>> => {
   return invoke('doclib-stats-words-chatheatmap')
 }
 

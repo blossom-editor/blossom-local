@@ -127,7 +127,6 @@
 
 <script setup lang="ts">
 import { ref, onBeforeUnmount, nextTick, computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
 import { useConfigStore } from '@renderer/stores/config'
 import { useDocLibStore } from '@renderer/stores/docLib'
 // element plus
@@ -147,12 +146,12 @@ import { useDraggable } from '@renderer/scripts/draggable'
 // util
 import { isEmpty } from 'lodash'
 import { pathJoin, platformText, inValidateFileName } from '@renderer/assets/utils/util'
-import { isNotBlank, isBlank, isNull } from '@renderer/assets/utils/obj'
+import { isNotBlank, isBlank } from '@renderer/assets/utils/obj'
 import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
 import ArticleTreeWorkbench from './ArticleTreeWorkbench.vue'
 
-const route = useRoute()
+// const route = useRoute()
 const docLibStore = useDocLibStore()
 const configStore = useConfigStore()
 const { viewStyle } = useConfigStore()
@@ -185,24 +184,24 @@ const docTreeData = ref<DocTree[]>([]) // 文档菜单
 /**
  * 获取路由参数, 用于从外部点击时跳转至文章, 如收藏列表等
  */
-const getRouteQueryParams = () => {
-  let routeArticleId = route.query.articleId
-  if (isNull(routeArticleId)) {
-    return
-  }
-  const articleId = routeArticleId as string
-  const docTree: DocTree = new DefaultDocTree()
-  emits('clickDoc', docTree)
-  nextTick(() => {
-    docTreeCurrentChoiseId.value = articleId
-    const parentNode = DocTreeRef.value.getNode(articleId).parent
-    setDocTreeCurrentKey({ id: articleId, parentId: parentNode.data.id, type: 'ARTICLE' })
-    const ele = document.getElementById('article-doc-wrapper-' + articleId)
-    if (ele) {
-      ;(DocTreeContainer.value as Element).scrollTop = ele.offsetTop
-    }
-  })
-}
+// const getRouteQueryParams = () => {
+//   let routeArticleId = route.query.articleId
+//   if (isNull(routeArticleId)) {
+//     return
+//   }
+//   const articleId = routeArticleId as string
+//   const docTree: DocTree = new DefaultDocTree()
+//   emits('clickDoc', docTree)
+//   nextTick(() => {
+//     docTreeCurrentChoiseId.value = articleId
+//     const parentNode = DocTreeRef.value.getNode(articleId).parent
+//     setDocTreeCurrentKey({ id: articleId, parentId: parentNode.data.id, type: 'ARTICLE' })
+//     const ele = document.getElementById('article-doc-wrapper-' + articleId)
+//     if (ele) {
+//       ;(DocTreeContainer.value as Element).scrollTop = ele.offsetTop
+//     }
+//   })
+// }
 
 /**
  * 定位到当前打开的文章
@@ -392,14 +391,14 @@ const collapseAll = () => {
 /**
  * 折叠所有无子菜单的文件夹
  */
-const collapseNoChild = () => {
-  nextTick(() => {
-    for (let i = 0; i < docTreeData.value.length; i++) {
-      const doc = docTreeData.value[i]
-      collapseChild(doc)
-    }
-  })
-}
+// const collapseNoChild = () => {
+//   nextTick(() => {
+//     for (let i = 0; i < docTreeData.value.length; i++) {
+//       const doc = docTreeData.value[i]
+//       collapseChild(doc)
+//     }
+//   })
+// }
 
 /**
  * 递归折叠所有子文件夹
@@ -451,7 +450,7 @@ const collapseChilds = async (node: Node) => {
  * 如果父节点没有子节点时, 关闭父节点的展开状态
  * @param pid 父ID
  */
-const closeParentIfNoChild = (pid: string) => {}
+// const closeParentIfNoChild = (pid: string) => {}
 
 /**
  * 拖拽后处理各个节点排序
@@ -480,7 +479,7 @@ const handleShowChildFileCount = () => {
 //#region ----------------------------------------< 右键菜单 >--------------------------------------
 const curDoc = ref<DocTree>(new DefaultDocTree())
 const rMenu = ref<RightMenu>({ show: false, clientX: 0, clientY: 0 })
-const rMenuLevel2 = ref<RightMenuLevel2>({ top: '0px' })
+// const rMenuLevel2 = ref<RightMenuLevel2>({ top: '0px' })
 const ArticleDocTreeRightMenuRef = ref()
 const curDocType = computed(() => {
   if (curDoc.value.type === 'FOLDER') return '文件夹'
@@ -533,14 +532,14 @@ const closeTreeDocsMenuShow = (event?: MouseEvent) => {
  * @param event
  * @param childMenuCount 二级菜单的个数, 用于处理二级菜单显示位置
  */
-const handleHoverRightMenuLevel2 = (event: MouseEvent, childMenuCount: number = 1) => {
-  const domHeight = 30 * childMenuCount + 10
-  if (document.body.clientHeight - event.clientY <= domHeight) {
-    rMenuLevel2.value.top = domHeight * -1 + 30 + 'px'
-  } else {
-    rMenuLevel2.value.top = '0px'
-  }
-}
+// const handleHoverRightMenuLevel2 = (event: MouseEvent, childMenuCount: number = 1) => {
+//   const domHeight = 30 * childMenuCount + 10
+//   if (document.body.clientHeight - event.clientY <= domHeight) {
+//     rMenuLevel2.value.top = domHeight * -1 + 30 + 'px'
+//   } else {
+//     rMenuLevel2.value.top = '0px'
+//   }
+// }
 
 // ======================== 文章重命名 ==============================
 const renameTooltipVisible = ref(false)
