@@ -45,6 +45,21 @@
       </div>
     </div>
   </div>
+
+  <el-dialog
+    v-model="isShowDocLibLoading"
+    class="bl-dialog-hidden-header-fixed-body"
+    width="500"
+    align-center
+    :modal="false"
+    :destroy-on-close="true"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false">
+    <div class="doclib-loading-root">
+      <div class="info">正在检查文档库配置, 请稍后....</div>
+      <el-progress :percentage="30" :stroke-width="15" :show-text="false" striped striped-flow />
+    </div>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
@@ -57,6 +72,7 @@ import { ElMessageBox } from 'element-plus'
 import { picCacheRefresh, picCacheWrapper, protocolWrapper } from '../picture/scripts/picture'
 import Notify from '@renderer/scripts/notify'
 import errorImg from '@renderer/assets/imgs/img_error.png'
+import { ref } from 'vue'
 
 const docLibStore = useDocLibStore()
 const { items } = storeToRefs(docLibStore)
@@ -124,15 +140,26 @@ const toTop = (docLib: DocLibItem) => {
 }
 
 const toEditor = (docLib: DocLibItem) => {
-  // 主进程切换文档库成功后, 渲染进程切换文档库
-  checkDocLibConfigApi({ docLibPath: docLib.path }).then((resp) => {
-    if (resp.ok) {
-      docLibStore.setCurDoc(docLib)
-      router.push('/articleIndex')
-    } else {
-      Notify.error(resp.msg, '打开文档库失败')
+  isLoaded.value = false
+  setTimeout(() => {
+    if (isLoaded.value === false) {
+      isShowDocLibLoading.value = true
     }
-  })
+  }, 1000)
+  // 主进程切换文档库成功后, 渲染进程切换文档库
+  checkDocLibConfigApi({ docLibPath: docLib.path })
+    .then((resp) => {
+      if (resp.ok) {
+        docLibStore.setCurDoc(docLib)
+        router.push('/articleIndex')
+      } else {
+        Notify.error(resp.msg, '打开文档库失败')
+      }
+    })
+    .finally(() => {
+      isLoaded.value = true
+      isShowDocLibLoading.value = false
+    })
 }
 
 const stopPropagation = (event: MouseEvent) => {
@@ -152,8 +179,20 @@ const onErrorImg = (a: Event) => {
     }
   }
 }
+
+//#region 进入文档库弹框提示
+const isShowDocLibLoading = ref(false)
+const isLoaded = ref(false)
+//#endregion
 </script>
 
 <style scoped lang="scss">
 @import './styles/setting-doclib.scss';
+
+.doclib-loading-root {
+  padding: 10px 20px 20px;
+  .info {
+    margin-bottom: 10px;
+  }
+}
 </style>

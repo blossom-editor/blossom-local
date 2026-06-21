@@ -28,8 +28,6 @@
     <div class="desc">
       <div style="margin-bottom: 0">说明:</div>
       <ol>
-        <li>如果文章没有任何引用, 则不会出现在引用网络中.</li>
-        <li>文章名称必须唯一, 相同链接如果有不同的名称, 则会以其中一条为准.</li>
         <li>使用简短的链接名称, 有助于在知识网络中显示.</li>
         <li>点击查看详情.</li>
       </ol>
@@ -56,8 +54,20 @@ import AppHeader from '@renderer/components/AppHeader.vue'
 echarts.use([TitleComponent, TooltipComponent, LegendComponent, GraphChart, CanvasRenderer])
 
 const isDark = useDark()
-
 const route = useRoute()
+
+onMounted(() => {
+  document.title = 'Blossom 双链图表'
+  init()
+  windowResize()
+  articleId = route.query.articleId as string
+  getArticleRefList(false)
+  window.addEventListener('resize', windowResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', windowResize)
+})
 
 // -------------------- data
 const showOutsideName = ref(false)
@@ -71,16 +81,16 @@ let stat = ref({
   outside: 0
 })
 
-let inside: any = { itemStyle: {}, label: {} }
-let insideUnknown: any = { itemStyle: {}, label: {} }
+let inner: any = { itemStyle: {}, label: {} }
+let innerUnknown: any = { itemStyle: {}, label: {} }
 let outside: any = { itemStyle: {}, label: {} }
 const changeStyle = () => {
   let primaryColor = getPrimaryColor()
   // 节点数量统计
   stat.value = { inside: 0, outside: 0 }
-  inside = {
+  inner = {
     itemStyle: {
-      color: primaryColor.color
+      color: isDark.value ? '#6E6E6E' : '#9B9B9B'
     },
     label: {
       fontSize: 14,
@@ -89,7 +99,7 @@ const changeStyle = () => {
       textBorderWidth: 2
     }
   }
-  insideUnknown = {
+  innerUnknown = {
     itemStyle: {
       color: isDark.value ? '#7B0000' : '#EB6969'
     },
@@ -119,27 +129,31 @@ const changeStyle = () => {
  */
 const getArticleRefList = (onlyInner: boolean) => {
   changeStyle()
-  let param: any
+  let req: ArticleRefReq
   if (isNotNull(articleId) && isNotBlank(articleId)) {
-    param = { onlyInner: onlyInner, articleId: articleId }
+    req = { onlyInner: onlyInner, articleId: articleId }
   } else {
-    param = { onlyInner: onlyInner }
+    req = { onlyInner: onlyInner }
   }
-  articleRefListApi(param).then((resp) => {
-    nodes = resp.data.nodes.map((node: any) => {
-      if (node.artType == 11) {
-        node.itemStyle = inside.itemStyle
-        node.label = inside.label
+
+  articleRefListApi(req).then((resp) => {
+    if (!resp.data || !resp.data.nodes) {
+      return
+    }
+    nodes = resp.data!.nodes.map((node: ArticleRefNode) => {
+      if (node.type == 'INNER_ARTICLE') {
+        node.itemStyle = inner.itemStyle
+        node.label = inner.label
         stat.value.inside += 1
-      } else if (node.artType === 12) {
-        node.itemStyle = insideUnknown.itemStyle
-        node.label = insideUnknown.label
-      } else if (node.artType == 21) {
+      } else if (node.type === 'UNKNOWN_INNER_ARTICLE') {
+        node.itemStyle = innerUnknown.itemStyle
+        node.label = innerUnknown.label
+      } else if (node.type == 'PUBLIC_ARTICLE') {
         node.itemStyle = outside.itemStyle
         node.label = outside.label
         stat.value.outside += 1
       }
-      node.symbolSize = getLinkCount(node.name, resp.data.links)
+      node.symbolSize = getLinkCount(node.name, resp.data!.links)
       return node
     })
     links = resp.data.links
@@ -154,8 +168,8 @@ const ascending = 1
  * @param name  节点名称
  * @param links 全部节点关系
  */
-const getLinkCount = (name: string, links: any[]): number => {
-  let count: number = 20
+const getLinkCount = (name: string, links: ArticleRefLink[]): number => {
+  let count: number = 10
   for (let i = 0; i < links.length; i++) {
     if (count >= 100) {
       break
@@ -187,18 +201,16 @@ const renderChart = () => {
         }
         let url = ''
         if (!params.data.inner) {
-          url = `<div>地址: <a target="_blank" href="${params.data.artUrl}">${params.data.artUrl}</a></div>`
+          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
         } else {
-          url = `<div>地址: <a target="_blank" href="${'userStore.userinfo.userParams.WEB_ARTICLE_URL' + params.data.artId}">${
-            'userStore.userinfo.userParams.WEB_ARTICLE_URL' + params.data.artId
-          }</a></div>`
+          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
         }
         let type = ''
-        if (params.data.artType === 11) {
-          type = `<div>类型: 内部文章</div>`
-        } else if (params.data.artType === 12) {
-          type = `<div style="color:${insideUnknown.itemStyle.color}">类型: 未知文章, 可能是文章ID错误或已被删除</div>`
-        } else if (params.data.artType === 21) {
+        if (params.data.type === 'INNER_ARTICLE') {
+          type = `<div>类型: 文档库内文章</div>`
+        } else if (params.data.type === 'UNKNOWN_INNER_ARTICLE') {
+          type = `<div style="color:${innerUnknown.itemStyle.color}">类型: 未知文章, 可能已被删除或 Markdown 链接格式错误</div>`
+        } else if (params.data.type === 'PUBLIC_ARTICLE') {
           type = `<div>类型: 外网文章</div>`
         }
         return `<div class="chart-graph-article-ref-tooltip" style="border:1px solid ${params.data.itemStyle.color}">
@@ -213,25 +225,28 @@ const renderChart = () => {
     series: [
       {
         type: 'graph',
-        layout: 'force',
+        layout: 'force', // 采用力引导布局
         top: 100,
         bottom: 100,
         draggable: false,
         symbolSize: 15,
-        animation: true,
-        animationThreshold: 1000,
-        animationDuration: 1,
+        // animation: false,
+        // animationDuration: 1000,
+        // animationThreshold: 500,
+        // animationEasingUpdate: 'quinticInOut',
         zoom: 0.5,
         roam: true,
         label: {
-          show: true,
-          formatter: (param: any) => {
-            let len = param.name.length
-            if (len < 20) {
-              return param.name
-            }
-            return (param.name as string).substring(0, 15) + '...'
-          }
+          show: false,
+          position: 'bottom',
+          formatter: '{b}'
+          // formatter: (param: any) => {
+          //   let len = param.name.length
+          //   if (len < 20) {
+          //     return param.name
+          //   }
+          //   return (param.name as string).substring(0, 15) + '...'
+          // }
         },
         labelLayout: {
           // 标签重叠时进行遮盖
@@ -245,55 +260,88 @@ const renderChart = () => {
         // },
         // autoCurveness: true,
         lineStyle: {
-          color: isDark.value ? '#5E5E5E' : '#B3B3B3',
-          width: 2,
-          // 直线或曲线
-          curveness: 0.1
+          color: isDark.value ? '#5E5E5E' : '#7E7E7E',
+          width: 1,
+          curveness: 0 // 直线或曲线
         },
         force: {
           layoutAnimation: true,
           repulsion: 500, // 节点之间的斥力因子。
-          // 这个参数能减缓节点的移动速度. 取值范围 0 到 1, 越大越快, 值越大时, 节点之间会更加内聚, 否则会混在一起
-          friction: 0.2,
-          // 节点受到的向中心的引力因子. 该值越大, 所有节点越往中心点靠拢.
-          gravity: 0.05
+          friction: 0.1, // 这个参数能减缓节点的移动速度. 取值范围 0 到 1, 越大越快, 值越大时, 节点之间会更加内聚, 否则会混在一起
+          gravity: 1 // 节点受到的向中心的引力因子. 该值越大, 所有节点越往中心点靠拢.
         },
         // 箭头的开始, 结束图形
         edgeSymbol: ['circle', 'arrow'],
         // 箭头的开始, 结束图形大小
-        edgeSymbolSize: [0, 5],
+        edgeSymbolSize: [0, 9],
+        // 连线的标题
         // edgeLabel: {
         //   show: false,
-        // fontSize: 10,
-        // width: 30,
-        // overflow: 'truncate'
+        //   fontSize: 10,
+        //   width: 30,
+        //   overflow: 'truncate'
         // },
+        // =========== 高亮状态的图形样式 ===========
         emphasis: {
-          // 聚焦关系图中的邻接点和边的图形。
-          focus: 'adjacency',
-          // blurScope: 'series',
+          focus: 'adjacency', // 聚焦关系图中的邻接点和边的图形。
+          scale: false,
           lineStyle: {
-            width: 5
+            width: 1
+          },
+          itemStyle: {
+            color: getPrimaryColor().color
           }
           // label: { show: true },
           // edgeLabel: { show: false },
         },
+        // =========== 被淡出的节点样式 ===========
         blur: {
-          // itemStyle: { opacity: 0.1 },
-          lineStyle: { opacity: 0.1 },
-          label: { show: false },
-          edgeLabel: { show: false }
+          itemStyle: {
+            opacity: 0.1
+          },
+          lineStyle: {
+            opacity: 0.1
+          },
+          label: {
+            show: false
+          },
+          // 连线标题的样式
+          edgeLabel: {
+            show: false
+          }
         },
         data: nodes,
-        links: links,
-        categories:
-          nodes.length > 0
-            ? nodes.map((item: any) => {
-                return item.name
-              })
-            : ''
+        links: links
+        // categories:
+        //   nodes.length > 0
+        //     ? nodes.map((item: any) => {
+        //         return item.name
+        //       })
+        //     : ''
       }
     ]
+  })
+
+  chartGraph.on('graphroam', function (_params: any) {
+    // console.log('graphroam', params)
+    // // 1. 获取当前的 option
+    const option = chartGraph.getOption()
+    // // 2. 获取当前的缩放比例，默认是1[reference:3]
+    const currentZoom = option.series[0].zoom || 1
+    // console.log('currentZoom', currentZoom)
+    if (currentZoom > 1.5) {
+      if (option.series[0].label.show === false) {
+        option.series[0].label = { show: true }
+        option.series[0].blur.label = { show: true }
+        setOption(option)
+      }
+    } else {
+      if (option.series[0].label.show === true) {
+        option.series[0].label = { show: false }
+        option.series[0].blur.label = { show: false }
+        setOption(option)
+      }
+    }
   })
 }
 
@@ -312,24 +360,18 @@ function debounce(fn: () => void, time = 500) {
   debounceTimeout = setTimeout(fn, time)
 }
 
+const setOption = (option: any) => {
+  debounce(() => {
+    console.log('setOption')
+    chartGraph.setOption(option, { lazyUpdate: true })
+  }, 500)
+}
+
 const windowResize = () => {
   debounce(() => {
     chartGraph.resize()
   }, 300)
 }
-
-onMounted(() => {
-  document.title = 'Blossom 双链图表'
-  init()
-  windowResize()
-  articleId = route.query.articleId as string
-  getArticleRefList(true)
-  window.addEventListener('resize', windowResize)
-})
-
-onUnmounted(() => {
-  window.removeEventListener('resize', windowResize)
-})
 </script>
 
 <style scoped lang="scss">

@@ -13,7 +13,7 @@ asarUnpack:
   - resources/**
 afterSign: build/notarize.js
 win:
-  executableName: blossomlocal
+  executableName: blossom-local
 # https://www.electron.build/configuration/nsis
 nsis:
   artifactName: ${name}-${version}-setup.${ext}

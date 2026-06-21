@@ -152,10 +152,11 @@ export const isHttp = (url: string | null | undefined) => {
   return url.startsWith('http://') || url.startsWith('https://')
 }
 
+export const DEFAULT_ID = '0-0'
 /**
  * 创建一个默认的 BigIntStats 对象
  */
-export function createDefaultBigIntStats() {
+export const createDefaultBigIntStats = () => {
   const ZERO = 0n // 所有数值属性用 bigint 的 0
   const DEFAULT_DATE = new Date(0) // 时间属性的默认值（1970-01-01）
 
@@ -193,6 +194,10 @@ export function createDefaultBigIntStats() {
     isFIFO: () => false,
     isSocket: () => false
   }
+}
+
+export const sleep = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
 //#region 染色日志

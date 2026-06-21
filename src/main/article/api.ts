@@ -3,7 +3,7 @@ import fs, { BigIntStats } from 'fs'
 import path from 'path'
 import R from '../../preload/r'
 import { IdMapping, FileItem } from '../doclib/idMapping'
-import { DocLibStatsManager, UpdateMdNameRes } from '../doclib/docLibStatsManager'
+import { DocLibStatsManager, MdToLink, MdToLinkItem, UpdateMdNameRes } from '../doclib/docLibStatsManager'
 import { readDocList, readDocTreeSort } from '../doclib/api'
 import { timeToYMD } from '../date'
 import { getUniqueId } from '../utils'
@@ -26,6 +26,7 @@ export const initArticleApi = (win: BrowserWindow) => {
   initCreateFolder()
   initCreateMarkdown()
   initDeleteFile()
+  initArticleRefList()
 }
 const initReadDocInfo = () => {
   ipcMain.handle('read-doc-info', async (_event, req: GetFileContentReq): Promise<R<DocInfo>> => await readDocInfo(req))
@@ -47,6 +48,9 @@ const initCreateMarkdown = () => {
 }
 const initDeleteFile = () => {
   ipcMain.handle('delete-file', (_event, req: DeleteFileReq) => deleteFile(req))
+}
+const initArticleRefList = () => {
+  ipcMain.handle('article-ref', (_event, req: ArticleRefReq) => articleRefList(req))
 }
 //#endregion
 
@@ -422,4 +426,98 @@ const deleteFile = async (req: DeleteFileReq): Promise<R<DocTree[]>> => {
   } catch (err) {
     return R.fail('50102', err)
   }
+}
+
+//#region 双链引用图表
+/**
+ *
+ * @param req
+ */
+export const articleRefList = async (req: ArticleRefReq): Promise<R<ArticleRefRes>> => {
+  const res: ArticleRefRes = { nodes: [], links: [] }
+  const seen: Set<string> = new Set()
+  function addNode(node: ArticleRefNode) {
+    if (!seen.has(node.id)) {
+      seen.add(node.id)
+      res.nodes.push(node)
+    }
+  }
+
+  // ==================================================================
+  // 查询指定文章的
+  // ==================================================================
+  if (req.articleId !== undefined && req.articleId !== '') {
+    const article = idMapping.get(req.articleId)
+    if (article === undefined) return R.ok(res)
+
+    // 文章本身
+    addNode({ id: article.id, name: article.name, type: 'INNER_ARTICLE', inner: true, url: article.path })
+
+    // 文章引用的其他链接
+    const m2m: MdToLink | undefined = docLibStatsManager.getM2M().get(article.id)
+    if (m2m === undefined) return R.ok(res)
+
+    // 文章引用的其他链接
+    m2m.links.forEach((item: MdToLinkItem) => {
+      if (item.type === 'PUBLIC_ARTICLE' && req.onlyInner === true) return
+
+      const node: ArticleRefNode = { id: item.markdownId, name: item.linkUrl, type: item.type, inner: true, url: item.linkUrl }
+      const link: ArticleRefLink = { source: article.id, target: item.markdownId }
+
+      // 外部链接, 地址做为ID
+      if (item.type === 'PUBLIC_ARTICLE') {
+        node.id = item.linkUrl
+        node.inner = false
+        link.target = item.linkUrl
+      } else {
+        node.name = path.basename(item.linkUrl)
+      }
+      res.links.push(link)
+      addNode(node)
+    })
+
+    // 其他文章引用的本身
+
+    return R.ok(res)
+  }
+
+  // ==================================================================
+  // 查询全局
+  // ==================================================================
+
+  // 文档库下的所有文章
+  idMapping.files.forEach((file) => {
+    if (file.type !== 'ARTICLE') return
+    const node: ArticleRefNode = { id: file.id, name: file.name, type: 'INNER_ARTICLE', inner: true, url: file.path }
+    addNode(node)
+  })
+
+  // 从文章引用解析中获取节点, 这里包含公开文章和地址错误的内部文章
+  docLibStatsManager.getM2M().forEach((m2m: MdToLink, id: string) => {
+    m2m.links.forEach((item: MdToLinkItem) => {
+      if (item.type === 'PUBLIC_ARTICLE' && req.onlyInner === true) return
+
+      // 内部文章引用错误要作为节点, 解析链接时没有获取到文章的 stat 时会标记此状态
+      if (item.type === 'UNKNOWN_INNER_ARTICLE') {
+        const node: ArticleRefNode = { id: item.linkUrl, name: path.basename(item.linkUrl), type: item.type, inner: true, url: item.linkUrl }
+        const link: ArticleRefLink = { source: id, target: item.linkUrl }
+        addNode(node)
+        res.links.push(link)
+      }
+      // 外部链接作为节点, 地址做为ID
+      else if (item.type === 'PUBLIC_ARTICLE') {
+        const node: ArticleRefNode = { id: item.linkUrl, name: item.linkUrl, type: item.type, inner: false, url: item.linkUrl }
+        const link: ArticleRefLink = { source: id, target: item.linkUrl }
+        addNode(node)
+        res.links.push(link)
+      }
+      // 正常的内部链接, 保存连线
+      else {
+        const link: ArticleRefLink = { source: id, target: item.markdownId }
+        res.links.push(link)
+      }
+    })
+  })
+
+  return R.ok(res)
 }

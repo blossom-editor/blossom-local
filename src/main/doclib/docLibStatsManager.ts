@@ -5,7 +5,7 @@ import { BigIntStats } from 'fs'
 import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
-import { createDefaultBigIntStats, extractFileName, getUniqueId, isHttp, traceLog, warnLog } from '../utils'
+import { createDefaultBigIntStats, DEFAULT_ID, extractFileName, getUniqueId, isHttp, sleep, traceLog, warnLog } from '../utils'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -43,6 +43,10 @@ export class DocLibStatsManager {
     return this.stats!
   }
 
+  public getM2M(): Map<string, MdToLink> {
+    return this.m2m
+  }
+
   /**
    * 根据图片名称获取对应的文章信息
    * @param picName 图片名称
@@ -61,17 +65,13 @@ export class DocLibStatsManager {
   public async statsBegin(docLibPath: string): Promise<void> {
     // 三十秒一次
     // if (this.docLibPath === docLibPath && new Date().getTime() - this.lastInitStatsTime < 30 * 1000) {
+
     if (this.docLibPath === docLibPath) {
       return
     }
 
     this.docLibPath = docLibPath
-    if (!this.stats) {
-      await this.init(docLibPath)
-    }
-    if (!this.stats) {
-      return
-    }
+    await this.init(docLibPath)
 
     this.m2p.clear()
     this.p2m.clear()
@@ -87,7 +87,7 @@ export class DocLibStatsManager {
       pictureTotalSize: 0
     }
 
-    this.statsFileTreeRecursive(docLibPath, temp).then((temp: DocLibStats) => {
+    await this.statsFileTreeRecursive(docLibPath, temp).then((temp: DocLibStats) => {
       this.stats!.articleTotal = temp.articleTotal
       this.stats!.articleTotalWords = temp.articleTotalWords
       this.stats!.pictureTotal = temp.pictureTotal
@@ -103,6 +103,8 @@ export class DocLibStatsManager {
    * @param docLibPath 文档库路径
    */
   private async init(docLibPath: string): Promise<void> {
+    this.stats = undefined
+    // 读取配置文件
     const rawString = await fs.promises.readFile(path.join(docLibPath, sysFolder, docLibStatsFile), 'utf-8')
     this.stats = JSON.parse(rawString) as DocLibStats
     if (this.stats.articleTotal === undefined) this.stats.articleTotal = 0
@@ -284,14 +286,25 @@ export class DocLibStatsManager {
   private async initM2M(links: LinkMatch[], markdownId: string) {
     for (const link of links) {
       let m2m: MdToLink = this.m2m.get(markdownId)!
+
+      let id: string
       let fullPath: string
+      let type: ArticleRefNodeType = 'INNER_ARTICLE'
+
       if (isHttp(link.url) || link.url.startsWith(this.docLibPath)) {
         fullPath = link.url
+        type = 'PUBLIC_ARTICLE'
+        id = link.url
       } else {
+        // 如果是内部文章, 但没有找到该文件, 则返回未知内部文章
         fullPath = path.join(this.docLibPath, link.url)
+        id = getUniqueId(await this.stat(fullPath))
+        if (id === DEFAULT_ID) {
+          id = link.url
+          type = 'UNKNOWN_INNER_ARTICLE'
+        }
       }
-      const stats = await this.stat(fullPath)
-      m2m.links.push({ markdownId: getUniqueId(stats), linkFullPath: fullPath, linkUrl: link.url, linkRaw: link.raw })
+      m2m.links.push({ markdownId: id, linkFullPath: fullPath, linkUrl: link.url, linkRaw: link.raw, type: type })
       this.m2m.set(markdownId, m2m)
     }
   }
@@ -315,19 +328,26 @@ export class DocLibStatsManager {
     this.m2m.delete(markdownId)
     for (const link of linkMatch) {
       let m2m: MdToLink = this.m2m.get(markdownId) || { links: [] }
+
+      let id: string
       let fullPath: string
+      let type: ArticleRefNodeType = 'INNER_ARTICLE'
+
       if (isHttp(link.url) || link.url.startsWith(this.docLibPath)) {
         fullPath = link.url
+        type = 'PUBLIC_ARTICLE'
+        id = link.url
       } else {
+        // 如果是内部文章, 但没有找到该文件, 则返回未知内部文章
         fullPath = path.join(this.docLibPath, link.url)
+        try {
+          id = getUniqueId(fs.statSync(fullPath, { bigint: true }))
+        } catch (e) {
+          id = link.url
+          type = 'UNKNOWN_INNER_ARTICLE'
+        }
       }
-      let stats: fs.BigIntStats
-      try {
-        stats = fs.statSync(fullPath, { bigint: true })
-      } catch (e) {
-        stats = createDefaultBigIntStats()
-      }
-      m2m.links.push({ markdownId: getUniqueId(stats), linkFullPath: fullPath, linkUrl: link.url, linkRaw: link.raw })
+      m2m.links.push({ markdownId: id, linkFullPath: fullPath, linkUrl: link.url, linkRaw: link.raw, type: type })
       this.m2m.set(markdownId, m2m)
     }
 
@@ -691,8 +711,14 @@ interface MdToPicItem { picName: string; picPath: string; picMdRaw: string; } //
  * markdown 和链接的对应结果, 一个 markdown 对应多个链接
  * 链接的主键为拼接了文档库路径的 linkPath
  */
-interface MdToLink { links: MdToLinkItem[] } // prettier-ignore
-interface MdToLinkItem { markdownId: string, linkFullPath: string; linkUrl: string ; linkRaw: string } // prettier-ignore
+export interface MdToLink { links: MdToLinkItem[] } // prettier-ignore
+export interface MdToLinkItem {
+  markdownId: string
+  linkFullPath: string
+  linkUrl: string
+  linkRaw: string
+  type: ArticleRefNodeType
+}
 
 /**
  * 基础匹配信息（包含公共字段）

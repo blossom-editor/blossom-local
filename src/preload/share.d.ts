@@ -236,3 +236,23 @@ declare interface PictureMoveBatchReq extends Base  {
 }
 
 //#endregion
+
+/** 双链引用节点类型 */
+declare type ArticleRefNodeType = 'PICTURE' | 'INNER_ARTICLE' | 'UNKNOWN_INNER_ARTICLE' | 'PUBLIC_ARTICLE'
+
+/** 双链引用节点对象 */
+declare interface ArticleRefNode {
+  id: string
+  name: stirng,
+  type: ArticleRefNodeType
+  inner: boolean
+  url: string
+  itemStyle?: stirng // 节点样式
+  label?: any // 节点标签样式
+  symbolSize?: number  // 节点被链接数
+}
+
+/** 双链引用节点之间的关系 */
+declare interface ArticleRefLink { source: string; target: string }
+declare interface ArticleRefReq { onlyInner: boolean; articleId?: string }
+declare interface ArticleRefRes { nodes: ArticleRefNode[];  links: ArticleRefLink[] }

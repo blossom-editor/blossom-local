@@ -317,6 +317,9 @@ export const checkDocLibConfig = async (base: Base) => {
     return R.fail('DOCLIB_PATH_NOT_EXIST', `文档库不存在: ${base.docLibPath}`)
   }
 
+  idMapping.clear()
+  picNameMapping.clear()
+
   const systemPath = path.join(base.docLibPath, sysFolder)
   // 创建创建文件夹
   await fs.promises.mkdir(systemPath, { recursive: true })
@@ -325,7 +328,7 @@ export const checkDocLibConfig = async (base: Base) => {
   // 创建文章拓展信息文件
   await checkArticleExtensionFileFile(base.docLibPath)
   // 开始统计
-  docLibStatsManager.statsBegin(base.docLibPath)
+  await docLibStatsManager.statsBegin(base.docLibPath)
   // 变更文档库的路径, curDocLibManager 用于在全局获取当前文档库路径
   curDocLibManager.change(base.docLibPath)
   return R.ok('')

@@ -70,12 +70,11 @@ export const articleListApi = (req?: object): Promise<R<any>> => {
   return new Promise(() => {})
 }
 
-
 /**
  * 文章引用关系
  */
-export const articleRefListApi = (req?: object): Promise<R<any>> => {
-  return new Promise(() => {})
+export const articleRefListApi = (req: ArticleRefReq): Promise<R<ArticleRefRes>> => {
+  return invoke('article-ref', req)
 }
 
 //#endregion
