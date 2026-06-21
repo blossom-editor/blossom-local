@@ -519,7 +519,7 @@ export const uuid = (): string => {
  * mac平台的约束在win平台同样生效, 放置文档库在不同设备之间同步
  */
 export const inValidateFileName = (str: string): boolean => {
-  const regex = /[<>\/\\:*?"|.]/
+  const regex = /[<>\/\\:*?"|. ]/
   return regex.test(str)
 }
 

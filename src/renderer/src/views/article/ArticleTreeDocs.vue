@@ -53,6 +53,7 @@
       :default-expanded-keys="Array.from(docTreeCurrentExpandIdSet)"
       :filter-node-method="filterNode"
       :draggable="isBlank(treeFilterText)"
+      :expand-on-click-node="notAllowDragId === ''"
       @nodeClick="clickCurDoc"
       @nodeExpand="handleNodeExpand"
       @nodeCollapse="handleNodeCollapse"
@@ -122,7 +123,7 @@
   </Teleport>
 
   <!-- prettier-ignore -->
-  <el-tooltip :visible="renameTooltipVisible" content='名称中不允许包含 <>\/:*?"|.' placement="top" effect="dark" trigger="click" virtual-triggering :virtual-ref="renameTooltipRef" />
+  <el-tooltip :visible="renameTooltipVisible" content='名称中不允许包含 <>\/:*?"|. 和空格' placement="top" effect="dark" trigger="click" virtual-triggering :virtual-ref="renameTooltipRef" />
 </template>
 
 <script setup lang="ts">
@@ -259,7 +260,7 @@ const getDocTree = (callback?: () => void) => {
  * @param event 点击事件
  */
 const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: MouseEvent) => {
-  if (tree.id === notAllowDragId) {
+  if (tree.id === notAllowDragId.value) {
     return
   }
   closeTreeDocsMenuShow(event)
@@ -307,7 +308,7 @@ const DocTreeSearch = ref()
 const DocTreeSearchMove = ref()
 const DocTreeSearchInput = ref()
 // 禁止拖拽的节点, 正在重命名的节点不允许进行拖拽
-let notAllowDragId: string = ''
+const notAllowDragId = ref<string>('')
 
 useDraggable(DocTreeSearch, DocTreeSearchMove, DocTreeContainer)
 
@@ -364,7 +365,7 @@ const filterNode = (value: string, data: DocTree) => {
  * @return boolean 节点是否允许被拖动
  */
 const handleAllowDrag = (node: Node) => {
-  return notAllowDragId !== node.data.id
+  return notAllowDragId.value !== node.data.id
 }
 
 /**
@@ -551,7 +552,7 @@ const position = ref({ top: 0, left: 0, bottom: 0, right: 0 } as DOMRect)
  */
 const rename = () => {
   curDoc.value.updn = true
-  notAllowDragId = curDoc.value.id
+  notAllowDragId.value = curDoc.value.id
   nextTick(() => {
     let ele = document.getElementById('article-doc-name-' + curDoc.value.id)
     if (ele) ele.focus()
@@ -586,14 +587,14 @@ const blurArticleNameInput = (doc: DocTree) => {
   // 文件名不合法时, 刷新列表汇
   if (!changeArticleNameInput(doc)) {
     getDocTree()
-    notAllowDragId = ''
+    notAllowDragId.value = ''
     renameTooltipVisible.value = false
     return
   }
 
   function resetUpdateState() {
     doc.updn = false
-    notAllowDragId = ''
+    notAllowDragId.value = ''
   }
 
   req.newName = doc.formatName + (doc.type === 'ARTICLE' ? '.md' : '')

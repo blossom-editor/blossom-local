@@ -1,7 +1,7 @@
 <template>
   <div class="global-home-root">
     <div class="left"></div>
-    <div class="doclib-name">{{ doclibStore.cur!.name }}游戏开发</div>
+    <div class="doclib-name">{{ doclibStore.cur!.name }}</div>
     <div class="logo">Blossom</div>
     <div class="main">
       <bl-row class="greetings" height="65px"> Good {{ now }}. </bl-row>

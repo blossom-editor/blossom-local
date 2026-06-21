@@ -57,6 +57,7 @@
       :default-expanded-keys="Array.from(docTreeCurrentExpandIdSet)"
       :filter-node-method="filterNode"
       :draggable="isBlank(treeFilterText)"
+      :expand-on-click-node="(notAllowDragId === '')"
       node-key="id"
       @nodeClick="clickCurDoc"
       @nodeExpand="handleNodeExpand"
@@ -116,7 +117,7 @@
   </Teleport>
 
   <!-- prettier-ignore -->
-  <el-tooltip :visible="renameTooltipVisible" content='名称中不允许包含 <>\/:*?"|.' placement="top" effect="dark" trigger="click" virtual-triggering :virtual-ref="renameTooltipRef"/>
+  <el-tooltip :visible="renameTooltipVisible" content='名称中不允许包含 <>\/:*?"|. 和空格' placement="top" effect="dark" trigger="click" virtual-triggering :virtual-ref="renameTooltipRef"/>
 </template>
 
 <script setup lang="ts">
@@ -216,7 +217,7 @@ const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: Mouse
   // 设置当前文档
   setDocTreeCurrentKey({ id: tree.id, parentId: node.parent.data.id, type: tree.type }, node, treeNode, event)
   // 正在重命名的图片不能点击
-  if (tree.id === notAllowDragId) return
+  if (tree.id === notAllowDragId.value) return
   emits('clickDoc', tree)
 }
 
@@ -270,7 +271,7 @@ const DocTreeSearchMove = ref()
 const DocTreeSearchInput = ref()
 const isShowPictureRepeat = ref(false)
 // 禁止拖拽的节点, 正在重命名的节点不允许进行拖拽
-let notAllowDragId: string = ''
+const notAllowDragId = ref<string>('')
 
 useDraggable(DocTreeSearch, DocTreeSearchMove, DocTreeContainer)
 
@@ -335,7 +336,7 @@ const filterNode = (value: string | boolean, data: DocTree): boolean => {
  * @return boolean 节点是否允许被拖动
  */
 const handleAllowDrag = (node: Node): boolean => {
-  return node.data.type === 'PICTURE' && notAllowDragId !== node.data.id
+  return node.data.type === 'PICTURE' && notAllowDragId.value !== node.data.id
 }
 
 /**
@@ -577,7 +578,7 @@ const position = ref({ top: 0, left: 0, bottom: 0, right: 0 } as DOMRect)
  */
 const rename = () => {
   curDoc.value.updn = true
-  notAllowDragId = curDoc.value.id
+  notAllowDragId.value = curDoc.value.id
   nextTick(() => {
     let ele = document.getElementById('article-doc-name-' + curDoc.value.id)
     if (ele) ele.focus()
@@ -591,7 +592,7 @@ const blurArticleNameInput = (doc: DocTree) => {
   const req: RenameFileReq = { id: doc.id, newName: '' }
   if (!changeArticleNameInput(doc)) {
     getDocTree()
-    notAllowDragId = ''
+    notAllowDragId.value = ''
     renameTooltipVisible.value = false
     return
   }
@@ -599,7 +600,7 @@ const blurArticleNameInput = (doc: DocTree) => {
   req.newName = doc.name
   function resetUpdateState() {
     doc.updn = false
-    notAllowDragId = ''
+    notAllowDragId.value = ''
   }
 
   // 路径相同, 则未重命名
