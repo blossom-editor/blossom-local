@@ -23,7 +23,7 @@ import SettingAboutVue from './SettingAbout.vue'
 import CONFIG from '@renderer/assets/constants/system'
 
 onMounted(() => {
-  document.title = 'Blossom 设置'
+  document.title = '设置'
   activeTab.value = 'login'
 })
 

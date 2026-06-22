@@ -50,6 +50,18 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { isNotBlank, isNotNull } from '@renderer/assets/utils/obj'
 import { getPrimaryColor } from '@renderer/scripts/global-theme'
 import AppHeader from '@renderer/components/AppHeader.vue'
+import createLayout from 'mgraph.forcelayout'
+import createGraph, { NodeId } from 'mgraph.graph'
+
+const graph = createGraph()
+const layout = createLayout(graph, {
+  dimensions: 2, // 默认为2D[reference:4]
+  springLength: 2, // 理想边长[reference:5]
+  springCoefficient: 0.8, // 弹簧强度[reference:6]
+  gravity: -25 // 重力 (负值为斥力)[reference:7]
+})
+
+//////////////
 
 echarts.use([TitleComponent, TooltipComponent, LegendComponent, GraphChart, CanvasRenderer])
 
@@ -57,7 +69,7 @@ const isDark = useDark()
 const route = useRoute()
 
 onMounted(() => {
-  document.title = 'Blossom 双链图表'
+  document.title = '双链图表'
   init()
   windowResize()
   articleId = route.query.articleId as string
@@ -67,53 +79,34 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', windowResize)
+  layout.dispose()
 })
 
 // -------------------- data
 const showOutsideName = ref(false)
 const ChartGraphRef = ref<any>(null)
+const stat = ref({ inside: 0, outside: 0 })
 let articleId = ''
 let chartGraph: any
 let nodes: any = [{}]
 let links: any = [{}]
-let stat = ref({
-  inside: 0,
-  outside: 0
-})
 
 let inner: any = { itemStyle: {}, label: {} }
 let innerUnknown: any = { itemStyle: {}, label: {} }
 let outside: any = { itemStyle: {}, label: {} }
 const changeStyle = () => {
-  let primaryColor = getPrimaryColor()
   // 节点数量统计
   stat.value = { inside: 0, outside: 0 }
   inner = {
-    itemStyle: {
-      color: isDark.value ? '#6E6E6E' : '#9B9B9B'
-    },
-    label: {
-      fontSize: 14,
-      color: isDark.value ? '#BABABA' : '#000000',
-      textBorderColor: isDark.value ? '#3B3B3B' : '#E7E7E7',
-      textBorderWidth: 2
-    }
+    label: { fontSize: 12, color: isDark.value ? '#BABABA' : '#000000' },
+    itemStyle: { color: isDark.value ? '#6E6E6E' : '#9B9B9B' }
   }
   innerUnknown = {
-    itemStyle: {
-      color: isDark.value ? '#7B0000' : '#EB6969'
-    },
-    label: {
-      fontSize: 13,
-      color: isDark.value ? '#BABABA' : '#030303',
-      textBorderColor: isDark.value ? '#7B0000' : '#EB6969',
-      textBorderWidth: 1
-    }
+    label: { fontSize: 12, color: isDark.value ? '#7B0000' : '#EB6969' },
+    itemStyle: { color: isDark.value ? '#7B0000' : '#EB6969' }
   }
   outside = {
-    itemStyle: {
-      color: isDark.value ? '#7B5E00' : '#FDC81A87'
-    },
+    itemStyle: { color: isDark.value ? '#7B5E00' : '#DEAE10' },
     label: {
       fontSize: 12,
       show: showOutsideName.value,
@@ -153,16 +146,50 @@ const getArticleRefList = (onlyInner: boolean) => {
         node.label = outside.label
         stat.value.outside += 1
       }
-      node.symbolSize = getLinkCount(node.name, resp.data!.links)
+      node.symbolSize = getLinkCount(node.id, resp.data!.links)
       return node
     })
     links = resp.data.links
-    renderChart()
+
+    nodes.forEach((node: { id: NodeId }) => {
+      graph.addNode(node.id)
+    })
+
+    links.forEach((link: { source: NodeId; target: NodeId }) => {
+      graph.addLink(link.source, link.target)
+    })
+
+    let start = Date.now()
+    const iterations = 200
+    for (let i = 0; i < iterations; i++) {
+      if (layout.step()) {
+        break
+      }
+    }
+    console.log(`layout took ${Date.now() - start}ms`)
+
+    start = Date.now()
+    graph.forEachNode((graphNode: any) => {
+      const pos = layout.getNodePosition(graphNode.id)
+      nodes.forEach((data: { id: any; x: number; y: number }) => {
+        if (data.id === graphNode.id) {
+          data.x = pos.x
+          data.y = pos.y
+        }
+      })
+    })
+
+    console.log(`getNodePosition took ${Date.now() - start}ms`)
+
+    start = Date.now()
+    randerChat2(nodes)
+    console.log(`randerChat2 took ${Date.now() - start}ms`)
+
+    layout.dispose()
+    //
   })
 }
 
-// 节点被链接数量的累计基数, 越大则节点 symbolSize 越大
-const ascending = 1
 /**
  * 统计节点被被链接的数量, 用于计算 symbolSize
  * @param name  节点名称
@@ -171,18 +198,138 @@ const ascending = 1
 const getLinkCount = (name: string, links: ArticleRefLink[]): number => {
   let count: number = 10
   for (let i = 0; i < links.length; i++) {
-    if (count >= 100) {
+    if (count >= 50) {
       break
     }
     let link = links[i]
     if (link.source == name) {
-      count += ascending
+      count += 1
     }
     if (link.target == name) {
-      count += ascending
+      count += 1
     }
   }
   return count
+}
+
+const randerChat2 = (nodes1: any[]) => {
+  chartGraph.setOption({
+    tooltip: {
+      // position: [20, 50],
+      triggerOn: 'click',
+      enterable: true,
+      alwaysShowContent: false,
+      borderWidth: 0,
+      borderColor: 'none',
+      padding: 0,
+      formatter: (params: any) => {
+        if (params.dataType === 'edge') {
+          return
+        }
+        let url = ''
+        if (!params.data.inner) {
+          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
+        } else {
+          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
+        }
+        let type = ''
+        if (params.data.type === 'INNER_ARTICLE') {
+          type = `<div>类型: 文档库内文章</div>`
+        } else if (params.data.type === 'UNKNOWN_INNER_ARTICLE') {
+          type = `<div style="color:${innerUnknown.itemStyle.color}">类型: 未知文章, 可能已被删除或 Markdown 链接格式错误</div>`
+        } else if (params.data.type === 'PUBLIC_ARTICLE') {
+          type = `<div>类型: 外网文章</div>`
+        }
+        return `<div class="chart-graph-article-ref-tooltip" style="border:1px solid ${params.data.itemStyle.color}">
+          <div class="title">${params.data.name}</div>
+          <div class="content">
+            ${type}
+            ${url}
+          </div>
+          </div>`
+      }
+    },
+    series: [
+      {
+        type: 'graph',
+        layout: 'none', // 采用力引导布局
+        top: 100,
+        bottom: 100,
+        draggable: false,
+        symbolSize: 15,
+        // animationDuration: 1000,
+        // animationThreshold: 500, // 是否开启动画的阈值，当单个系列显示的图形数量大于这个阈值时会关闭动画。
+        zoom: 0.5,
+        roam: true,
+        label: {
+          show: nodes1.length > 200 ? false : true,
+          position: 'bottom',
+          // formatter: '{b}'
+          formatter: (param: any) => {
+            let len = param.name.length
+            if (len < 20) {
+              return param.name.replace('.md', '')
+            }
+            return (param.name as string).substring(0, 15) + '...'
+          }
+        },
+        labelLayout: {
+          hideOverlap: true // 标签重叠时进行遮盖
+        },
+        lineStyle: {
+          color: isDark.value ? '#5E5E5E' : '#7E7E7E',
+          width: 1,
+          curveness: 0 // 直线或曲线
+        },
+        edgeSymbol: ['circle', 'arrow'], // 箭头的开始, 结束图形
+        edgeSymbolSize: [0, 5], // 箭头的开始, 结束图形大小
+        // =========== 高亮状态的图形样式 ===========
+        emphasis: {
+          focus: 'adjacency', // 聚焦关系图中的邻接点和边的图形。
+          scale: false,
+          lineStyle: { width: 2, color: getPrimaryColor().color },
+          itemStyle: { color: getPrimaryColor().color }
+          // label: { show: true },
+          // edgeLabel: { show: false },
+        },
+        // =========== 被淡出的节点样式 ===========
+        blur: {
+          itemStyle: { opacity: 0.1 },
+          lineStyle: { opacity: 0.1 },
+          label: { show: false },
+          edgeLabel: { show: false } // 连线标题的样式
+        },
+        data: nodes1,
+        links: links
+      }
+    ]
+  })
+
+  if (nodes1.length < 200) {
+    return
+  }
+
+  chartGraph.on('graphroam', function (_params: any) {
+    // console.log('graphroam', params)
+    // // 1. 获取当前的 option
+    const option = chartGraph.getOption()
+    // // 2. 获取当前的缩放比例，默认是1[reference:3]
+    const currentZoom = option.series[0].zoom || 1
+    // console.log('currentZoom', currentZoom)
+    if (currentZoom > 1.5) {
+      if (option.series[0].label.show === false) {
+        option.series[0].label = { show: true }
+        option.series[0].blur.label = { show: true }
+        setOption(option)
+      }
+    } else {
+      if (option.series[0].label.show === true) {
+        option.series[0].label = { show: false }
+        option.series[0].blur.label = { show: false }
+        setOption(option)
+      }
+    }
+  })
 }
 
 const renderChart = () => {

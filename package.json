@@ -49,6 +49,8 @@
     "markmap-lib": "^0.16.1",
     "markmap-view": "^0.16.0",
     "mermaid": "^10.9.3",
+    "mgraph.forcelayout": "^3.4.3",
+    "mgraph.graph": "^1.0.2",
     "pinia": "^2.1.6",
     "prettier": "^3.5.2",
     "sass": "^1.74.1",

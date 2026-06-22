@@ -19,12 +19,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
 import router from '@renderer/router'
+import { ref, watch, onMounted } from 'vue'
+import { useConfigStore } from '@renderer/stores/config'
 import { isElectron } from '@renderer/assets/utils/util'
 import indexAside from './index/IndexAside.vue'
 import AppHeader from '@renderer/components/AppHeader.vue'
-import { useConfigStore } from '@renderer/stores/config'
 
 const { viewStyle } = useConfigStore()
 
