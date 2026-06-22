@@ -223,21 +223,18 @@ const randerChat2 = (nodes1: any[]) => {
       borderColor: 'none',
       padding: 0,
       formatter: (params: any) => {
-        if (params.dataType === 'edge') {
-          return
-        }
+        if (params.dataType === 'edge') return
+
         let url = ''
-        if (!params.data.inner) {
-          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
-        } else {
-          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
-        }
         let type = ''
         if (params.data.type === 'INNER_ARTICLE') {
+          url = `<div>地址: <span href="${params.data.url}">${params.data.url}</span></div>`
           type = `<div>类型: 文档库内文章</div>`
         } else if (params.data.type === 'UNKNOWN_INNER_ARTICLE') {
           type = `<div style="color:${innerUnknown.itemStyle.color}">类型: 未知文章, 可能已被删除或 Markdown 链接格式错误</div>`
+          url = `<div>地址: ${params.data.url}</div>`
         } else if (params.data.type === 'PUBLIC_ARTICLE') {
+          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
           type = `<div>类型: 外网文章</div>`
         }
         return `<div class="chart-graph-article-ref-tooltip" style="border:1px solid ${params.data.itemStyle.color}">

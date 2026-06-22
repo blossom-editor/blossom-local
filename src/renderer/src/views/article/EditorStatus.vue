@@ -9,7 +9,9 @@
         </div>
       </el-tooltip>
       <el-tooltip :content="curArticle?.id" effect="light" placement="top" :hide-after="0" :show-after="500">
-        <div v-show="curArticle" class="id">ID:{{ curArticle?.id }}</div>
+        <div v-show="curArticle" class="id">
+          <span>ID:{{ curArticle?.id }}</span>
+        </div>
       </el-tooltip>
     </bl-row>
     <bl-row just="flex-end" width="260px" height="100%" class="status-item-container-right">

@@ -14,7 +14,6 @@ import mermaid from 'mermaid'
 // markmap
 import { Transformer } from 'markmap-lib'
 import { Markmap, deriveOptions } from 'markmap-view'
-import { ArticleReference } from './article'
 import { picCacheWrapper } from '@renderer/views/picture/scripts/picture'
 import { getDocByPath } from '@renderer/views/doc/doc'
 import { useDocLibStore } from '@renderer/stores/docLib'
@@ -401,40 +400,25 @@ export const renderImage = (href: string | null, title: string | null, text: str
  * @param title 链接标题 <a title="title">, 语法拓展内容在title中
  * @param text 链接的文字
  * @param docTrees 文档树状对象, 用于获取双链笔记的内容详情
- * @returns {
- *  link: link 标签
- *  ref: 双链内容
- * }
+ * @returns link 标签
  */
-export const renderLink = (
-  href: string,
-  _title: string | null | undefined,
-  text: string,
-  docTrees: DocTree[]
-): { link: string; ref: ArticleReference } => {
+export const renderLink = (href: string, _title: string | null | undefined, text: string, docTrees: DocTree[]): string => {
   let link: string
-  let ref: ArticleReference = { targetId: '0', targetName: text, targetUrl: href as string, type: 'PUBLIC_ARTICLE' }
-
   // 外部链接
   if (isHttp(href)) {
     link = `<a target="_blank" href=${href} target="_blank">${text}</a>`
   } else {
     // 拼接目标文章的路径
     const targetPath = pathJoin(docLibStore.cur!.path, href)
+    console.log('targetPath', docLibStore.cur!.path, targetPath)
     const targetArticle = getDocByPath(targetPath, docTrees)
     if (targetArticle != undefined) {
-      ref.targetId = targetArticle.id
-      ref.targetName = targetArticle.name
-      ref.type = 'INNER_ARTICLE'
-      link = `<a target="_blank" href=${href} class="inner-link" onclick="onHtmlEventDispatch(this,'',event,'ARTICLE_REFERENCE_VIEW','${ref.targetId}')">${text}</a>`
+      link = `<a target="_blank" href=${href} class="inner-link" onclick="onHtmlEventDispatch(this,'',event,'ARTICLE_REFERENCE_VIEW','${targetArticle.id}')">${text}</a>`
     } else {
-      ref.targetId = href
-      ref.targetName = '未知文章-' + href
-      ref.type = 'UNKNOWN_INNER_ARTICLE'
       link = `<a target="_blank" href=${href} class="inner-link error-link" onclick="onHtmlEventDispatch(this,'',event,'UNKNOWN_INNER_ARTICLE')">${text} <span class="iconbl bl-a-closeline-line"></span></a>`
     }
   }
-  return { link: link, ref: ref }
+  return link
 }
 
 //#endregion

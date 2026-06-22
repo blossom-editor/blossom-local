@@ -163,10 +163,12 @@
 
 <script setup lang="ts">
 // vue
-import { ref, provide, onMounted, onBeforeUnmount, onActivated, onDeactivated, defineAsyncComponent, watch, nextTick } from 'vue'
+import { ref, shallowRef, provide, onMounted, onBeforeUnmount, onActivated, onDeactivated, defineAsyncComponent, watch, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useConfigStore } from '@renderer/stores/config'
 import { useDocLibStore } from '@renderer/stores/docLib'
+import { selectPicAndMoveDialog } from '@renderer/api/picture'
+import { openFileLocation } from '@renderer/api/docLib'
 import { articleInfoApi, saveArticleContentApi } from '@renderer/api/blossom'
 // utils
 import { isBlank, isNotBlank, isNull } from '@renderer/assets/utils/obj'
@@ -185,6 +187,7 @@ import type { shortcutFunc } from '@renderer/scripts/shortcut-register'
 import { treeToInfo, provideKeyCurArticleInfo, isArticle, DefaultDocTree } from '@renderer/views/doc/doc'
 import { ArticleReference, parseTocAsync, countWords } from './scripts/article'
 import type { Toc } from './scripts/article'
+import { noRanderTemplate } from './scripts/noRanderTemplate.js'
 import { picCacheWrapper, picCacheRefresh, uploadForm, DefaultPicture, protocolWrapper } from '@renderer/views/picture/scripts/picture'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
 // codemirror
@@ -193,11 +196,7 @@ import { CmWrapper } from './scripts/codemirror'
 import marked, { renderBlockquote, renderCode, renderCodespan, renderHeading, renderImage, renderTable, renderLink } from './scripts/markedjs'
 import { EPScroll } from './scripts/editor-preview-scroll'
 import { useArticleHtmlEvent } from './scripts/article-html-event'
-import { shallowRef } from 'vue'
 import { keymaps } from './scripts/editor-tools'
-import { selectPicAndMoveDialog } from '@renderer/api/picture.js'
-import { noRanderTemplate } from './scripts/noRanderTemplate.js'
-import { openFileLocation } from '@renderer/api/docLib.js'
 
 //#region -- mounted
 
@@ -506,14 +505,6 @@ const saveCurArticleContent = async (auto: boolean = false) => {
   let data: SaveFileContentReq = {
     id: curArticle.value!.id!,
     content: cmw.getDocString()
-    // references: articleImg.value.concat(articleLink.value).map((item) => {
-    //   let refer: ArticleReference = { targetId: '', targetName: '', targetUrl: '', type: 10 }
-    //   Object.assign(refer, item)
-    //   if (isBase64Img(refer.targetUrl)) {
-    //     refer.targetUrl = ''
-    //   }
-    //   return refer
-    // })
   }
   curArticle.value!.words = countWords(data.content)
   await saveArticleContentApi(data)
@@ -652,9 +643,7 @@ const renderer = {
     return renderImage(href, title, text)
   },
   link(href: string, title: string | null | undefined, text: string): string {
-    let { link, ref } = renderLink(href, title, text, ArticleTreeDocsRef.value.getDocTreeData())
-    articleLink.value.push(ref)
-    return link
+    return renderLink(href, title, text, ArticleTreeDocsRef.value.getDocTreeData())
   }
 }
 
@@ -714,7 +703,6 @@ function debounceParse(parseFn: () => void, time = 500) {
 //#region ----------------------------------------< TOC >------------------------------------------
 const articleToc = shallowRef<Toc[]>([])
 const articleImg = shallowRef<ArticleReference[]>([]) // 文章对图片引用
-const articleLink = shallowRef<ArticleReference[]>([]) // 文章对链接的引用
 const TocRef = ref()
 const TocTitleRef = ref()
 /**
@@ -727,10 +715,7 @@ const toScroll = (id: string) => {
   ;(elm.parentNode as Element).scrollTop = elm.offsetTop
 }
 // 清空当前目录内容
-const clearTocAndImg = () => {
-  articleImg.value = []
-  articleLink.value = []
-}
+const clearTocAndImg = () => (articleImg.value = [])
 
 const parseToc = async () => {
   parseTocAsync(PreviewRef.value).then((tocs) => (articleToc.value = tocs))

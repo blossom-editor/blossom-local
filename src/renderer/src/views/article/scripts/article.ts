@@ -41,11 +41,6 @@ export interface ArticleReference {
   targetUrl: string
   /**
    * 文章的引用类型
-   *
-   * 10 : picture
-   * 11 : inner article
-   * 12 : unknown inner article
-   * 21 : public article
    */
   type: 'PICTURE' | 'INNER_ARTICLE' | 'UNKNOWN_INNER_ARTICLE' | 'PUBLIC_ARTICLE'
 }

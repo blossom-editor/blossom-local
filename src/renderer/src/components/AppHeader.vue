@@ -1,6 +1,6 @@
 <template>
   <div class="app-header-root">
-    <div class="cur-doclib">文档库：{{ docLibStore.cur?.name }}</div>
+    <div v-if="!props.simple" class="cur-doclib">文档库：{{ docLibStore.cur?.name }}</div>
     <div class="drag"></div>
     <div class="window-workbench">
       <el-popover

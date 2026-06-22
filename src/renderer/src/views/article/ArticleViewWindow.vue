@@ -22,27 +22,54 @@
       </div>
     </div>
   </div>
+
+  <Teleport to="body">
+    <div v-if="articleReferenceView.show" ref="ArticleViewRef" class="article-view-absolute" :style="articleReferenceView.style">
+      <div class="content-view" :style="editorStyle">
+        {{ articleReferenceView.html }}
+      </div>
+      <bl-row v-if="articleReferenceView.articleId !== '' && articleReferenceView.path !== ''" class="workbench" just="space-between">
+        <div class="btns">
+          <div @click="openFileLocation(articleReferenceView.path)">查看原文件</div>
+        </div>
+        <div class="infos">{{ articleReferenceView.name }}</div>
+      </bl-row>
+    </div>
+  </Teleport>
 </template>
 <script setup lang="ts">
+import { useRoute } from 'vue-router'
 import { storeToRefs } from 'pinia'
 import { ref, onMounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
-import { articleInfoApi } from '@renderer/api/blossom'
+import { Local } from '@renderer/assets/utils/storage'
 import { useConfigStore } from '@renderer/stores/config'
+import { DOC_LIB_CUR_KEY, useDocLibStore } from '@renderer/stores/docLib'
+import { docTreeApi } from '@renderer/api/docLib'
+import { openFileLocation } from '@renderer/api/docLib'
+import { articleInfoApi } from '@renderer/api/blossom'
 import { parseTocAsync } from './scripts/article'
 import { isHttp } from '@renderer/assets/utils/util'
 import { protocolWrapper } from '../picture/scripts/picture'
 import type { Toc } from './scripts/article'
 import marked, { renderBlockquote, renderCode, renderCodespan, renderHeading, renderImage, renderTable, renderLink } from './scripts/markedjs'
+import { useArticleHtmlEvent } from './scripts/article-html-event'
 import AppHeader from '@renderer/components/AppHeader.vue'
 
+const docLibSotre = useDocLibStore()
 const configStore = useConfigStore()
 const { editorStyle } = storeToRefs(configStore)
+
+onMounted(() => {
+  const docLib = Local.get(DOC_LIB_CUR_KEY)
+  docLibSotre.setCurDoc(docLib)
+  initPreview(route.query.articleId as string)
+})
 
 const route = useRoute()
 const article = ref<DocInfo>()
 const tocs = ref<Toc[]>([])
 const WindowPreviewRef = ref()
+const docTree = ref<DocTree[]>([])
 
 /**
  * 跳转至指定ID位置,ID为 标题级别-标题内容
@@ -58,8 +85,11 @@ const initPreview = (articleId: string) => {
   articleInfoApi({ id: articleId }).then((resp) => {
     article.value = resp.data
     document.title = `《${resp.data!.name}》`
-    nextTick(() => {
-      parse(article.value!.markdown!)
+    docTreeApi({ type: 'ARTICLE' }).then((tree) => {
+      docTree.value = tree.data!
+      nextTick(() => {
+        parse(article.value!.markdown!)
+      })
     })
   })
 }
@@ -91,9 +121,7 @@ const renderer = {
     return renderImage(href, title, text)
   },
   link(href: string, title: string | null | undefined, text: string): string {
-    // let { link, ref } = renderLink(href, title, text, [])
-    let { link } = renderLink(href, title, text, [])
-    return link
+    return renderLink(href, title, text, docTree.value)
   }
 }
 
@@ -121,13 +149,13 @@ const parse = (markdown: string) => {
 
 //#endregion
 
-onMounted(() => {
-  initPreview(route.query.articleId as string)
-})
+const ArticleViewRef = ref()
+const { articleReferenceView } = useArticleHtmlEvent(ArticleViewRef)
 </script>
 <style scoped lang="scss">
 @import './styles/bl-preview-toc.scss';
 @import './styles/article-backtop.scss';
+@import './styles/article-view-absolute.scss';
 
 .header {
   @include box(100%, 30px);

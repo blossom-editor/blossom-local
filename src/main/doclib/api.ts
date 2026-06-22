@@ -110,7 +110,7 @@ export const readDocTreeSort = async (req: DocTreeReq): Promise<DocTree[]> => {
  *
  * @param req 文档库路径, 必填项
  */
-const readDocTree = async (req: DocTreeReq, status: DocLibStatsNumber): Promise<DocTree[]> => {
+const readDocTree = async (req: DocTreeReq, docLibStat: DocLibStatsNumber): Promise<DocTree[]> => {
   const files = await fs.promises.readdir(req.docLibPath!, { withFileTypes: true })
   const nodes: DocTree[] = []
 
@@ -146,7 +146,7 @@ const readDocTree = async (req: DocTreeReq, status: DocLibStatsNumber): Promise<
       idMapping.add(fileItem)
 
       // 递归读取子目录
-      const children = await readDocTree({ docLibPath: fullPath, type: req.type }, status)
+      const children = await readDocTree({ docLibPath: fullPath, type: req.type }, docLibStat)
       doc.type = 'FOLDER'
       doc.icon = 'wl-folder'
       doc.formatName = file.name
@@ -164,13 +164,13 @@ const readDocTree = async (req: DocTreeReq, status: DocLibStatsNumber): Promise<
       if (!file.name.endsWith('.md')) {
         picNameMapping.add(new PicItem(doc.id, doc.name, doc.folderPath, Number(stats.size)))
         fileItem.type = 'PICTURE'
-        status.pictureTotal++
-        status.pictureTotalSize += Number(stats.size)
+        docLibStat.pictureTotal++
+        docLibStat.pictureTotalSize += Number(stats.size)
       }
       if (file.name.endsWith('.md')) {
         docLibStatsManager.increaseArticleUpdToday(timeToYMD(stats.mtime.toString()))
         fileItem.type = 'ARTICLE'
-        status.articleTotal++
+        docLibStat.articleTotal++
       }
       idMapping.add(fileItem)
     }
