@@ -6,6 +6,8 @@
     "src/preload/**/*"
   ],
   "compilerOptions": {
+    "noUnusedLocals": false,    // 关闭局部变量未使用检查
+    "noUnusedParameters": false, // 可选：关闭函数参数未使用检查
     "composite": true,
     "types": ["electron-vite/node"]
   }

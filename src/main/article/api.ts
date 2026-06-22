@@ -420,7 +420,7 @@ const deleteFile = async (req: DeleteFileReq): Promise<R<DocTree[]>> => {
     }
 
     await shell.trashItem(doc.path)
-    docLibStatsManager.log()
+    // docLibStatsManager.log()
 
     return R.ok(await readDocTreeSort({ ...req, ...{ type: 'ARTICLE' } }))
   } catch (err) {

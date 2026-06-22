@@ -621,7 +621,7 @@ const blurArticleNameInput = (doc: DocTree) => {
  * @param path : 文章的路径
  */
 const createUrlLink = () => {
-  let url = `[${curDoc.value.name}](${curDoc.value.path.replace(docLibStore.cur!.path, '')} )`
+  let url = `[${curDoc.value.name}](${curDoc.value.path.replace(docLibStore.cur!.path, '')})`
   writeText(url)
 }
 

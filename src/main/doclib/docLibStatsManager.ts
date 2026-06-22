@@ -5,7 +5,7 @@ import { BigIntStats } from 'fs'
 import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
-import { createDefaultBigIntStats, DEFAULT_ID, extractFileName, getUniqueId, isHttp, sleep, traceLog, warnLog } from '../utils'
+import { createDefaultBigIntStats, DEFAULT_ID, extractFileName, getUniqueId, isHttp, traceLog, warnLog } from '../utils'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -510,18 +510,18 @@ export class DocLibStatsManager {
     warnLog('\n\n\n\n===============================================================================================================================')
     warnLog('* 文章对应的图片 / 图片对应的文章')
     warnLog('===============================================================================================================================')
-    warnLog('=====< 下列是文章对应的链接 >======================================================================================================')
-    this.m2m.forEach((m2m, key) => {
-      console.log(`文档: [${key}] 包含 ${m2m.links.length} 个链接:`)
-      m2m.links.forEach((link) => console.log(`  - ID: ${link.markdownId} 地址: ${link.linkFullPath}, 链接: ${link.linkUrl}  结构: ${link.linkRaw}`))
-      traceLog('------------------------------------------------------------------------------')
-    })
-    // warnLog('=====< 下列是文章对应的图片 >======================================================================================================')
-    // this.m2p.forEach((m2p, key) => {
-    //   console.log(`文档: [${key}] 包含 ${m2p.pics.length} 张图片:`)
-    //   m2p.pics.forEach((pic) => console.log(`  - 名称: ${pic.picName}  路径: ${pic.picPath}  结构: ${pic.picMdRaw}`))
+    // warnLog('=====< 下列是文章对应的链接 >======================================================================================================')
+    // this.m2m.forEach((m2m, key) => {
+    //   console.log(`文档: [${key}] 包含 ${m2m.links.length} 个链接:`)
+    //   m2m.links.forEach((link) => console.log(`  - ID: ${link.markdownId} 地址: ${link.linkFullPath}, 链接: ${link.linkUrl}  结构: ${link.linkRaw}`))
     //   traceLog('------------------------------------------------------------------------------')
     // })
+    warnLog('=====< 下列是文章对应的图片 >======================================================================================================')
+    this.m2p.forEach((m2p, key) => {
+      console.log(`文档: [${key}] 包含 ${m2p.pics.length} 张图片:`)
+      m2p.pics.forEach((pic) => console.log(`  - 名称: ${pic.picName}  路径: ${pic.picPath}  结构: ${pic.picMdRaw}`))
+      traceLog('------------------------------------------------------------------------------')
+    })
     // warnLog('=====< 下列是图片对应的文章 >======================================================================================================')
     // this.p2m.forEach((p2m, key) => {
     //   console.log(`图片: [${key}] 包含 ${p2m.mds.length} 个文章:`)

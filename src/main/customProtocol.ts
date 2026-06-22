@@ -31,7 +31,7 @@ export const initProtocol = () => {
   console.log('2. 自定义图片协议 initProtocol')
   protocol.handle('blossom', (request): Promise<GlobalResponse> => {
     const docLibPath = curDocLibManager.getPath()
-    let url = request.url.slice(BLOSSOM_PROTOCOL.length)
+    let url = decodeURIComponent(request.url.slice(BLOSSOM_PROTOCOL.length))
 
     const params = parseQueryParams(url)
     const picName = extractFileName(url)

@@ -404,6 +404,8 @@ export const renderImage = (href: string | null, title: string | null, text: str
  */
 export const renderLink = (href: string, _title: string | null | undefined, text: string, docTrees: DocTree[]): string => {
   let link: string
+
+  href = decodeURI(href)
   // 外部链接
   if (isHttp(href)) {
     link = `<a target="_blank" href=${href} target="_blank">${text}</a>`
