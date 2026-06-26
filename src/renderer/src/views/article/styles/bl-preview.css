@@ -75,7 +75,9 @@ h6 {
 }
 
 .bl-preview li::marker {
-  color: #989898;
+  /* color: #989898; */
+  color: var(--el-color-primary);
+  font-weight: bold;
 }
 
 /* 有序列表 */
