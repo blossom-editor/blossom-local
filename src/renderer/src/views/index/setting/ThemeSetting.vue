@@ -183,7 +183,7 @@
                 :max="200000"
                 :step="5000"
                 size="default"
-                style="width: 100%"
+                style="width: 40%"
                 @change="changeEditorStyle">
                 <template #suffix>
                   <span>字数</span>
@@ -207,7 +207,24 @@
               <el-switch v-model="configViewStyleForm.isShowFolderFileCount" size="default" style="margin-right: 10px" @change="changeViewStyle" />
             </bl-row>
             <div class="conf-tip">开启后，文件列表会显示文件夹下的文章或图片数量。</div>
+
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">显示编辑器左侧边栏</div>
+              </div>
+              <el-switch v-model="isShowCmGutters" size="default" style="margin-right: 10px" @change="changeCmGuttersDisplay" />
+            </bl-row>
+            <div class="conf-tip">关闭后, 编辑器做侧边栏会隐藏, 建议隐藏后适当调整编辑器左右边距。</div>
           </div>
+
+          <bl-row class="prop-row" just="space-between" align="flex-start">
+            <div class="prop">
+              <div class="prop-name">编辑器左右边距</div>
+            </div>
+            <el-input-number v-model="cmContentPadding" :min="0" :step="5" size="default" style="width: 40%" @change="changeCmContentPadding">
+            </el-input-number>
+          </bl-row>
+          <div class="conf-tip">编辑器左右边距</div>
         </el-tab-pane>
 
         <!--
@@ -315,13 +332,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useConfigStore } from '@renderer/stores/config'
 import { Sunny, Moon } from '@element-plus/icons-vue'
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useThemeStore } from '@renderer/stores/theme'
 import type { EditorStyle, ViewStyle, PicStyle, WeatherConfig } from '@renderer/stores/config'
-import { isDark, changeTheme, setPrimaryColor, setStyleItemObj, resetStyleItems } from '@renderer/scripts/global-theme'
+import { isDark, changeTheme, setPrimaryColor, setStyleItemObj, resetStyleItems, getTheme } from '@renderer/scripts/global-theme'
 import { setZoomLevel, resetZoomLevel, openDevTools } from '@renderer/assets/utils/electron'
 import { isElectron } from '@renderer/assets/utils/util'
 
@@ -332,7 +349,23 @@ const configViewStyleForm = ref<ViewStyle>(configStore.viewStyle)
 const configPicStyleForm = ref<PicStyle>(configStore.picStyle)
 const weatherConfigForm = ref<WeatherConfig>(configStore.weatherConfig)
 
-//#region 主题设置
+onMounted(() => {
+  if (getTheme(true)['--bl-cm-gutters-display'] === 'none') {
+    isShowCmGutters.value = false
+  } else {
+    isShowCmGutters.value = true
+  }
+  // cm-content-padding
+  const paddingText = getTheme(true)['--bl-cm-content-padding']
+  const padding = paddingText.replaceAll('px', '').split(' ')
+  if (padding.length !== 2) {
+    cmContentPadding.value = 0
+  } else {
+    cmContentPadding.value = Number(padding[1])
+  }
+})
+
+//#region 修改全局的 blossom-theme-css
 
 const themeStore = useThemeStore()
 const ThemeSettingRef = ref()
@@ -391,9 +424,35 @@ const changeGlobalShadow = (open: boolean) => {
   configStore.setViewStyle(configViewStyleForm.value)
 }
 
-// const changeViewStyle = () => {
-//   configStore.setViewStyle(viewStyle)
-// }
+const isShowCmGutters = ref(true) // 是否显示编辑器侧边栏
+const changeCmGuttersDisplay = (open: boolean) => {
+  if (open) {
+    let style = {
+      '--bl-cm-gutters-display': 'flex'
+    }
+    setStyleItemObj(style, true)
+    setStyleItemObj(style, false)
+  } else {
+    let style = {
+      '--bl-cm-gutters-display': 'none'
+    }
+    setStyleItemObj(style, true)
+    setStyleItemObj(style, false)
+  }
+}
+
+const cmContentPadding = ref(0)
+const changeCmContentPadding = (padding: boolean) => {
+  let style = {
+    '--bl-cm-content-padding': `0px ${padding}px`
+  }
+  setStyleItemObj(style, true)
+  setStyleItemObj(style, false)
+}
+
+//#endregion
+
+//#region 修改配置 configStore
 
 const changeEditorStyle = () => {
   configStore.setEditorStyle(configEditorStyleForm.value)
@@ -410,6 +469,11 @@ const changePicStyle = () => {
 const changeWeather = () => {
   configStore.setWeather(weatherConfigForm.value)
 }
+
+/**
+ * 设置文件夹的图标
+ * @param folderIcon 图标名称
+ */
 const changeFolderType = (folderIcon: string) => {
   configViewStyleForm.value.folderIconOnDocTree = folderIcon
   configStore.setViewStyle(configViewStyleForm.value)

@@ -2,8 +2,8 @@
 .bl-preview-toc-absolute {
   padding: 10px;
   transition:
-    width 0.2s,
-    height 0.2s;
+    width 0.5s,
+    height 0s;
 }
 
 // 块的目录, 用在新窗口中
@@ -115,7 +115,7 @@
 
 // 浮动的目录, 用在编辑器中
 .bl-preview-toc-absolute {
-  @include font(12px);
+  @include font(13px);
   @include themeShadow(2px 4px 7px 2px rgba(49, 49, 49, 0.3), 2px 4px 7px 2px rgb(28, 28, 28));
   position: absolute;
   top: 50px;
@@ -134,6 +134,12 @@
     @include themeColor(#ffffff, #cdcdcd);
     padding-top: 10px;
     cursor: move;
+    overflow: hidden;
+
+    span {
+      overflow: hidden;
+      word-break: nowrap;
+    }
   }
 
   .toc-content {
@@ -143,7 +149,7 @@
     max-height: calc(700px - 150px - 60px - 20px);
 
     .toc-1 {
-      @include themeBorder(2px, #a3a3a3, #a3a3a3, 'top');
+      // @include themeBorder(2px, #a3a3a3, #a3a3a3, 'top');
     }
 
     .toc-1,

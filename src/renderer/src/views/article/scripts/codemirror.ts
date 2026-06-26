@@ -61,7 +61,8 @@ export const cwTheme: any = {
     fontSize: '12px',
     width: '50px',
     minWidth: '50px',
-    maxWidth: '50px'
+    maxWidth: '50px',
+    display: 'var(--bl-cm-gutters-display)'
   },
   '.cm-gutterElement': {
     fontSize: '13px !important'
@@ -85,7 +86,7 @@ export const cwTheme: any = {
     wordWrap: 'break-word',
     // overflow: 'auto',
     width: 'calc(100% - 55px)',
-    padding: '0',
+    padding: 'var(--bl-cm-content-padding)',
     caretColor: '#707070'
   },
   '.cm-line': {

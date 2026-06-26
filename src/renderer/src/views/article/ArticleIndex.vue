@@ -103,9 +103,9 @@
           <div v-for="toc in articleToc" :key="toc.id" :class="[toc.clazz]" @click="toScroll(toc.id)" v-html="toc.content"></div>
         </div>
         <div class="img-title">
-          引用图片
-          <el-tooltip effect="light" placement="right" :hide-after="0">
-            <template #content> 重复上传图片后<br />如果图片无变化可刷新缓存 </template>
+          图片
+          <el-tooltip effect="dark" placement="right" :hide-after="0">
+            <template #content> 重载图片 </template>
             <span class="iconbl bl-refresh-line" @click="refreshCache"></span>
           </el-tooltip>
         </div>

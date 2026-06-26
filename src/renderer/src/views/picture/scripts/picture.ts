@@ -106,9 +106,9 @@ export const picCacheRefresh = () => {
 export const picCacheWrapper = (url: string): string => {
   const params: Record<string, string> | null = parseQueryParams(url)
   if (params) {
-    return url + '&t=' + new Date().getTime()
+    return url + '&t=' + picCache
   } else {
-    return url + '?t=' + new Date().getTime()
+    return url + '?t=' + picCache
   }
 }
 

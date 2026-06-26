@@ -61,8 +61,8 @@
       }
 
       .gutter-holder {
-        height: 100%;
-        width: 49px;
+        @include box(50px, 100%);
+        display: var(--bl-cm-gutters-display);
         position: absolute;
         background-color: var(--bl-editor-gutters-bg-color);
         border-right: 1px solid var(--bl-editor-gutters-border-color);
