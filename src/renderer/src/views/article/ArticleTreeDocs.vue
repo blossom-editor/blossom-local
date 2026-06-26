@@ -63,10 +63,10 @@
           {{ data.childrenFileCount }}
         </div>
         <div class="menu-item-wrapper" :id="'article-doc-wrapper-' + data.id" @click.right="handleClickRightMenu($event, data)">
-          <div :class="[viewStyle.isShowSubjectStyle ? (data.t?.includes('subject') ? 'subject-title' : 'doc-title') : 'doc-title']">
+          <div class="doc-title">
             <div class="doc-name">
               <svg v-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
-                <use :xlink:href="'#' + data.icon"></use>
+                <use :xlink:href="'#' + viewStyle.folderIconOnDocTree"></use>
               </svg>
               <!-- prettier-ignore -->
               <el-input v-if="data?.updn" v-model="data.formatName" :id="'article-doc-name-' + data.id" style="width: 95%"
@@ -123,7 +123,7 @@
   </Teleport>
 
   <!-- prettier-ignore -->
-  <el-tooltip :visible="renameTooltipVisible" content='名称中不允许包含 <>\/:*?"|. 和空格' placement="top" effect="dark" trigger="click" virtual-triggering :virtual-ref="renameTooltipRef" />
+  <el-tooltip :visible="renameTooltipVisible" content='名称中不允许包含 <>\/:*?"|.' placement="top" effect="dark" trigger="click" virtual-triggering :virtual-ref="renameTooltipRef" />
 </template>
 
 <script setup lang="ts">
@@ -621,7 +621,7 @@ const blurArticleNameInput = (doc: DocTree) => {
  * @param path : 文章的路径
  */
 const createUrlLink = () => {
-  let url = `[${curDoc.value.name}](${curDoc.value.path.replace(docLibStore.cur!.path, '')})`
+  let url = `[${curDoc.value.name}](${curDoc.value.path.replace(docLibStore.cur!.path, '').replace(/ /g, '%20')})`
   writeText(url)
 }
 

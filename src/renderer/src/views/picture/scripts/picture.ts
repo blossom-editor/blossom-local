@@ -76,7 +76,7 @@ export const uploadForm = (articleId: string, file: File, callback: UploadCallba
  * @param path
  */
 export const copyUrl = (path: string) => {
-  writeText(path)
+  writeText(`${path}`)
   ElMessage.info({ message: '已复制文件路径', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
 }
 
@@ -87,7 +87,7 @@ export const copyUrl = (path: string) => {
  * @param event event
  */
 export const copyMarkdownUrl = (picName: string) => {
-  writeText(`![${picName}](${picName})`)
+  writeText(`![${picName}](${picName.replace(/ /g, '%20')})`)
   ElMessage.info({ message: '已复制 MD 格式链接', duration: 3000, offset: 10, grouping: true, icon: CopyDocument, customClass: 'bl-message' })
 }
 
@@ -106,9 +106,9 @@ export const picCacheRefresh = () => {
 export const picCacheWrapper = (url: string): string => {
   const params: Record<string, string> | null = parseQueryParams(url)
   if (params) {
-    return url + '&t=' + picCache
+    return url + '&t=' + new Date().getTime()
   } else {
-    return url + '?t=' + picCache
+    return url + '?t=' + new Date().getTime()
   }
 }
 

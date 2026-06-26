@@ -19,6 +19,6 @@ export const isShowImg = (doc: DocTree, viewStyle: { isShowArticleIcon: boolean 
  * @param viewStyle
  * @returns
  */
-export const isShowSvg = (doc: DocTree, viewStyle: { isShowArticleIcon: boolean }) => {
-  return viewStyle.isShowArticleIcon && !doc?.updn && doc.icon?.startsWith('wl-')
+export const isShowSvg = (doc: DocTree, viewStyle: { isShowFolderOnDocTree: boolean }) => {
+  return viewStyle.isShowFolderOnDocTree && !doc?.updn && doc.icon?.startsWith('wl-')
 }

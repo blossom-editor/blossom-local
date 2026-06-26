@@ -3,7 +3,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 import { useDark } from '@vueuse/core'
 import { getPrimaryColor } from '@renderer/scripts/global-theme'
 // echarts
@@ -15,6 +15,7 @@ import { CanvasRenderer } from 'echarts/renderers'
 import { ScatterChart } from 'echarts/charts'
 import { UniversalTransition } from 'echarts/features'
 import { articleHeatmapApi } from '@renderer/api/docLib'
+import { useLifecycle } from '@renderer/scripts/lifecycle'
 echarts.use([
   TitleComponent,
   CalendarComponent,
@@ -28,6 +29,17 @@ echarts.use([
 ])
 
 const isDark = useDark()
+
+useLifecycle(
+  () => {
+    chartHeatmap = echarts.init(ChartHeatmapRef.value)
+    reload()
+    windowResize()
+  },
+  () => {
+    reload()
+  }
+)
 
 watch(
   () => isDark.value,
@@ -149,12 +161,6 @@ const renderChart = async (callback?: any) => {
 const windowResize = () => {
   chartHeatmap.resize()
 }
-
-onMounted(() => {
-  chartHeatmap = echarts.init(ChartHeatmapRef.value)
-  reload()
-  windowResize()
-})
 
 const reload = () => {
   nextTick(() => {

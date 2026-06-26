@@ -17,7 +17,12 @@
 
     <div class="content" align="flex-start">
       <el-tabs class="tabs" tab-position="right" v-model="activeTab">
-        <el-tab-pane name="theme" label="主题">
+        <!--
+
+        外观
+
+        -->
+        <el-tab-pane name="theme" label="外观">
           <bl-row class="prop-name">日间</bl-row>
           <bl-row class="colors" align="flex-start">
             <el-color-picker
@@ -74,6 +79,48 @@
             <el-switch v-model="configViewStyleForm.isShowAsideSimple" size="default" @change="changeViewStyle" />
           </bl-row>
 
+          <bl-row class="prop-row" just="space-between">
+            <div class="prop">
+              <div class="prop-name">显示文件夹图标</div>
+            </div>
+            <el-switch v-model="configViewStyleForm.isShowFolderOnDocTree" size="default" @change="changeViewStyle" />
+          </bl-row>
+
+          <bl-row class="prop-row" just="space-between">
+            <div class="prop">
+              <div class="prop-name">文件夹图标样式</div>
+            </div>
+            <div class="folder-type-list">
+              <div class="item" @click="changeFolderType('wl-folder')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder"></use></svg>
+              </div>
+              <div class="item" @click="changeFolderType('wl-folder0')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder0"></use></svg>
+              </div>
+              <div class="item" @click="changeFolderType('wl-folder1')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder1"></use></svg>
+              </div>
+              <div class="item" @click="changeFolderType('wl-folder2')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder2"></use></svg>
+              </div>
+              <div class="item" @click="changeFolderType('wl-folder3')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder3"></use></svg>
+              </div>
+              <div class="item" @click="changeFolderType('wl-folder4')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder4"></use></svg>
+              </div>
+              <div class="item" @click="changeFolderType('wl-folder5')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder5"></use></svg>
+              </div>
+              <div class="item" @click="changeFolderType('wl-folder6')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder6"></use></svg>
+              </div>
+              <div class="item" @click="changeFolderType('wl-folder7')">
+                <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder7"></use></svg>
+              </div>
+            </div>
+          </bl-row>
+
           <bl-row v-if="isElectron()" class="prop-row" just="space-between">
             <div class="prop">
               <div class="prop-name">窗口缩放</div>
@@ -85,11 +132,11 @@
             </el-button-group>
           </bl-row>
 
-          <div class="conf-tip" style="font-size: 13px; border: none; margin: 10px 0 0 0">修改主题后, 再次切换日间/夜间模式可查看完整效果。</div>
+          <div class="tab-tip" style="">修改主题后, 再次切换日间/夜间模式可查看完整效果。</div>
         </el-tab-pane>
         <!--
 
-        ==========================================================================================
+        编辑器
 
         -->
         <el-tab-pane name="article" label="编辑器">
@@ -155,30 +202,26 @@
 
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
-                <div class="prop-name">只展开一项子菜单</div>
-              </div>
-              <el-switch v-model="configViewStyleForm.isMenuUniqueOpened" size="default" style="margin-right: 10px" @change="changeViewStyle" />
-            </bl-row>
-            <div class="conf-tip"></div>
-
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
                 <div class="prop-name">显示文件数量</div>
               </div>
               <el-switch v-model="configViewStyleForm.isShowFolderFileCount" size="default" style="margin-right: 10px" @change="changeViewStyle" />
             </bl-row>
             <div class="conf-tip">开启后，文件列表会显示文件夹下的文章或图片数量。</div>
+          </div>
+        </el-tab-pane>
 
-            <!--
-            =========================================================================================================================
-            -->
-            <div class="config-module-titile"><span class="iconbl bl-picture-line"></span>图片管理</div>
+        <!--
 
+        图片管理
+
+        -->
+        <el-tab-pane name="picture" label="图片">
+          <div class="tab-pane-content">
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
                 <div class="prop-name">图片上传后重命名</div>
               </div>
-              <el-switch v-model="configPicStyleForm.isAddSuffix" size="default" style="margin-right: 10px" @change="changePicStyle" />
+              <el-switch v-model="configPicStyleForm.isAddSuffix" size="default" style="margin-right: 10px" @change="changePicStyle" disabled />
             </bl-row>
             <div class="conf-tip">开启后，若在文档库中重名图片, 会自动为上传的图片增加后缀，如:<code>image_20230101_123015_000.png.</code></div>
 
@@ -199,30 +242,18 @@
               <div v-else-if="configPicStyleForm.picLinkStyle === 'ABSOLUTE_PATH'">文件的绝对路径, 文件移动后可能导致图片读取错误.</div>
             </div>
 
-            <div class="config-module-titile"><span class="iconbl bl-apps-line"></span>其他功能</div>
-
-            <!-- <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">登录后进入首页</div>
-              </div>
-              <el-switch v-model="configViewStyleForm.isLoginToHomePage" size="default" style="margin-right: 10px" @change="changeViewStyle" />
-            </bl-row> -->
-
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">开发者工具</div>
-              </div>
-              <el-button @click="openDevTools" style="margin-right: 10px"><span class="iconbl bl-bug-line" @click="openDevTools"></span></el-button>
-            </bl-row>
+            <div class="tab-tip">
+              提示: 在整个文档库范围内, Blossom 都不允许图片名称出现重复, 尽管可以在操作系统中添加重复图片, 但在文章中只会显示其中一个.
+            </div>
           </div>
         </el-tab-pane>
+
         <!--
 
-
+        天气
 
         -->
-
-        <el-tab-pane name="keys" label="天气">
+        <el-tab-pane name="weather" label="天气">
           <div class="tab-pane-content">
             <bl-row class="prop-row" just="space-between" align="flex-start">
               <div class="prop">
@@ -266,6 +297,17 @@
             </div>
           </div>
         </el-tab-pane>
+
+        <el-tab-pane name="other" label="其他">
+          <div class="tab-pane-content">
+            <bl-row class="prop-row" just="space-between" align="flex-start">
+              <div class="prop">
+                <div class="prop-name">开发者工具</div>
+              </div>
+              <el-button @click="openDevTools" style="margin-right: 10px"><span class="iconbl bl-bug-line" @click="openDevTools"></span></el-button>
+            </bl-row>
+          </div>
+        </el-tab-pane>
       </el-tabs>
       <!--  -->
     </div>
@@ -284,7 +326,6 @@ import { setZoomLevel, resetZoomLevel, openDevTools } from '@renderer/assets/uti
 import { isElectron } from '@renderer/assets/utils/util'
 
 const configStore = useConfigStore()
-// const { viewStyle } = configStore
 
 const configEditorStyleForm = ref<EditorStyle>(configStore.editorStyle)
 const configViewStyleForm = ref<ViewStyle>(configStore.viewStyle)
@@ -369,6 +410,10 @@ const changePicStyle = () => {
 const changeWeather = () => {
   configStore.setWeather(weatherConfigForm.value)
 }
+const changeFolderType = (folderIcon: string) => {
+  configViewStyleForm.value.folderIconOnDocTree = folderIcon
+  configStore.setViewStyle(configViewStyleForm.value)
+}
 //#endregion
 
 //#region
@@ -400,7 +445,6 @@ const zoomReset = () => {
 </script>
 
 <style lang="scss">
-// @import '../styles/config-root.scss';
 .theme-setting-root {
   @include box(460px, auto);
   background-color: var(--bl-dialog-bg-color);
@@ -537,7 +581,8 @@ const zoomReset = () => {
     }
   }
 
-  .conf-tip {
+  .conf-tip,
+  .tab-tip {
     @include font(12px, 500);
     min-height: 26px;
     color: var(--bl-text-color-light);
@@ -566,6 +611,18 @@ const zoomReset = () => {
       color: var(--el-color-primary);
     }
   }
+
+  .tab-tip {
+    font-size: 13px;
+    font-style: italic;
+    border: none;
+    margin: 30px 0 0 0;
+    padding: 10px;
+    color: var(--bl-text-color);
+    border: 2px dashed var(--el-border-color);
+    border-radius: 4px;
+    background-color: var(--bl-bg-color);
+  }
 }
 
 .theme-color-picker {
@@ -573,14 +630,18 @@ const zoomReset = () => {
   margin: 0 10px 10px 0;
 }
 
-// .custom-tabs-label {
-//   @include flex(row, center, center);
-//   font-size: 15px;
-//   .iconbl {
-//     font-size: 20px;
-//     margin-right: 5px;
-//   }
-// }
+.folder-type-list {
+  @include flex(row, flex-start, center);
+  .item {
+    margin-right: 3px;
+    padding: 2px 5px;
+    &:hover {
+      border-radius: 3px;
+      background-color: var(--el-color-primary-light-6);
+      cursor: pointer;
+    }
+  }
+}
 
 .el-divider__text {
   background: var(--bl-dialog-bg-color);

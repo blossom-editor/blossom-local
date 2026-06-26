@@ -5,3 +5,4 @@ out
 stats.html
 auto-imports.d.ts
 components.d.ts
+.vscode

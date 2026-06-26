@@ -5,7 +5,7 @@ import { BigIntStats } from 'fs'
 import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
-import { createDefaultBigIntStats, DEFAULT_ID, extractFileName, getUniqueId, isHttp, traceLog, warnLog } from '../utils'
+import { DEFAULT_ID, createDefaultBigIntStats, decodeSpace, encodeSpace, extractFileName, getUniqueId, isHttp, traceLog, warnLog } from '../utils'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -297,7 +297,7 @@ export class DocLibStatsManager {
         id = link.url
       } else {
         // 如果是内部文章, 但没有找到该文件, 则返回未知内部文章
-        fullPath = path.join(this.docLibPath, link.url)
+        fullPath = decodeSpace(path.join(this.docLibPath, link.url))
         id = getUniqueId(await this.stat(fullPath))
         if (id === DEFAULT_ID) {
           id = link.url
@@ -340,6 +340,7 @@ export class DocLibStatsManager {
       } else {
         // 如果是内部文章, 但没有找到该文件, 则返回未知内部文章
         fullPath = path.join(this.docLibPath, link.url)
+        fullPath = decodeSpace(fullPath)
         try {
           id = getUniqueId(fs.statSync(fullPath, { bigint: true }))
         } catch (e) {
@@ -415,8 +416,9 @@ export class DocLibStatsManager {
     // 文章本身引用其他的路径不修改
     // const links: MdToLink | undefined = this.m2m.get(mdId)
     // 关联该文章的文章, 路径要进行修改
-    const relativeOldPath = path.relative(this.docLibPath, oldMdPath) // 旧路径的相对文档库绝对路径
-    const relativeNewPath = path.relative(this.docLibPath, newMdPath) // 新路径的相对文档库绝对路径
+    const relativeOldPath = encodeSpace(path.relative(this.docLibPath, oldMdPath)) // 旧路径的相对文档库绝对路径
+    const relativeNewPath = encodeSpace(path.relative(this.docLibPath, newMdPath)) // 新路径的相对文档库绝对路径
+    console.log('updateMdName', mdId, relativeOldPath, relativeNewPath)
 
     const results: UpdateMdNameRes[] = []
     // 所有使用了旧路径的文章, 引用该文章的图片路径也要进行修改
@@ -510,18 +512,18 @@ export class DocLibStatsManager {
     warnLog('\n\n\n\n===============================================================================================================================')
     warnLog('* 文章对应的图片 / 图片对应的文章')
     warnLog('===============================================================================================================================')
-    // warnLog('=====< 下列是文章对应的链接 >======================================================================================================')
-    // this.m2m.forEach((m2m, key) => {
-    //   console.log(`文档: [${key}] 包含 ${m2m.links.length} 个链接:`)
-    //   m2m.links.forEach((link) => console.log(`  - ID: ${link.markdownId} 地址: ${link.linkFullPath}, 链接: ${link.linkUrl}  结构: ${link.linkRaw}`))
-    //   traceLog('------------------------------------------------------------------------------')
-    // })
-    warnLog('=====< 下列是文章对应的图片 >======================================================================================================')
-    this.m2p.forEach((m2p, key) => {
-      console.log(`文档: [${key}] 包含 ${m2p.pics.length} 张图片:`)
-      m2p.pics.forEach((pic) => console.log(`  - 名称: ${pic.picName}  路径: ${pic.picPath}  结构: ${pic.picMdRaw}`))
+    warnLog('=====< 下列是文章对应的链接 >======================================================================================================')
+    this.m2m.forEach((m2m, key) => {
+      console.log(`文档: [${key}] 包含 ${m2m.links.length} 个链接:`)
+      m2m.links.forEach((link) => console.log(`  - ID: ${link.markdownId} 地址: ${link.linkFullPath}, 链接: ${link.linkUrl}  结构: ${link.linkRaw}`))
       traceLog('------------------------------------------------------------------------------')
     })
+    // warnLog('=====< 下列是文章对应的图片 >======================================================================================================')
+    // this.m2p.forEach((m2p, key) => {
+    //   console.log(`文档: [${key}] 包含 ${m2p.pics.length} 张图片:`)
+    //   m2p.pics.forEach((pic) => console.log(`  - 名称: ${pic.picName}  路径: ${pic.picPath}  结构: ${pic.picMdRaw}`))
+    //   traceLog('------------------------------------------------------------------------------')
+    // })
     // warnLog('=====< 下列是图片对应的文章 >======================================================================================================')
     // this.p2m.forEach((p2m, key) => {
     //   console.log(`图片: [${key}] 包含 ${p2m.mds.length} 个文章:`)
@@ -571,7 +573,7 @@ function findPicNamesByMarkdownId(map: Map<string, PicToMd>, markdownId: string)
  * @param markdown
  * @returns
  */
-export const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkMatch)[] => {
+const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkMatch)[] => {
   const results: (ImageMatch | LinkMatch)[] = []
   const len = markdown.length
   let i = 0

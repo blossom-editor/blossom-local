@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, nextTick } from 'vue'
+import { ref, watch, nextTick } from 'vue'
 import { useDark } from '@vueuse/core'
 import { ChartLineWordsData, renderChart } from './scripts/chart-line-words'
 // echarts
@@ -16,6 +16,7 @@ import { UniversalTransition } from 'echarts/features'
 import { LabelLayout } from 'echarts/features'
 import { CanvasRenderer } from 'echarts/renderers'
 import { articleWordLineApi } from '@renderer/api/docLib'
+import { useLifecycle } from '@renderer/scripts/lifecycle'
 echarts.use([
   TitleComponent,
   TooltipComponent,
@@ -30,11 +31,16 @@ echarts.use([
 
 const isDark = useDark()
 
-onMounted(() => {
-  chartLine = echarts.init(ChartLineRef.value)
-  reload()
-  windowResize()
-})
+useLifecycle(
+  () => {
+    chartLine = echarts.init(ChartLineRef.value)
+    reload()
+    windowResize()
+  },
+  () => {
+    reload()
+  }
+)
 
 watch(
   () => isDark.value,

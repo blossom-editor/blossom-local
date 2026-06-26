@@ -68,12 +68,31 @@ export const normalizeUrlToForwardSlash = (url: string) => {
 
 /**
  * 规范图片链接
- * 去除图片的 ![]() 标记, 以符合 markdown 语法规范
+ * 删除图片的 ![]() 标记, 以符合 markdown 语法规范
+ * 文件名中的空格替换为_
  */
 export const normalizeMarkdownImage = (text: string) => {
   return text
     .replace(/\s/g, '_') // 任何空白字符 -> _
     .replace(/[!\[\]()]/g, '') // 删除 ! [ ] ( )
+}
+
+/**
+ * 编码空格
+ * blossom:代码 引用 计数1.png?t=1 2 3
+ * blossom:代码%20引用%20计数1.png?t=1%202%203
+ */
+export const encodeSpace = (text: string) => {
+  return text.replace(/ /g, '%20')
+}
+
+/**
+ * 解码空格
+ * blossom:代码%20引用%20计数1.png?t=1%202%203
+ * blossom:代码 引用 计数1.png?t=1 2 3
+ */
+export const decodeSpace = (text: string) => {
+  return text.replace(/%20/g, ' ')
 }
 
 export const imagesSuffix: string[] = ['jpeg', 'jpg', 'gif', 'png', 'apng', 'bmp', 'pic', 'svg', 'tif', 'tiff', 'webp', 'jfif', 'ico']

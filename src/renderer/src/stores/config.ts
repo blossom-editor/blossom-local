@@ -53,6 +53,10 @@ export interface ViewStyle {
   isShowAsideSimple: boolean
   // 显示文件夹下的文件数量
   isShowFolderFileCount: boolean
+  // 是否在文档树中显示文件夹
+  isShowFolderOnDocTree: boolean
+  // 文件夹的样式
+  folderIconOnDocTree: string
 }
 
 /**
@@ -166,7 +170,9 @@ export const useConfigStore = defineStore('configStore', {
         isShowAsideUpload: true,
         isShowAsideLogo: true,
         isShowAsideSimple: false,
-        isShowFolderFileCount: false
+        isShowFolderFileCount: false,
+        isShowFolderOnDocTree: true,
+        folderIconOnDocTree: 'wl-folder'
       },
       ...Local.get(VIEW_STYLE_KEY)
     },

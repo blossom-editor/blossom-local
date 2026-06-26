@@ -57,7 +57,7 @@
       :default-expanded-keys="Array.from(docTreeCurrentExpandIdSet)"
       :filter-node-method="filterNode"
       :draggable="isBlank(treeFilterText)"
-      :expand-on-click-node="(notAllowDragId === '')"
+      :expand-on-click-node="notAllowDragId === ''"
       node-key="id"
       @nodeClick="clickCurDoc"
       @nodeExpand="handleNodeExpand"
@@ -71,7 +71,7 @@
           <div class="doc-title">
             <div class="doc-name">
               <svg v-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
-                <use :xlink:href="'#' + data.icon"></use>
+                <use :xlink:href="'#' + viewStyle.folderIconOnDocTree"></use>
               </svg>
               <img class="menu-icon-img" v-else-if="isShowImg(data, viewStyle)" :src="data.icon" />
               <el-input
@@ -623,7 +623,7 @@ const blurArticleNameInput = (doc: DocTree) => {
  * 检查文件夹名是否合法
  */
 const changeArticleNameInput = (data: DocTree): boolean => {
-  if (inValidateFileName(getFilePrefix(data.name))) {
+  if (inValidateFileName(getFilePrefix(data.name), false)) {
     renameTooltipVisible.value = true
     let ele = document.getElementById('article-doc-name-' + curDoc.value.id) as HTMLInputElement
     position.value = DOMRect.fromRect({

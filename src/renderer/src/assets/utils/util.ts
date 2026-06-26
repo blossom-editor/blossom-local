@@ -517,10 +517,18 @@ export const uuid = (): string => {
 /**
  * 文件名不允许包含如下特殊字符
  * mac平台的约束在win平台同样生效, 放置文档库在不同设备之间同步
+ *
+ * @param str 文件名
+ * @param allowSpace 是否允许空格
  */
-export const inValidateFileName = (str: string): boolean => {
-  const regex = /[<>\/\\:*?"|. ]/
-  return regex.test(str)
+export const inValidateFileName = (str: string, allowSpace: boolean = true): boolean => {
+  if (allowSpace) {
+    const regex = /[<>\/\\:*?"|.]/
+    return regex.test(str)
+  } else {
+    const regex = /[<>\/\\:*?"|. ]/
+    return regex.test(str)
+  }
 }
 
 /**

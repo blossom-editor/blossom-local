@@ -162,7 +162,7 @@ const renameFile = async (req: RenameFileReq): Promise<R<DocTree[]>> => {
     // ============================================================================================
     else {
       const updateDocs: UpdateMdNameRes[] = docLibStatsManager.updateMdName(doc.id, oldPath, newPath)
-
+      console.log('updateDocs', updateDocs)
       await fs.promises.rename(oldPath, newPath)
 
       // 批量修改文章的内容, 替换文章中的链接路径或名称
@@ -327,7 +327,7 @@ export const saveArticleContent = async (req: SaveFileContentReq): Promise<R<any
 
     // 重新构建该文章的图片关系
     docLibStatsManager.updateM2P_P2M_M2M(stat, req.content)
-    docLibStatsManager.log()
+    // docLibStatsManager.log()
     return R.ok('')
   } catch (err) {
     return R.fail('50102', err)

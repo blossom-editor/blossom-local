@@ -497,17 +497,14 @@ const saveCurArticleContent = async (auto: boolean = false) => {
     return
   }
   // 如果文档正在解析中, 则等待解析完成
-  while (articleParseing) {
-    console.info('%c检测到正在解析, 等待解析完成', 'background:#AD7736;color:#fff;padding-top:2px')
-    await sleep(100)
-  }
+  // while (articleParseing) {
+  //   console.info('%c检测到正在解析, 等待解析完成', 'background:#AD7736;color:#fff;padding-top:2px')
+  //   await sleep(100)
+  // }
   articleChanged = false
-  let data: SaveFileContentReq = {
-    id: curArticle.value!.id!,
-    content: cmw.getDocString()
-  }
-  curArticle.value!.words = countWords(data.content)
-  await saveArticleContentApi(data)
+  let req: SaveFileContentReq = { id: curArticle.value!.id!, content: cmw.getDocString() }
+  curArticle.value!.words = countWords(req.content)
+  await saveArticleContentApi(req)
     .then((_resp) => {
       lastSaveTime = new Date().getTime()
       saveCallback()
