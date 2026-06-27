@@ -2,7 +2,7 @@
   <div class="about-root">
     <div class="project-name">
       <div>Blossom</div>
-      <div class="version">Client {{ CONFIG.SYS.VERSION }}</div>
+      <div class="version">{{ CONFIG.SYS.VERSION }}</div>
     </div>
 
     <bl-col height="fit-content">

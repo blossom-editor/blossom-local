@@ -8,10 +8,10 @@ const blossom = {
     VERSION: 'v0.0.1',
 
     //
-    DOC: 'https://www.wangyunf.com/blossom-doc/index',
+    DOC: 'https://www.blossom-editor.org/',
     CONTACT: 'https://www.wangyunf.com/blossom-doc/guide/about/contact.html',
     SPONSOR: 'https://www.wangyunf.com/blossom-doc/guide/about/sponsor.html',
-    GITHUB_REPO: 'https://github.com/blossom-editor/blossom',
+    GITHUB_REPO: 'https://github.com/blossom-editor/blossom-local',
     GITHUB_RELEASE: 'https://github.com/blossom-editor/blossom/releases',
     GITEE_REPO: 'https://gitee.com/blossom-editor/blossom'
   }
