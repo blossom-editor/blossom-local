@@ -227,6 +227,7 @@ html.dark {
   --bl-editor-c7-color: var(--el-color-primary);
   --bl-editor-c7-bg-color: #00000000;
 
+  --bl-editor-line-height: 1.6;
   /* ======================================= */
 
   /* 预览的字体颜色 */
@@ -284,7 +285,7 @@ html.dark {
 }
 
 html.dark {
-  --bl-editor-color: #a9a9a9;
+  --bl-editor-color: #c5c5c5;
   --bl-editor-bg-color: #1e1e1e;
 
   --bl-editor-gutters-color: #676767;
@@ -308,6 +309,8 @@ html.dark {
   --bl-editor-c5-color: var(--el-color-primary-light-3);
   --bl-editor-c7-color: var(--el-color-primary-light-3);
   --bl-editor-c7-bg-color: #00000000;
+
+  --bl-editor-line-height: 1.6;
   /* ======================================= */
 
   --bl-preview-color: #9d9d9d;

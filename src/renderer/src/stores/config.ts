@@ -130,7 +130,7 @@ export const useConfigStore = defineStore('configStore', {
     editorStyle: {
       ...{
         fontFamily: "'Jetbrains Mono', sans-serif",
-        fontSize: '14px',
+        fontSize: '15px',
         defaultPreLanguage: '',
         isAutoBreakLine: true,
         isShowPreLineNumber: false,

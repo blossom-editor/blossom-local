@@ -4,7 +4,7 @@
 .bl-preview {
   color: var(--bl-preview-color);
   background-color: var(--bl-preview-bg-color);
-  line-height: 20px;
+  line-height: var(--bl-editor-line-height);
 }
 
 .bl-preview * {

@@ -35,12 +35,11 @@
           <div class="desc">Blossom 是一个开源项目，公开所有源代码。你可以加入社区反馈问题，参与开发。</div>
         </bl-col>
         <div class="btns">
-          <el-button style="width: 55px" @click="openExtenal(CONFIG.SYS.GITHUB_REPO)">Github</el-button>
-          <el-button style="width: 55px; margin: 3px 0 0 0" @click="openExtenal(CONFIG.SYS.GITEE_REPO)">Gitee</el-button>
+          <el-button size="default" style="width: 55px" @click="openExtenal(CONFIG.SYS.GITHUB_REPO)">Github</el-button>
         </div>
       </bl-row>
 
-      <bl-row just="center" class="about-item" height="50px" width="700px">
+      <!-- <bl-row just="center" class="about-item" height="50px" width="700px">
         <div class="iconbl">❤️</div>
         <bl-col just="center" align="flex-start" height="100%" width="400px">
           <div class="title">赞助项目</div>
@@ -51,7 +50,7 @@
         <div class="btns">
           <el-button size="default" style="width: 55px" @click="openExtenal(CONFIG.SYS.SPONSOR)"> 前往 </el-button>
         </div>
-      </bl-row>
+      </bl-row> -->
     </bl-col>
 
     <bl-col just="center" height="fit-content">

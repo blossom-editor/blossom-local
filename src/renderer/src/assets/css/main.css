@@ -5,7 +5,7 @@ body {
 }
 
 * {
-  font-family: 'Jetbrains Mono', sans-serif;
+  font-family: 'Jetbrains Mono', 'Consolas', 'Menlo', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
   box-sizing: border-box;
   user-select: none;
 }

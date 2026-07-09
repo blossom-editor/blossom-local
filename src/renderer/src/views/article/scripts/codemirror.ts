@@ -55,7 +55,7 @@ export const cwTheme: any = {
     backgroundColor: 'var(--bl-text-bg-color)'
   },
   '.cm-gutters': {
-    backgroundColor: 'var(--bl-editor-gutters-bg-color)',
+    backgroundColor: 'transparent',
     borderColor: 'var(--bl-editor-gutters-border-color)',
     color: 'var(--bl-editor-gutters-color)',
     fontSize: '12px',
@@ -68,7 +68,7 @@ export const cwTheme: any = {
     fontSize: '13px !important'
   },
   '.cm-activeLineGutter': {
-    backgroundColor: 'var(--bl-editor-gutters-bg-color)',
+    backgroundColor: 'transparent',
     color: 'var(--el-color-primary)'
   },
   '.cm-lineNumbers': {
@@ -76,7 +76,9 @@ export const cwTheme: any = {
   },
   '.cm-scroller': {
     // overflow: 'scroll',
-    outline: 'none'
+    outline: 'none',
+    lineHeight: 'var(--bl-editor-line-height)',
+    backgroundColor: 'transparent'
   },
   '.cm-foldGutter': {
     // paddingRight: '3px'

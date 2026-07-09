@@ -23,7 +23,7 @@
 
         -->
         <el-tab-pane name="theme" label="外观">
-          <bl-row class="prop-name">日间</bl-row>
+          <bl-row class="prop-name" style="color: var(--bl-text-color)">日间</bl-row>
           <bl-row class="colors" align="flex-start">
             <el-color-picker
               popper-class="theme-color-picker"
@@ -41,7 +41,7 @@
           </bl-row>
 
           <!--  -->
-          <bl-row class="prop-name">夜间</bl-row>
+          <bl-row class="prop-name" style="color: var(--bl-text-color)">夜间</bl-row>
           <bl-row class="colors" align="flex-start">
             <el-color-picker
               popper-class="theme-color-picker"
@@ -59,37 +59,27 @@
           </bl-row>
 
           <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">页面立体效果</div>
-            </div>
+            <div class="prop">页面立体效果</div>
             <el-switch v-model="configViewStyleForm.isGlobalShadow" size="default" @change="changeGlobalShadow" />
           </bl-row>
 
           <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">显示左上角 LOGO</div>
-            </div>
+            <div class="prop">显示左上角 LOGO</div>
             <el-switch v-model="configViewStyleForm.isShowAsideLogo" size="default" @change="changeViewStyle" />
           </bl-row>
 
           <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">简约的左侧菜单</div>
-            </div>
+            <div class="prop">简约的左侧菜单</div>
             <el-switch v-model="configViewStyleForm.isShowAsideSimple" size="default" @change="changeViewStyle" />
           </bl-row>
 
           <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">显示文件夹图标</div>
-            </div>
+            <div class="prop">显示文件夹图标</div>
             <el-switch v-model="configViewStyleForm.isShowFolderOnDocTree" size="default" @change="changeViewStyle" />
           </bl-row>
 
           <bl-row class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">文件夹图标样式</div>
-            </div>
+            <div class="prop">文件夹图标样式</div>
             <div class="folder-type-list">
               <div class="item" @click="changeFolderType('wl-folder')">
                 <svg class="icon menu-icon" aria-hidden="true"><use xlink:href="#wl-folder"></use></svg>
@@ -122,9 +112,7 @@
           </bl-row>
 
           <bl-row v-if="isElectron()" class="prop-row" just="space-between">
-            <div class="prop">
-              <div class="prop-name">窗口缩放</div>
-            </div>
+            <div class="prop">窗口缩放</div>
             <el-button-group>
               <el-button @click="zoomOut">缩小</el-button>
               <el-button @click="zoomIn">放大</el-button>
@@ -141,49 +129,45 @@
         -->
         <el-tab-pane name="article" label="编辑器">
           <div class="tab-pane-content">
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop"><div class="prop-name">编辑器字体</div></div>
-              <el-input v-model="configEditorStyleForm.fontFamily" size="default" @input="changeEditorStyle"></el-input>
+            <bl-row class="prop-row">
+              <div class="prop">编辑器字体</div>
+              <el-input v-model="configEditorStyleForm.fontFamily" size="default" @input="changeEditorStyle" />
             </bl-row>
             <div class="conf-tip">文章的字体样式。中英文等宽字体在表格中会有更好的样式表现</div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop"><div class="prop-name">编辑器字体大小</div></div>
-              <el-input v-model="configEditorStyleForm.fontSize" size="default" @input="changeEditorStyle">
-                <template #append>单位 px</template>
-              </el-input>
+            <bl-row class="prop-row">
+              <div class="prop">编辑器字体大小</div>
+              <el-input-number v-model="editorFontSize" size="default" :min="8" @input="changeEditorFontSize" />
             </bl-row>
             <div class="conf-tip">文章的字体大小。</div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">文档列表字体大小</div>
-              </div>
-              <el-input v-model="configViewStyleForm.treeDocsFontSize" size="default" @input="changeViewStyle">
-                <template #append>单位 px</template>
-              </el-input>
+            <bl-row class="prop-row">
+              <div class="prop">文档列表字体大小</div>
+              <el-input-number v-model="treeDocsFontSize" size="default" :min="8" @input="changeTreeDocsFontSize" />
             </bl-row>
             <div class="conf-tip">左侧树状列表的字体大小。</div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">代码块默认语言</div>
-              </div>
-              <el-input v-model="configEditorStyleForm.defaultPreLanguage" size="default" @input="changeEditorStyle"> </el-input>
+            <bl-row class="prop-row">
+              <div class="prop">编辑器内容行高</div>
+              <el-input-number v-model="cmConentLineHeight" size="default" :min="0.1" :step="0.1" @input="changeLineHeight" />
+            </bl-row>
+            <div class="conf-tip">编辑器正文与预览页面的行高度</div>
+
+            <bl-row class="prop-row">
+              <div class="prop">代码块默认语言</div>
+              <el-input v-model="configEditorStyleForm.defaultPreLanguage" size="default" @input="changeEditorStyle" />
             </bl-row>
             <div class="conf-tip">通过快捷键和工具栏按钮生成多行代码块<code>```</code>时的默认语言。</div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">最大渲染字数</div>
-              </div>
+            <bl-row class="prop-row">
+              <div class="prop">最大渲染字数</div>
               <el-input-number
                 v-model="configEditorStyleForm.maxWordsCount"
                 :min="0"
                 :max="200000"
                 :step="5000"
                 size="default"
-                style="width: 40%"
+                style="width: 45%"
                 @change="changeEditorStyle">
                 <template #suffix>
                   <span>字数</span>
@@ -192,39 +176,37 @@
             </bl-row>
             <div class="conf-tip">为防止渲染时卡顿, 文章超过该字数后将禁止渲染, 最大20万字</div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">显示代码块行数</div>
-              </div>
+            <bl-row class="prop-row">
+              <div class="prop">显示代码块行数</div>
               <el-switch v-model="configEditorStyleForm.isShowPreLineNumber" size="default" style="margin-right: 10px" @change="changeEditorStyle" />
             </bl-row>
             <div class="conf-tip"></div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">显示文件数量</div>
-              </div>
+            <bl-row class="prop-row">
+              <div class="prop">显示文件数量</div>
               <el-switch v-model="configViewStyleForm.isShowFolderFileCount" size="default" style="margin-right: 10px" @change="changeViewStyle" />
             </bl-row>
             <div class="conf-tip">开启后，文件列表会显示文件夹下的文章或图片数量。</div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">显示编辑器左侧边栏</div>
-              </div>
+            <bl-row class="prop-row">
+              <div class="prop">显示编辑器左侧边栏</div>
               <el-switch v-model="isShowCmGutters" size="default" style="margin-right: 10px" @change="changeCmGuttersDisplay" />
             </bl-row>
             <div class="conf-tip">关闭后, 编辑器做侧边栏会隐藏, 建议隐藏后适当调整编辑器左右边距。</div>
           </div>
 
-          <bl-row class="prop-row" just="space-between" align="flex-start">
-            <div class="prop">
-              <div class="prop-name">编辑器左右边距</div>
-            </div>
+          <bl-row class="prop-row">
+            <div class="prop">编辑器左右边距</div>
             <el-input-number v-model="cmContentPadding" :min="0" :step="5" size="default" style="width: 40%" @change="changeCmContentPadding">
             </el-input-number>
           </bl-row>
           <div class="conf-tip">编辑器左右边距</div>
+
+          <bl-row class="prop-row">
+            <div class="prop">编辑器内阴影</div>
+            <el-switch v-model="isShowEditorBoxShadowInset" size="default" style="margin-right: 10px" @change="changeEditorBoxShadowInset" />
+          </bl-row>
+          <div class="conf-tip">开启后, 编辑器会显示一个内部阴影, 使其有更明显的边界效果</div>
         </el-tab-pane>
 
         <!--
@@ -234,18 +216,14 @@
         -->
         <el-tab-pane name="picture" label="图片">
           <div class="tab-pane-content">
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">图片上传后重命名</div>
-              </div>
+            <bl-row class="prop-row">
+              <div class="prop">图片上传后重命名</div>
               <el-switch v-model="configPicStyleForm.isAddSuffix" size="default" style="margin-right: 10px" @change="changePicStyle" disabled />
             </bl-row>
             <div class="conf-tip">开启后，若在文档库中重名图片, 会自动为上传的图片增加后缀，如:<code>image_20230101_123015_000.png.</code></div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">图片链接格式</div>
-              </div>
+            <bl-row class="prop-row">
+              <div class="prop">图片链接格式</div>
               <el-radio-group v-model="configPicStyleForm.picLinkStyle" size="small" @change="changePicStyle">
                 <el-radio-button label="文件名" value="NAME" />
                 <el-radio-button label="绝对路径" value="ABSOLUTE_PATH" disabled />
@@ -272,10 +250,8 @@
         -->
         <el-tab-pane name="weather" label="天气">
           <div class="tab-pane-content">
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">是否开启天气</div>
-              </div>
+            <bl-row class="prop-row">
+              <div class="prop">是否开启天气</div>
               <el-switch
                 v-model="weatherConfigForm.enabled"
                 size="default"
@@ -287,8 +263,8 @@
             </bl-row>
             <div class="conf-tip">当前只支持<a target="_blank" href="https://id.qweather.com/#/login">和风天气</a></div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop"><div class="prop-name">所在位置代码</div></div>
+            <bl-row class="prop-row">
+              <div class="prop">所在位置代码</div>
               <el-input v-model="weatherConfigForm.location" size="default" @input="changeWeather"></el-input>
             </bl-row>
             <div class="conf-tip">
@@ -297,16 +273,16 @@
               >中查看
             </div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop"><div class="prop-name">API Host</div></div>
+            <bl-row class="prop-row">
+              <div class="prop">API Host</div>
               <el-input v-model="weatherConfigForm.host" size="default" @input="changeWeather"></el-input>
             </bl-row>
             <div class="conf-tip">
               和风天气的 API Host, 在<a target="_blank" href="https://console.qweather.com/setting?lang=zh">个人控制台的设置</a>中查看
             </div>
 
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop"><div class="prop-name">Key</div></div>
+            <bl-row class="prop-row">
+              <div class="prop">Key</div>
               <el-input v-model="weatherConfigForm.key" size="default" @input="changeWeather"></el-input>
             </bl-row>
             <div class="conf-tip">
@@ -317,10 +293,8 @@
 
         <el-tab-pane name="other" label="其他">
           <div class="tab-pane-content">
-            <bl-row class="prop-row" just="space-between" align="flex-start">
-              <div class="prop">
-                <div class="prop-name">开发者工具</div>
-              </div>
+            <bl-row class="prop-row">
+              <div class="prop">开发者工具</div>
               <el-button @click="openDevTools" style="margin-right: 10px"><span class="iconbl bl-bug-line" @click="openDevTools"></span></el-button>
             </bl-row>
           </div>
@@ -342,36 +316,47 @@ import { isDark, changeTheme, setPrimaryColor, setStyleItemObj, resetStyleItems,
 import { setZoomLevel, resetZoomLevel, openDevTools } from '@renderer/assets/utils/electron'
 import { isElectron } from '@renderer/assets/utils/util'
 
+const themeStore = useThemeStore()
 const configStore = useConfigStore()
-
 const configEditorStyleForm = ref<EditorStyle>(configStore.editorStyle)
 const configViewStyleForm = ref<ViewStyle>(configStore.viewStyle)
 const configPicStyleForm = ref<PicStyle>(configStore.picStyle)
 const weatherConfigForm = ref<WeatherConfig>(configStore.weatherConfig)
 
 onMounted(() => {
+  // 编辑器和列表字体大小
+  editorFontSize.value = Number(configStore.editorStyle.fontSize.replaceAll('px', ''))
+  treeDocsFontSize.value = Number(configStore.viewStyle.treeDocsFontSize.replaceAll('px', ''))
+
+  // 是否显示编辑器侧边栏
   if (getTheme(true)['--bl-cm-gutters-display'] === 'none') {
     isShowCmGutters.value = false
   } else {
     isShowCmGutters.value = true
   }
-  // cm-content-padding
+  // 编辑器内容宽度
   const paddingText = getTheme(true)['--bl-cm-content-padding']
   const padding = paddingText.replaceAll('px', '').split(' ')
-  if (padding.length !== 2) {
+  if (padding.length !== 4) {
     cmContentPadding.value = 0
   } else {
     cmContentPadding.value = Number(padding[1])
   }
+  // 编辑器内容行高度
+  const lineHeightText = getTheme(true)['--bl-editor-line-height']
+  cmConentLineHeight.value = Number(lineHeightText)
+
+  // 编辑器内阴影
+  const editorBoxShadowInset = getTheme(true)['--bl-editor-box-shadow-inset']
+  isShowEditorBoxShadowInset.value = !(editorBoxShadowInset === 'none')
 })
 
 //#region 修改全局的 blossom-theme-css
 
-const themeStore = useThemeStore()
+const activeTab = ref('theme')
 const ThemeSettingRef = ref()
 const ThemeSettingTitleRef = ref()
 useDraggable(ThemeSettingRef, ThemeSettingTitleRef)
-const activeTab = ref('theme')
 
 const presetsLight = [
   { color: 'rgb(186, 91, 73)', name: '赤缇' },
@@ -398,10 +383,7 @@ const presetsDark = [
 
 const customLight = ref('')
 const customDark = ref('')
-
-const changePrimaryColor = (color: string, themeDark: boolean) => {
-  setPrimaryColor(color, themeDark)
-}
+const changePrimaryColor = (color: string, themeDark: boolean) => setPrimaryColor(color, themeDark)
 
 /**
  * 设置全局阴影
@@ -424,51 +406,69 @@ const changeGlobalShadow = (open: boolean) => {
   configStore.setViewStyle(configViewStyleForm.value)
 }
 
-const isShowCmGutters = ref(true) // 是否显示编辑器侧边栏
+/** ============================================================================
+ * 是否显示编辑器侧边栏
+ * ============================================================================= */
+const isShowCmGutters = ref(true)
 const changeCmGuttersDisplay = (open: boolean) => {
-  if (open) {
-    let style = {
-      '--bl-cm-gutters-display': 'flex'
-    }
-    setStyleItemObj(style, true)
-    setStyleItemObj(style, false)
-  } else {
-    let style = {
-      '--bl-cm-gutters-display': 'none'
-    }
-    setStyleItemObj(style, true)
-    setStyleItemObj(style, false)
-  }
-}
-
-const cmContentPadding = ref(0)
-const changeCmContentPadding = (padding: boolean) => {
-  let style = {
-    '--bl-cm-content-padding': `0px ${padding}px`
-  }
+  let style = { '--bl-cm-gutters-display': open ? 'flex' : 'none' }
   setStyleItemObj(style, true)
   setStyleItemObj(style, false)
+}
+
+/** ============================================================================
+ * 显示文本内容宽度
+ * ============================================================================= */
+const cmContentPadding = ref(0)
+const changeCmContentPadding = (padding: boolean) => {
+  let style = { '--bl-cm-content-padding': `10px ${padding}px 0 ${padding}px` }
+  setStyleItemObj(style, true)
+  setStyleItemObj(style, false)
+}
+
+/** ============================================================================
+ * 设置编辑器行高
+ * ============================================================================= */
+const cmConentLineHeight = ref(1.6)
+const changeLineHeight = (lineHeight: boolean) => {
+  let style = { '--bl-editor-line-height': lineHeight }
+  setStyleItemObj(style, true)
+  setStyleItemObj(style, false)
+}
+
+/** ============================================================================
+ * 显示编辑器内阴影
+ * ============================================================================= */
+const isShowEditorBoxShadowInset = ref(false)
+const changeEditorBoxShadowInset = (open: boolean) => {
+  let lightStyle = { '--bl-editor-box-shadow-inset': open ? 'inset 0 0 5px rgba(0, 0, 0, 0.2)' : 'none' }
+  let darkStyle = { '--bl-editor-box-shadow-inset': open ? 'inset 0 0 7px rgba(0, 0, 0, 1)' : 'none' }
+  setStyleItemObj(lightStyle, false)
+  setStyleItemObj(darkStyle, true)
 }
 
 //#endregion
 
 //#region 修改配置 configStore
-
-const changeEditorStyle = () => {
+const editorFontSize = ref(15)
+const changeEditorFontSize = () => {
+  configEditorStyleForm.value.fontSize = editorFontSize.value + 'px'
   configStore.setEditorStyle(configEditorStyleForm.value)
 }
 
-const changeViewStyle = () => {
+const treeDocsFontSize = ref(15)
+const changeTreeDocsFontSize = () => {
+  configViewStyleForm.value.treeDocsFontSize = treeDocsFontSize.value + 'px'
   configStore.setViewStyle(configViewStyleForm.value)
 }
 
-const changePicStyle = () => {
-  configStore.setPicStyle(configPicStyleForm.value)
-}
+const changeEditorStyle = () => configStore.setEditorStyle(configEditorStyleForm.value)
 
-const changeWeather = () => {
-  configStore.setWeather(weatherConfigForm.value)
-}
+const changeViewStyle = () => configStore.setViewStyle(configViewStyleForm.value)
+
+const changePicStyle = () => configStore.setPicStyle(configPicStyleForm.value)
+
+const changeWeather = () => configStore.setWeather(weatherConfigForm.value)
 
 /**
  * 设置文件夹的图标
@@ -577,11 +577,6 @@ const zoomReset = () => {
         margin-right: 10px;
       }
     }
-
-    .prop-name {
-      @include font(14px, 300);
-      color: var(--bl-text-color);
-    }
     .colors {
       padding: 10px 0 20px 10px;
       align-content: flex-start;
@@ -624,13 +619,16 @@ const zoomReset = () => {
   }
 
   .prop-row {
-    align-items: flex-start;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
     margin-bottom: 4px;
 
     .prop {
       @include flex(column, flex-start, flex-start);
+      @include font(14px, 300);
       width: 130px;
       min-width: 130px;
+      color: var(--bl-text-color);
       margin-top: 5px;
     }
 
@@ -651,7 +649,7 @@ const zoomReset = () => {
     min-height: 26px;
     color: var(--bl-text-color-light);
     border-bottom: 1px solid var(--el-border-color);
-    padding-bottom: 10px;
+    padding-bottom: 15px;
     margin-bottom: 15px;
     word-break: break-all;
 

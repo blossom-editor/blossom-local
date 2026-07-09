@@ -31,7 +31,9 @@ const DEFAULT_LIGHT = {
   '--bl-box-shadow-subject': '0 3px 5px 0 #cacaca',
   '--bl-drop-shadow-star': 'drop-shadow(2px 2px 2px rgb(180, 180, 180))',
   '--bl-cm-gutters-display': 'flex',
-  '--bl-cm-content-padding': '0px 0px'
+  '--bl-cm-content-padding': '10px 0px 0px 0px',
+  '--bl-editor-line-height': '1.6',
+  '--bl-editor-box-shadow-inset': 'none'
 }
 
 const DEFAULT_DARK = {
@@ -58,7 +60,9 @@ const DEFAULT_DARK = {
   '--bl-box-shadow-subject': '0 3px 3px #000000',
   '--bl-drop-shadow-star': ' drop-shadow(2px 2px 2px rgb(0, 0, 0))',
   '--bl-cm-gutters-display': 'flex',
-  '--bl-cm-content-padding': '0px 0px'
+  '--bl-cm-content-padding': '10px 0px 0px 0px',
+  '--bl-editor-line-height': '1.6',
+  '--bl-editor-box-shadow-inset': 'none'
 }
 
 const isDark = useDark()

@@ -77,6 +77,16 @@
         font-size: inherit;
         overflow: scroll;
         z-index: 2;
+        box-shadow: var(--bl-editor-box-shadow-inset);
+
+        // &::before {
+        //   content: '';
+        //   height: 100%;
+        //   width: 100%;
+        //   display: block;
+        //   position: absolute;
+        //   z-index: 10;
+        // }
 
         /* 定义滑块 内阴影+圆角 */
         &::-webkit-scrollbar-thumb {
@@ -89,8 +99,7 @@
         }
 
         :deep(.cm-editor) {
-          // height: 100%;
-          // max-height: 100%;
+          background-color: transparent;
         }
 
         :deep(.cm-line) {
