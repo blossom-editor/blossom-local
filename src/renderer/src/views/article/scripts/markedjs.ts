@@ -423,6 +423,25 @@ export const renderLink = (href: string, _title: string | null | undefined, text
   return link
 }
 
+/**
+ * 自定义渲染 html
+ * @param html
+ * @param block
+ * @returns
+ */
+export const renderHtml = (html: string, block?: boolean): string => {
+  if (html === '<re>') return '<font style="color:var(--el-color-danger)">'
+  if (html === '<gr>') return '<font style="color:var(--el-color-success)">'
+  if (html === '<ye>') return '<font style="color:var(--el-color-warning)">'
+  if (html === '<bl>') return '<font style="color:var(--bl-color-blue)">'
+  if (html === '<pu>') return '<font style="color:var(--bl-color-purple)">'
+  if (html === '</re>' || html === '</gr>' || html === '</ye>' || html === '</bl>' || html === '</pu>') {
+    return '</font>'
+  }
+
+  return html
+}
+
 //#endregion
 
 //#region ----------------------------------------< simpleMarked >--------------------------------------

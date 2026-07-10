@@ -111,6 +111,9 @@ html.dark {
   --el-text-color-secondary: #a3a6ad;
   --el-text-color-placeholder: #535353;
 
+  --bl-color-blue: #2c8cff;
+  --bl-color-purple: #9279fe;
+
   /* ================================= 背景颜色 =================================*/
   --el-bg-color: #262727;
 
@@ -134,13 +137,17 @@ html.dark {
 :root {
   --bl-html-color: #ffffff;
   --bl-bg-color: #f1f1f1;
-  /* ================================= text styles =================================*/
+
+  /* ================================= 文本颜色 =================================*/
   --bl-text-doctree-color: #909399;
   --bl-text-title-color: #727272;
   /* primary color */
   --bl-text-color: #606266;
   /* 更贴近背景色的字体颜色 */
   --bl-text-color-light: #b7b7b7;
+
+  --bl-color-blue: #3a8df3;
+  --bl-color-purple: #7c5fff;
 
   --bl-box-shadow: 3px 3px 10px 3px rgba(107, 104, 104, 0.3);
   --bl-box-shadow-hover: 0 0 5px rgba(172, 172, 172, 0.7);

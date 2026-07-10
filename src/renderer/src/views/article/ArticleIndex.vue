@@ -193,7 +193,7 @@ import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
 // codemirror
 import { CmWrapper } from './scripts/codemirror'
 // marked
-import marked, { renderBlockquote, renderCode, renderCodespan, renderHeading, renderImage, renderTable, renderLink } from './scripts/markedjs'
+import marked, { renderBlockquote, renderCode, renderCodespan, renderHeading, renderImage, renderTable, renderLink, renderHtml } from './scripts/markedjs'
 import { EPScroll } from './scripts/editor-preview-scroll'
 import { useArticleHtmlEvent } from './scripts/article-html-event'
 import { keymaps } from './scripts/editor-tools'
@@ -641,6 +641,9 @@ const renderer = {
   },
   link(href: string, title: string | null | undefined, text: string): string {
     return renderLink(href, title, text, ArticleTreeDocsRef.value.getDocTreeData())
+  },
+  html(html: string, block?: boolean): string {
+    return renderHtml(html, block)
   }
 }
 

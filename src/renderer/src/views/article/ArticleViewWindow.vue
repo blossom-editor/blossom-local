@@ -51,7 +51,7 @@ import { parseTocAsync } from './scripts/article'
 import { isHttp } from '@renderer/assets/utils/util'
 import { protocolWrapper } from '../picture/scripts/picture'
 import type { Toc } from './scripts/article'
-import marked, { renderBlockquote, renderCode, renderCodespan, renderHeading, renderImage, renderTable, renderLink } from './scripts/markedjs'
+import marked, { renderBlockquote, renderCode, renderCodespan, renderHeading, renderImage, renderTable, renderLink, renderHtml } from './scripts/markedjs'
 import { useArticleHtmlEvent } from './scripts/article-html-event'
 import AppHeader from '@renderer/components/AppHeader.vue'
 
@@ -122,6 +122,9 @@ const renderer = {
   },
   link(href: string, title: string | null | undefined, text: string): string {
     return renderLink(href, title, text, docTree.value)
+  },
+  html(html: string, block?: boolean): string {
+    return renderHtml(html, block)
   }
 }
 
