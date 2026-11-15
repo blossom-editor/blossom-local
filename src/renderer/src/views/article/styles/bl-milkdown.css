@@ -1,0 +1,991 @@
+/**
+ * ============================================================================
+ * Milkdown 编辑器样式
+ * ============================================================================
+ *
+ * ## 分层说明
+ *
+ * 1. `bl-preview.css`（全局）—— 负责「文章正文的排版气质」：
+ *    标题、段落、引用、链接、行内代码等。编辑器根节点复用了 `.bl-preview` class，
+ *    因此正文观感与只读预览窗口保持一致。
+ *
+ * 2. 本文件 —— 负责：
+ *    - 编辑器容器（边距、背景、光标）
+ *    - **表格与代码块**：不再沿用旧版预览样式，改为 milkdown / prosemirror 的默认观感
+ *      （单元格细边框、表头浅底色；代码块浅色底 + 扁平边框）
+ *    - 编辑器独有 UI：语言下拉、斜杠菜单、浮动工具条、公式、图片工具
+ *
+ * 注意：旧样式里有不少 `!important` 与 `:last-child` 规则，表格 / 代码块这两块
+ * 必须显式覆盖，否则会出现「只改了一半」的样式错乱。
+ */
+
+/* ==========================================================================
+   0. 容器
+   ========================================================================== */
+
+/*
+ * milkdown 会在挂载点（.editor-wysiwyg）与 .ProseMirror 之间插一层
+ * <div class="milkdown">。它没有 font-family 声明，会被 main.css 里的
+ * `* { font-family: 'Jetbrains Mono', ... }` 命中，从而把下面的字体继承链断开
+ * （表现为「设置里的编辑器字体不生效」）。这里显式继承一次。
+ */
+.milkdown {
+  font-family: inherit;
+  font-size: inherit;
+  /*
+   * ⚠️ 不能只依赖 bl-preview.css 里的 `.bl-preview * { user-select: text }`。
+   *
+   * main.css 有全局 `* { user-select: none }`（桌面应用不让随便划选），
+   * 而 `.bl-preview *` 只作用于**后代**元素，编辑器根节点（`.bl-milkdown` 自己）
+   * 和这个包装层仍然是 none。于是「段落之间的空隙」「正文下方那 40vh 的空白」
+   * 这些落在根节点上的区域：按下拖动不会选字，而是被浏览器当成拖拽/块选择，
+   * 表现为鼠标指针变成拖拽光标、选不中任何内容。
+   */
+  user-select: text;
+}
+
+.bl-milkdown {
+  outline: none;
+  min-height: 100%;
+  /* 同 .editor-main：绕开全局 `* { font-family }`，让「编辑器字体」真正生效 */
+  font-family: inherit;
+  /* 同上：根节点自身也要可选中，见 `.milkdown` 的注释 */
+  user-select: text;
+  /* 左右边距由「设置 - 编辑器左右边距」控制 */
+  padding: 20px var(--bl-editor-padding-x, 24px) 40vh var(--bl-editor-padding-x, 24px);
+  box-sizing: border-box;
+  caret-color: var(--bl-editor-caret-color);
+  /*
+   * 背景交给外层滚动容器（.editor-wysiwyg）绘制：
+   * 编辑区高度通常大于正文，如果背景画在这里，超出的部分会露出容器底色。
+   * 这里用 `.bl-milkdown.bl-preview` 提高优先级，压掉 bl-preview.css 的默认底色。
+   */
+  background-color: transparent;
+  word-break: break-word;
+}
+
+.bl-milkdown.bl-preview {
+  background-color: transparent;
+}
+
+.bl-milkdown.ProseMirror-focused {
+  outline: none;
+}
+
+/* 编辑器选区颜色，与旧版观感一致 */
+.bl-milkdown ::selection {
+  background: var(--bl-editor-selection-bg-color);
+}
+
+/* 段落与标题的基础间距（bl-preview 只定义了字号，这里补齐段落间距） */
+.bl-milkdown p {
+  margin: 15px 0;
+  line-height: var(--bl-editor-line-height);
+  word-break: break-all;
+}
+
+.bl-milkdown > *:first-child {
+  margin-top: 0;
+}
+
+.bl-milkdown h1,
+.bl-milkdown h2,
+.bl-milkdown h3,
+.bl-milkdown h4,
+.bl-milkdown h5,
+.bl-milkdown h6 {
+  margin: 18px 0 10px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+/*
+ * 标题字号改用 em（相对「编辑器字体大小」）
+ *
+ * bl-preview.css 里写的是 30px / 25px / 22px ... 的固定值（还带 !important），
+ * 那样调整字号设置时正文会变、标题不变，看起来就像「设置没生效」。
+ * 这里按 15px 基准换算成 em，保持原有比例的同时跟随基础字号缩放。
+ */
+.bl-milkdown h1 {
+  font-size: 2em !important;
+}
+
+.bl-milkdown h2 {
+  font-size: 1.66em !important;
+}
+
+.bl-milkdown h3 {
+  font-size: 1.46em !important;
+}
+
+.bl-milkdown h4 {
+  font-size: 1.26em !important;
+}
+
+.bl-milkdown h5,
+.bl-milkdown h6 {
+  font-size: 1.06em !important;
+}
+
+/* ==========================================================================
+   1. ProseMirror 基础修正
+   ========================================================================== */
+
+.bl-milkdown .ProseMirror-gapcursor:after {
+  border-top-color: var(--bl-editor-caret-color);
+}
+
+/* 空段落也要有高度，否则新起一行时光标不可见 */
+.bl-milkdown p:empty::after,
+.bl-milkdown p > br.ProseMirror-trailingBreak:only-child {
+  content: '';
+  display: inline-block;
+}
+
+.bl-milkdown ul,
+.bl-milkdown ol {
+  margin: 8px 0;
+}
+
+.bl-milkdown li {
+  margin: 2px 0;
+}
+
+.bl-milkdown li > p {
+  margin: 0;
+}
+
+/* ==========================================================================
+   2. 表格：官方 table-block
+   --------------------------------------------------------------------------
+   结构与交互（加行列 / 拖拽 / 对齐）由 @milkdown/components 的 tableBlock 提供，
+   外观来自 bl-milkdown-official.css（Crepe 主题原样搬运）。
+
+   这里只处理两件「本项目特有」的事：
+   1. 压掉 bl-preview.css 里旧版预览表格的样式（深色表头、只画右边框），
+      否则 .bl-preview 与 .bl-milkdown 同时挂在一个节点上会互相打架
+   2. 容器表格（`| ##container## |`）——Decoration 的 class 落在
+      table-block 的外层 div 上，所以要写到 .milkdown-table-block 上
+   ========================================================================== */
+
+/* 旧预览样式里有 `border: 1px solid`、表头 `background` 等，这里统一改回官方观感 */
+.bl-milkdown .milkdown-table-block table {
+  border: none !important;
+  border-collapse: collapse !important;
+  border-spacing: 0 !important;
+  background-color: transparent !important;
+  margin: 0 !important;
+  table-layout: fixed;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.bl-milkdown .milkdown-table-block p {
+  margin: 5px 0;
+}
+
+.bl-milkdown .milkdown-table-block td,
+.bl-milkdown .milkdown-table-block th {
+  border: 1px solid var(--el-border-color-light) !important;
+  background-color: transparent !important;
+  color: inherit !important;
+  font-size: inherit !important;
+}
+
+.bl-milkdown .milkdown-table-block th {
+  background-color: var(--el-fill-color-light) !important;
+  font-weight: 600 !important;
+  text-align: left;
+}
+
+/* 列宽拖拽手柄的颜色与主题保持一致（结构样式由 official 提供） */
+.bl-milkdown .milkdown-table-block .column-resize-handle {
+  background-color: var(--el-color-primary-light-3);
+}
+
+/* 容器表格：隐藏表头行与所有边框，只保留内容排版 */
+.bl-milkdown .milkdown-table-block.bl-table-container tbody tr:first-child {
+  display: none;
+}
+
+.bl-milkdown .milkdown-table-block.bl-table-container td,
+.bl-milkdown .milkdown-table-block.bl-table-container th {
+  border: 0 !important;
+  background-color: transparent !important;
+  padding: 2px 8px !important;
+}
+
+/* ==========================================================================
+   3. 代码块：官方 code-block（CodeMirror）
+   --------------------------------------------------------------------------
+   结构、工具条、语言选择面板的样式都在 bl-milkdown-official.css 里，
+   这里只补三点：
+   1. 代码块底色跟随「编辑区正文背景色」，而不是固定取页面底色
+   2. CodeMirror 的文字颜色 / 光标 / 高亮配色走 CSS 变量（明暗两套）
+   3. 代码块不设置左右负边距，保持与正文对齐
+   ========================================================================== */
+
+/* 代码块配色（明 / 暗两套，供 CodeMirror 主题与语法高亮取用） */
+:root {
+  /* 字号由「设置 - 编辑器 - 代码块字体大小」覆盖（ArticleIndex 内联下发同名变量） */
+  --bl-code-font-size: 13px;
+  --bl-code-font-family: 'Jetbrains Mono', 'Consolas', 'Menlo', 'Monaco', monospace;
+  --bl-code-text: #2b2b2b;
+  --bl-code-caret: #2b2b2b;
+  --bl-code-gutter: #b0b0b0;
+  --bl-code-comment: #8c8c8c;
+  --bl-code-keyword: #a626a4;
+  --bl-code-string: #3f8f3f;
+  --bl-code-number: #986801;
+  --bl-code-function: #4078f2;
+  --bl-code-type: #c18401;
+  --bl-code-variable: #2b2b2b;
+  --bl-code-tag: #e45649;
+  --bl-code-heading: #1f2328;
+  --bl-code-link: #4078f2;
+}
+
+:root.dark {
+  --bl-code-text: #d4d4d4;
+  --bl-code-caret: #d4d4d4;
+  --bl-code-gutter: #5c5c5c;
+  --bl-code-comment: #6a737d;
+  --bl-code-keyword: #c678dd;
+  --bl-code-string: #98c379;
+  --bl-code-number: #d19a66;
+  --bl-code-function: #61afef;
+  --bl-code-type: #e6c07b;
+  --bl-code-variable: #d4d4d4;
+  --bl-code-tag: #e06c75;
+  --bl-code-heading: #e8e8e8;
+  --bl-code-link: #61afef;
+}
+
+/* 代码块底色画在外层容器 `.milkdown-code-block` 上，CodeMirror 自身一律透明。
+   ⚠️ 这不是美观问题，而是选区可见性的前提：
+   CodeMirror 的 drawSelection 把选区画在 `.cm-selectionLayer`（z-index: -2）里，
+   只要 `.cm-editor` / `.cm-content` 有一层不透明底色，就会把这层完全盖住，
+   表现为「代码块里选中文字没有任何背景色」。 */
+.bl-milkdown .milkdown-code-block .cm-editor,
+.bl-milkdown .milkdown-code-block .cm-content {
+  background: transparent;
+}
+
+/* 代码块字号
+   CodeMirror 主题里虽然也写了 `fontSize`，但那条规则的特异度只有 (0,1,0)，
+   会被 bl-preview.css 里的 `.bl-preview * { font-size: inherit }` 压住
+   （同特异度、且它更晚生效），结果是字号永远跟随正文字号、设置项无效。
+   所以这里用 (0,3,0) 的选择器再声明一次，值同样是 --bl-code-font-size。 */
+.bl-milkdown .milkdown-code-block .cm-editor {
+  font-size: var(--bl-code-font-size, 13px);
+}
+
+.bl-milkdown .milkdown-code-block .cm-content {
+  color: var(--bl-code-text);
+  caret-color: var(--bl-code-caret);
+}
+
+.bl-milkdown .milkdown-code-block .cm-gutters {
+  color: var(--bl-code-gutter);
+}
+
+/* 右上角「复制」按钮：只要文字，不要图标
+   官方结构是 `<button class="copy-button"><span class="milkdown-icon">📋</span>复制</button>`，
+   copyIcon 已配置成空字符串，图标位是个空 span；它还在的话 flex 的 gap 会多出 4px，
+   所以直接不让它参与布局。 */
+.bl-milkdown .milkdown-code-block .copy-button .milkdown-icon:empty {
+  display: none;
+}
+
+/* --------------------------------------------------------------------------
+   代码块「占位态 / 挂载态」等高
+   --------------------------------------------------------------------------
+   官方 codeBlockComponent 是懒加载的（@milkdown/components 的 CodeMirrorBlock）：
+   离开视口 200px 且 5 秒后 teardown，只留一个
+   `<pre class="milkdown-code-block-placeholder">`；滚回来再挂上 CodeMirror。
+
+   两种状态的原生高度差得很多：
+     · 挂载态 = 工具栏(.tools) + CodeMirror 文本区
+     · 占位态 = 只有一个 <pre>（既没有工具栏，字体也来自旧的 Crease 主题）
+   于是**来回滚动时整个文档会跟着上下跳**（一段 4 行的代码块实测差 33px）。
+   代码块里有一行特别宽时代价更大：占位态的 `white-space: pre-wrap` 会把它折成
+   好几行，挂载后 CodeMirror 不折行、只出横向滚动条，高度瞬间塌掉一大截。
+
+   下面四段让两态的盒子严格相等、且与滚动位置无关：
+     1. 工具栏定高，占位符用等高的 margin-top 把这块「空」补上；
+     2. 占位符的字体 / 行高 / 内边距与 CodeMirror 完全一致；
+     3. 占位符改成 pre 不折行（长行由横向滚动条解决），与 CodeMirror 行为一致；
+     4. 横向滚动条占位永久预留，避免「宽行进出渲染视口」时块高变化。
+
+   ⚠️ 四处的数值必须成对出现，改一个就要改另一个，否则又会出现滚动跳动。 */
+.bl-milkdown .milkdown-code-block {
+  /* 工具栏条带高度：占位态的 margin-top 与挂载态的 .tools 高度共用 */
+  --bl-code-tools-h: 32px;
+}
+
+.bl-milkdown .milkdown-code-block .tools {
+  height: var(--bl-code-tools-h, 32px);
+}
+
+.bl-milkdown .milkdown-code-block .milkdown-code-block-placeholder,
+.bl-milkdown .milkdown-code-block .milkdown-code-block-placeholder code {
+  /* 与 CodeMirror 的文本度量对齐（.cm-scroller 的 font-size / line-height） */
+  font-family: var(--bl-code-font-family, monospace);
+  font-size: var(--bl-code-font-size, 13px);
+  line-height: 1.6;
+}
+
+.bl-milkdown .milkdown-code-block .milkdown-code-block-placeholder {
+  /* 补上挂载态才有的一行工具栏 */
+  margin: var(--bl-code-tools-h, 32px) 0 0;
+  /* 与 .cm-content 的 padding 一致（2px 0） */
+  padding: 2px 0;
+  /* 长行不折行，交给横向滚动条 —— 与 CodeMirror 的表现保持一致。
+     原来是 pre-wrap + break-all，宽行会被折成多行，挂载后高度骤降。
+     横向溢出策略统一写在下面的「滚动位置无关」小节里（overflow-x: scroll）。 */
+  white-space: pre;
+  /* 空代码块也要占住一行的高度（CodeMirror 里空文档仍有一行） */
+  min-height: 1.6em;
+}
+
+/* --------------------------------------------------------------------------
+   代码块高度必须与「当前滚动到哪儿」无关
+   --------------------------------------------------------------------------
+   CodeMirror 6 只把**视口内的行**渲染进 DOM。横向滚动条是「有行比可视宽度宽」
+   才出现的，而这件事取决于此刻渲染了哪几行 —— 于是同一个几百行的代码块：
+     · 滚到不含宽行的位置 → 没有横向滚动条 → 块高 = 内容高
+     · 滚到宽行附近       → 横向滚动条出现 → 块高 +5px
+   实测 SP2-文章 那个约 1700 行的代码块（第 100 行附近有宽行）：
+   scrollTop 1200 → 1400 时 hBar 0 → 5，块高 32918.84 → 32923.50，
+   整篇文档跟着长 4.67px，下方所有内容整体下移 —— 这就是「来回滚动布局会变」。
+
+   把滚动条占位**永久预留**（overflow-x: scroll）后，有没有溢出都不影响布局。
+   配合透明轨道，没有溢出时看到的只是块底多出几像素留白。
+   占位符（<pre> 含全部行，永远有滚动条）也必须一起用 scroll，否则两态又不等高。 */
+.bl-milkdown .milkdown-code-block .cm-scroller,
+.bl-milkdown .milkdown-code-block .milkdown-code-block-placeholder {
+  overflow-x: scroll;
+  /* overflow-x: scroll 会把另一轴的 visible 提升成 auto（规范行为），
+     万一高度差 1px 就会冒出竖向滚动条，索性显式关掉 */
+  overflow-y: hidden;
+}
+
+.bl-milkdown .milkdown-code-block .cm-scroller::-webkit-scrollbar-track,
+.bl-milkdown .milkdown-code-block .milkdown-code-block-placeholder::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ==========================================================================
+   4. 列表：对齐 / 颜色 / 行距修正
+   --------------------------------------------------------------------------
+   list-item-block 的结构是：
+     li.list-item > (div.label-wrapper, div.children > div.content-dom > p)
+
+   官方主题（bl-milkdown-official.css）里的尺寸是按 Crepe 的 32px 行高设计的，
+   放到本项目会出现三个问题，这里逐一修正：
+   1. 序号高度 32px，而正文行高是 1.6em —— 两者不在一条基线上
+   2. 标签颜色取 `--crepe-color-outline`（边框色），应该是主题色
+   3. 结构里多了一层 div，`.bl-milkdown li > p { margin: 0 }` 命中不到段落，
+      段落自带的 8px 上下外边距会把列表行距撑大一倍
+   ========================================================================== */
+
+/* 标签（圆点 / 序号 / 复选框）：宽度自适应、与第一行文字同高 */
+.bl-milkdown .milkdown-list-item-block .list-item > .label-wrapper {
+  flex: none;
+  align-items: flex-start;
+  width: auto;
+  min-width: 1.1em;
+  height: calc(var(--bl-editor-line-height, 1.6) * 1em);
+  padding-top: 0;
+  color: var(--el-color-primary);
+}
+
+/* 行高交给正文统一控制，不要写死 */
+.bl-milkdown .milkdown-list-item-block .list-item > .label-wrapper .label {
+  width: auto;
+  min-width: 1.1em;
+  height: auto;
+  padding: 0;
+  line-height: var(--bl-editor-line-height, 1.6);
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* 复选框图标本身是 svg，给它一点垂直微调，避免比文字高半像素 */
+.bl-milkdown .milkdown-list-item-block .list-item > .label-wrapper .checked,
+.bl-milkdown .milkdown-list-item-block .list-item > .label-wrapper .unchecked {
+  display: inline-flex;
+  align-items: center;
+  height: calc(var(--bl-editor-line-height, 1.6) * 1em);
+  color: var(--el-color-primary);
+}
+
+.bl-milkdown .milkdown-list-item-block .list-item > .label-wrapper .unchecked {
+  color: var(--el-text-color-secondary);
+}
+
+/* 行距：段落外边距清零，完全由「编辑器内容行高」控制 */
+.bl-milkdown .milkdown-list-item-block .children p {
+  margin: 0;
+  line-height: var(--bl-editor-line-height, 1.6);
+}
+
+.bl-milkdown .milkdown-list-item-block .children > .content-dom > .ProseMirror-trailingBreak {
+  display: none;
+}
+
+/* 列表项之间只保留行高本身的间距 */
+.bl-milkdown .milkdown-list-item-block > .list-item {
+  margin: 0;
+  gap: 9px;
+}
+
+.bl-milkdown .milkdown-list-item-block > .list-item + .list-item {
+  margin-top: 0;
+}
+
+/* 嵌套列表的缩进 */
+.bl-milkdown .milkdown-list-item-block .children ul,
+.bl-milkdown .milkdown-list-item-block .children ol {
+  /* padding-left: 1.4em; */
+  margin: 0;
+}
+
+/* ==========================================================================
+   4.1 去掉 ProseMirror 默认的蓝色选中描边
+   --------------------------------------------------------------------------
+   prosemirror.css 里 `.ProseMirror-selectednode { outline: 2px solid #8cf }`，
+   在表格单元格 / 列表项被选中时会画出一圈蓝框，与本项目主题不符。
+   图片、公式有自己的选中样式（.is-selected），不受影响。
+   ========================================================================== */
+
+.bl-milkdown .ProseMirror-selectednode {
+  outline: none;
+}
+
+.bl-milkdown li.ProseMirror-selectednode::after {
+  border: none;
+}
+
+/* ==========================================================================
+   5. 数学公式
+   ========================================================================== */
+
+.bl-milkdown .bl-math {
+  cursor: pointer;
+  border-radius: 3px;
+  transition: background-color 0.15s;
+}
+
+.bl-milkdown .bl-math-inline {
+  display: inline-block;
+  padding: 0 2px;
+  vertical-align: baseline;
+}
+
+.bl-milkdown .bl-math-block {
+  display: block;
+  margin: 12px 0;
+  padding: 6px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.bl-milkdown .bl-math:hover {
+  background-color: var(--el-color-primary-light-9);
+}
+
+.bl-milkdown .bl-math.is-selected {
+  background-color: var(--el-color-primary-light-8);
+  outline: 1px solid var(--el-color-primary-light-5);
+}
+
+.bl-milkdown .bl-math-empty {
+  color: var(--bl-text-color-light);
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.bl-milkdown .bl-math-error {
+  color: var(--el-color-danger);
+  font-size: 13px;
+  font-family: monospace;
+}
+
+.bl-milkdown .katex {
+  font-size: 1.05em;
+}
+
+/* 公式编辑弹窗里的预览区 */
+.bl-math-editor-preview {
+  margin-top: 14px;
+  padding: 18px 16px;
+  min-height: 64px;
+  border-radius: 6px;
+  border: 1px dashed var(--el-border-color-light);
+  background-color: var(--el-fill-color-lighter);
+  text-align: center;
+  overflow-x: auto;
+  /* 让公式在预览区里垂直居中，长公式可横向滚动 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ==========================================================================
+   6. 图片
+   ========================================================================== */
+
+.bl-milkdown .bl-image-node {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  line-height: 0;
+  border-radius: var(--bl-preview-border-radius);
+  outline: 2px solid transparent;
+  transition: outline-color 0.15s;
+  cursor: pointer;
+}
+
+.bl-milkdown .bl-image-node.is-selected {
+  outline-color: var(--el-color-primary-light-5);
+}
+
+.bl-milkdown .bl-image-node img {
+  max-width: 100%;
+  /*
+   * height: auto 必须显式写：
+   * 图片节点会带 width / height 属性（用来在解码前预留占位高度），
+   * 如果没有 height:auto，浏览器会把属性里的高度当成固定高度，
+   * 一旦 max-width / 自定义宽度把宽度压小，图片就会被纵向拉长。
+   */
+  height: auto;
+  border-radius: var(--bl-preview-border-radius);
+  filter: var(--bl-preview-img-filter);
+}
+
+/**
+ * 图片右上角的「编辑」按钮
+ *
+ * 只在图片被选中时出现（点一下图片即可选中），点它才打开「宽度 / 阴影」面板。
+ * 单击图片本身不再弹面板，避免想拖动图片时被打断。
+ */
+.bl-milkdown .bl-image-node .bl-image-edit {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background-color: rgba(20, 20, 20, 0.62);
+  color: #ffffff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
+}
+
+.bl-milkdown .bl-image-node .bl-image-edit:hover {
+  background-color: var(--el-color-primary);
+}
+
+.bl-milkdown .bl-image-node.is-selected .bl-image-edit {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/**
+ * 加载失败：只显示一行文字
+ *
+ * 旧实现给失败状态加了 min-width / min-height 的虚线框，图片加载完成或失败时
+ * 高度突变会把正文「顶」一下（看起来像重新渲染）。文字提示高度与正文行高一致，
+ * 不会再造成排版抖动。
+ */
+.bl-milkdown .bl-image-error {
+  display: none;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--el-color-danger);
+}
+
+.bl-milkdown .bl-image-node.is-broken img {
+  display: none;
+}
+
+.bl-milkdown .bl-image-node.is-broken .bl-image-error {
+  display: inline;
+}
+
+/* ==========================================================================
+   7. 链接
+   ========================================================================== */
+
+/* 内部链接（文档库内文章）沿用旧版的虚线样式 */
+.bl-milkdown a[href]:not([href^='http']):not([href^='mailto']):not([href^='tel']) {
+  border-bottom: 2px dashed #858585;
+  box-sizing: border-box;
+  padding: 0 4px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.bl-milkdown a[href^='http'] {
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   8. Blossom 语法标记（`##green##`）的视觉隐藏
+   --------------------------------------------------------------------------
+   标记仍在文档里（保证存回 .md 时格式不变），只是不显示
+   ========================================================================== */
+
+.bl-milkdown .bl-md-marker {
+  font-size: 0 !important;
+  opacity: 0;
+  user-select: none;
+  letter-spacing: 0;
+  display: inline-block;
+  width: 0;
+  overflow: hidden;
+}
+
+/* ==========================================================================
+   9. 斜杠菜单
+   ========================================================================== */
+
+.bl-slash-menu {
+  position: absolute;
+  z-index: 3000;
+  min-width: 200px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 5px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-light);
+  background-color: var(--bl-html-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-size: 13px;
+}
+
+.bl-slash-menu[data-show='false'] {
+  display: none;
+}
+
+.bl-slash-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--bl-text-color);
+  white-space: nowrap;
+}
+
+.bl-slash-item.is-active,
+.bl-slash-item:hover {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.bl-slash-item .iconbl {
+  font-size: 14px;
+  width: 18px;
+  text-align: center;
+}
+
+.bl-slash-icon-text {
+  width: 18px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--bl-text-color-light);
+}
+
+.bl-slash-label {
+  flex: 1;
+}
+
+.bl-slash-hint {
+  font-size: 11px;
+  color: var(--bl-text-color-light);
+}
+
+.bl-slash-empty {
+  padding: 8px;
+  color: var(--bl-text-color-light);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ==========================================================================
+   10. 选区浮动工具条
+   --------------------------------------------------------------------------
+   两行：
+     第一行 预设文字颜色（色点直接点，不再展开二级面板）+ 清除
+     第二行 加粗 / 斜体 / 下划线 / 行内代码 | 设为链接
+   ========================================================================== */
+
+.bl-selection-tooltip {
+  position: absolute;
+  z-index: 100;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-light);
+  background-color: var(--bl-html-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.bl-selection-tooltip[data-show='false'] {
+  display: none;
+}
+
+.bl-tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.bl-selection-tooltip .bl-tooltip-btn {
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--bl-text-color);
+  transition: 0.15s;
+}
+
+.bl-selection-tooltip .bl-tooltip-btn:hover {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+/* 当前选区已经应用了该格式（加粗 / 斜体 / 下划线 / 行内代码） */
+.bl-selection-tooltip .bl-tooltip-btn.is-active {
+  background-color: var(--el-color-primary-light-9);
+  color: var(--el-color-primary);
+}
+
+.bl-tooltip-divider {
+  width: 1px;
+  height: 14px;
+  margin: 0 4px;
+  background-color: var(--el-border-color);
+}
+
+/* 第一行：预设颜色 */
+.bl-tooltip-colors {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 4px 5px;
+  margin-bottom: 3px;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+}
+
+.bl-color-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  transition: transform 0.12s;
+}
+
+.bl-color-dot:hover {
+  transform: scale(1.18);
+}
+
+/* 选区当前用的就是这个颜色 */
+.bl-color-dot.is-active {
+  box-shadow: 0 0 0 2px var(--el-color-primary);
+}
+
+.bl-color-clear {
+  margin-left: auto;
+  padding: 1px 6px;
+  font-size: 11px;
+  color: var(--bl-text-color);
+  border: 1px solid var(--el-border-color);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.bl-color-clear:hover {
+  color: var(--el-color-primary);
+  border-color: var(--el-color-primary-light-5);
+}
+
+/* ==========================================================================
+   11. 其它
+   ========================================================================== */
+
+.bl-uploading {
+  display: inline-block;
+  margin: 0 4px;
+  padding: 1px 6px;
+  font-size: 12px;
+  border-radius: 3px;
+  color: var(--el-color-primary);
+  background-color: var(--el-color-primary-light-9);
+}
+
+/* ==========================================================================
+   8. 正文查找（Ctrl + F）
+   --------------------------------------------------------------------------
+   命中用装饰（Decoration）渲染成 <span>，只是视觉高亮，不会写进 markdown。
+   配色参考浏览器原生查找：普通命中偏黄，当前命中偏橙。
+   ========================================================================== */
+
+.bl-milkdown .bl-search-match {
+  background-color: rgba(255, 213, 0, 0.42);
+  border-radius: 2px;
+}
+
+.bl-milkdown .bl-search-match-current {
+  background-color: #ff9632;
+  color: #1f1f1f;
+  box-shadow: 0 0 0 1px rgba(255, 150, 50, 0.85);
+}
+
+/* 深色主题下降低亮度，避免刺眼 */
+:root.dark .bl-milkdown .bl-search-match {
+  background-color: rgba(255, 213, 0, 0.28);
+}
+
+:root.dark .bl-milkdown .bl-search-match-current {
+  background-color: #d9822b;
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   9. 链接浮层（官方 @milkdown/kit/component/link-tooltip）
+   --------------------------------------------------------------------------
+   官方组件只提供结构，样式由使用方负责。两个浮层：
+
+     .milkdown-link-preview  → 悬停链接时的预览（复制 / 编辑 / 删除）
+     .milkdown-link-edit     → 点「编辑」或选中文字「设为链接」时就地弹出的输入框
+                               （plugins/link-edit.ts，class 与官方保持一致）
+
+   两者都由 TooltipProvider 绝对定位（left/top 由 floating-ui 计算）。
+   ========================================================================== */
+
+.milkdown-link-preview,
+.milkdown-link-edit {
+  position: absolute;
+  z-index: 100;
+}
+
+.milkdown-link-preview[data-show='false'],
+.milkdown-link-edit[data-show='false'] {
+  display: none;
+}
+
+.milkdown-link-preview .link-preview {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 420px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-light);
+  background-color: var(--bl-html-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  color: var(--bl-text-color);
+}
+
+.milkdown-link-preview .link-preview .link-display {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--el-color-primary);
+  text-decoration: none;
+}
+
+.milkdown-link-preview .link-preview .link-remove-button,
+.milkdown-link-preview .link-preview .link-edit-button {
+  font-size: 20px;
+}
+
+/* 最左边的「复制地址」按钮用的是图标字体（bl-a-texteditorstickup-line，见 editor.ts 的 linkIcon），
+   .iconbl 自带 16px 字号，这里压到 14px 与其它按钮视觉重量对齐 */
+.milkdown-link-preview .link-preview .link-icon,
+.milkdown-link-preview .link-preview .link-icon .iconbl {
+  font-size: 14px;
+  line-height: 1;
+}
+
+.milkdown-link-preview .link-preview .link-icon .iconbl {
+  color: inherit;
+}
+
+.milkdown-link-preview .link-preview .button,
+.milkdown-link-edit .link-edit .button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--bl-text-color-light);
+  user-select: none;
+}
+
+.milkdown-link-preview .link-preview .button:hover,
+.milkdown-link-edit .link-edit .button:hover {
+  background-color: var(--el-fill-color-light);
+  color: var(--el-color-primary);
+}
+
+.milkdown-link-preview .link-preview .link-remove-button:hover {
+  color: var(--el-color-danger);
+}
+
+.milkdown-link-edit .link-edit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 280px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--el-border-color-light);
+  background-color: var(--bl-html-color);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.milkdown-link-edit .link-edit .input-area {
+  flex: 1;
+  min-width: 0;
+  height: 22px;
+  padding: 0 4px;
+  border: none;
+  outline: none;
+  background-color: transparent;
+  color: var(--bl-text-color);
+  font-size: 12px;
+  font-family: inherit;
+}
+
+.milkdown-link-edit .link-edit .input-area::placeholder {
+  color: var(--bl-text-color-light);
+}
+
+/* 链接在编辑器里的样式：可点击的视觉反馈 */
+.bl-milkdown a[href]:hover {
+  text-decoration-thickness: 2px;
+}
+
+.bl-milkdown hr.ProseMirror-selectednode {
+  outline: 2px solid var(--el-color-primary-light-5);
+  background-clip: content-box;
+}

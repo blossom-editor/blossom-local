@@ -142,6 +142,12 @@
             <div class="conf-tip">文章的字体大小。</div>
 
             <bl-row class="prop-row">
+              <div class="prop">代码块字体大小</div>
+              <el-input-number v-model="codeFontSize" size="default" :min="8" @input="changeCodeFontSize" />
+            </bl-row>
+            <div class="conf-tip">多行代码块（CodeMirror）里代码的字号，不影响行内代码。</div>
+
+            <bl-row class="prop-row">
               <div class="prop">文档列表字体大小</div>
               <el-input-number v-model="treeDocsFontSize" size="default" :min="8" @input="changeTreeDocsFontSize" />
             </bl-row>
@@ -154,12 +160,26 @@
             <div class="conf-tip">编辑器正文与预览页面的行高度</div>
 
             <bl-row class="prop-row">
-              <div class="prop">代码块默认语言</div>
-              <el-input v-model="configEditorStyleForm.defaultPreLanguage" size="default" @input="changeEditorStyle" />
+              <div class="prop">编辑器左右边距</div>
+              <el-input-number v-model="editorPaddingX" :min="0" :max="300" :step="5" size="default" style="width: 40%" @change="changeEditorPadding">
+                <template #suffix>
+                  <span>px</span>
+                </template>
+              </el-input-number>
             </bl-row>
-            <div class="conf-tip">通过快捷键和工具栏按钮生成多行代码块<code>```</code>时的默认语言。</div>
+            <div class="conf-tip">文章正文左右两侧的留白宽度。</div>
 
             <bl-row class="prop-row">
+              <div class="prop">正文背景色（日间）</div>
+              <el-color-picker popper-class="theme-color-picker" v-model="editorContentBgLight" size="default" @change="changeEditorContentBgLight" />
+            </bl-row>
+            <bl-row class="prop-row">
+              <div class="prop">正文背景色（夜间）</div>
+              <el-color-picker popper-class="theme-color-picker" v-model="editorContentBgDark" size="default" @change="changeEditorContentBgDark" />
+            </bl-row>
+            <div class="conf-tip">分别设置日间 / 夜间模式下文章编辑区（含代码块）的正文背景，清空后跟随主题默认值。</div>
+
+            <!-- <bl-row class="prop-row">
               <div class="prop">最大渲染字数</div>
               <el-input-number
                 v-model="configEditorStyleForm.maxWordsCount"
@@ -174,13 +194,7 @@
                 </template>
               </el-input-number>
             </bl-row>
-            <div class="conf-tip">为防止渲染时卡顿, 文章超过该字数后将禁止渲染, 最大20万字</div>
-
-            <bl-row class="prop-row">
-              <div class="prop">显示代码块行数</div>
-              <el-switch v-model="configEditorStyleForm.isShowPreLineNumber" size="default" style="margin-right: 10px" @change="changeEditorStyle" />
-            </bl-row>
-            <div class="conf-tip"></div>
+            <div class="conf-tip">为防止卡顿, 文章超过该字数后会降低目录与源码的刷新频率, 最大20万字</div> -->
 
             <bl-row class="prop-row">
               <div class="prop">显示文件数量</div>
@@ -189,24 +203,11 @@
             <div class="conf-tip">开启后，文件列表会显示文件夹下的文章或图片数量。</div>
 
             <bl-row class="prop-row">
-              <div class="prop">显示编辑器左侧边栏</div>
-              <el-switch v-model="isShowCmGutters" size="default" style="margin-right: 10px" @change="changeCmGuttersDisplay" />
+              <div class="prop">编辑器内阴影</div>
+              <el-switch v-model="isShowEditorBoxShadowInset" size="default" style="margin-right: 10px" @change="changeEditorBoxShadowInset" />
             </bl-row>
-            <div class="conf-tip">关闭后, 编辑器做侧边栏会隐藏, 建议隐藏后适当调整编辑器左右边距。</div>
+            <div class="conf-tip">开启后, 编辑器会显示一个内部阴影, 使其有更明显的边界效果</div>
           </div>
-
-          <bl-row class="prop-row">
-            <div class="prop">编辑器左右边距</div>
-            <el-input-number v-model="cmContentPadding" :min="0" :step="5" size="default" style="width: 40%" @change="changeCmContentPadding">
-            </el-input-number>
-          </bl-row>
-          <div class="conf-tip">编辑器左右边距</div>
-
-          <bl-row class="prop-row">
-            <div class="prop">编辑器内阴影</div>
-            <el-switch v-model="isShowEditorBoxShadowInset" size="default" style="margin-right: 10px" @change="changeEditorBoxShadowInset" />
-          </bl-row>
-          <div class="conf-tip">开启后, 编辑器会显示一个内部阴影, 使其有更明显的边界效果</div>
         </el-tab-pane>
 
         <!--
@@ -326,22 +327,18 @@ const weatherConfigForm = ref<WeatherConfig>(configStore.weatherConfig)
 onMounted(() => {
   // 编辑器和列表字体大小
   editorFontSize.value = Number(configStore.editorStyle.fontSize.replaceAll('px', ''))
+  codeFontSize.value = Number((configStore.editorStyle.codeFontSize ?? '13px').replaceAll('px', '')) || 13
   treeDocsFontSize.value = Number(configStore.viewStyle.treeDocsFontSize.replaceAll('px', ''))
 
-  // 是否显示编辑器侧边栏
-  if (getTheme(true)['--bl-cm-gutters-display'] === 'none') {
-    isShowCmGutters.value = false
-  } else {
-    isShowCmGutters.value = true
-  }
-  // 编辑器内容宽度
-  const paddingText = getTheme(true)['--bl-cm-content-padding']
-  const padding = paddingText.replaceAll('px', '').split(' ')
-  if (padding.length !== 4) {
-    cmContentPadding.value = 0
-  } else {
-    cmContentPadding.value = Number(padding[1])
-  }
+  // 编辑区左右边距
+  const currentTheme = getTheme(isDark.value)
+  const paddingText: string = currentTheme['--bl-editor-padding-x'] ?? '80px'
+  editorPaddingX.value = Number(paddingText.replaceAll('px', '')) || 0
+  // 编辑区正文背景色（日间 / 夜间分别读取）
+  const lightTheme = getTheme(false)
+  const darkTheme = getTheme(true)
+  editorContentBgLight.value = lightTheme['--bl-editor-content-bg'] ?? ''
+  editorContentBgDark.value = darkTheme['--bl-editor-content-bg'] ?? ''
   // 编辑器内容行高度
   const lineHeightText = getTheme(true)['--bl-editor-line-height']
   cmConentLineHeight.value = Number(lineHeightText)
@@ -407,23 +404,43 @@ const changeGlobalShadow = (open: boolean) => {
 }
 
 /** ============================================================================
- * 是否显示编辑器侧边栏
+ * 编辑区左右边距
  * ============================================================================= */
-const isShowCmGutters = ref(true)
-const changeCmGuttersDisplay = (open: boolean) => {
-  let style = { '--bl-cm-gutters-display': open ? 'flex' : 'none' }
-  setStyleItemObj(style, true)
-  setStyleItemObj(style, false)
+const editorPaddingX = ref(80)
+const changeEditorPadding = (padding: number) => {
+  const value = `${padding ?? 80}px`
+  setStyleItemObj({ '--bl-editor-padding-x': value }, true)
+  setStyleItemObj({ '--bl-editor-padding-x': value }, false)
 }
 
-/** ============================================================================
- * 显示文本内容宽度
+/**
+ * ============================================================================
+ * 编辑区正文背景色
+ * ----------------------------------------------------------------------------
+ * 日间 / 夜间是两套独立的主题变量表（theme_light / theme_dark），
+ * 所以这里分开写：改日间不影响夜间，切换暗色模式时自动取对应值。
  * ============================================================================= */
-const cmContentPadding = ref(0)
-const changeCmContentPadding = (padding: boolean) => {
-  let style = { '--bl-cm-content-padding': `10px ${padding}px 0 ${padding}px` }
-  setStyleItemObj(style, true)
-  setStyleItemObj(style, false)
+const editorContentBgLight = ref('')
+const editorContentBgDark = ref('')
+
+const changeEditorContentBgLight = (color: string | null) => {
+  if (!color) {
+    resetStyleItems(['--bl-editor-content-bg'], false)
+    editorContentBgLight.value = ''
+    return
+  }
+  setStyleItemObj({ '--bl-editor-content-bg': color }, false)
+  editorContentBgLight.value = color
+}
+
+const changeEditorContentBgDark = (color: string | null) => {
+  if (!color) {
+    resetStyleItems(['--bl-editor-content-bg'], true)
+    editorContentBgDark.value = ''
+    return
+  }
+  setStyleItemObj({ '--bl-editor-content-bg': color }, true)
+  editorContentBgDark.value = color
 }
 
 /** ============================================================================
@@ -453,6 +470,13 @@ const changeEditorBoxShadowInset = (open: boolean) => {
 const editorFontSize = ref(15)
 const changeEditorFontSize = () => {
   configEditorStyleForm.value.fontSize = editorFontSize.value + 'px'
+  configStore.setEditorStyle(configEditorStyleForm.value)
+}
+
+/** 多行代码块（CodeMirror）字号，最终以 CSS 变量 --bl-code-font-size 下发给编辑器 */
+const codeFontSize = ref(13)
+const changeCodeFontSize = () => {
+  configEditorStyleForm.value.codeFontSize = codeFontSize.value + 'px'
   configStore.setEditorStyle(configEditorStyleForm.value)
 }
 

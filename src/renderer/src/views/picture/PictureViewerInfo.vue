@@ -14,7 +14,7 @@
         <el-divider></el-divider>
         <div class="container">
           <div><strong>使用该图片的文章：</strong></div>
-          <bl-col v-if="!isEmpty(picInfo!.articleLinks)" align="flex-start">
+          <bl-col v-if="!isEmptyArr(picInfo!.articleLinks)" align="flex-start">
             <div v-for="article in picInfo!.articleLinks">《{{ article.name }}》</div>
           </bl-col>
           <bl-row v-else>
@@ -72,7 +72,7 @@ import { WarnTriangleFilled } from '@element-plus/icons-vue'
 import { DefaultPicture, picCacheWrapper } from './scripts/picture'
 import { formatFileSize } from '@renderer/assets/utils/util'
 import { writeText } from '@renderer/assets/utils/electron'
-import { isEmpty } from '@renderer/assets/utils/obj'
+import { isEmptyArr } from '@renderer/assets/utils/obj'
 
 // 是否显示图片 viewer
 const isShowPicInfo = ref(false)

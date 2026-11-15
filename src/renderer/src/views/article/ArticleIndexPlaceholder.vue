@@ -29,12 +29,8 @@
         <div class="key">{{ keymaps.hideDocs }}</div>
       </bl-row>
       <bl-row>
-        <div class="label">隐藏目录</div>
-        <div class="key">{{ keymaps.hideToc }}</div>
-      </bl-row>
-      <bl-row>
-        <div class="label">格式化</div>
-        <div class="key">{{ keymaps.formatAll }}</div>
+        <div class="label">斜杠命令</div>
+        <div class="key">{{ keymaps.slash }}</div>
       </bl-row>
     </div>
   </div>

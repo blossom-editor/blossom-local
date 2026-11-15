@@ -73,7 +73,6 @@
               <svg v-if="isShowSvg(data, viewStyle)" class="icon menu-icon" aria-hidden="true">
                 <use :xlink:href="'#' + viewStyle.folderIconOnDocTree"></use>
               </svg>
-              <img class="menu-icon-img" v-else-if="isShowImg(data, viewStyle)" :src="data.icon" />
               <el-input
                 v-if="data?.updn"
                 v-model="data.name"
@@ -121,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, provide, nextTick, watch } from 'vue'
+import { ref, provide, nextTick, watch, onMounted, onActivated, onDeactivated, onBeforeUnmount } from 'vue'
 import { useConfigStore } from '@renderer/stores/config'
 import { useDocLibStore } from '@renderer/stores/docLib'
 // element plus
@@ -138,8 +137,7 @@ import { DOC_LIB_ROOT_FOLDER_ID, getChildFileCountColor } from '@renderer/views/
 import { useDraggable } from '@renderer/scripts/draggable'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 // util
-import { isEmpty } from 'lodash'
-import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
+import { isBlank, isNotBlank, isEmptyArr } from '@renderer/assets/utils/obj'
 import { getFilePrefix, inValidateFileName, platformText } from '@renderer/assets/utils/util.js'
 // components
 import Notify from '@renderer/scripts/notify'
@@ -180,7 +178,7 @@ const refreshDocTree = () => {
   getDocTree(() => {
     nextTick(() => {
       isShowPictureRepeat.value = false
-      if (!isEmpty(docTreeData.value) && isNotBlank(docTreeCurrentChoiseId.value)) {
+      if (!isEmptyArr(docTreeData.value) && isNotBlank(docTreeCurrentChoiseId.value)) {
         DocTreeRef.value.setCurrentKey(docTreeCurrentChoiseId.value)
       }
     })
@@ -382,7 +380,7 @@ const collapseAll = () => {
  */
 const collapseChild = (doc: DocTree) => {
   if (doc.type === 'FOLDER' || doc.type === 'PICTURE') {
-    if (isEmpty(doc.children)) {
+    if (isEmptyArr(doc.children)) {
       docTreeCurrentExpandIdSet.value.delete(doc.id)
     } else {
       for (let i = 0; i < doc.children!.length; i++) {
@@ -429,7 +427,7 @@ const collapseChilds = (node: Node) => {
  */
 const closeParentIfNoChild = (id: string) => {
   let node: Node = DocTreeRef.value.getNode(id).parent
-  if (node && isEmpty(node.childNodes)) {
+  if (node && isEmptyArr(node.childNodes)) {
     docTreeCurrentExpandIdSet.value.delete(id)
   }
 }
@@ -580,8 +578,12 @@ const rename = () => {
   curDoc.value.updn = true
   notAllowDragId.value = curDoc.value.id
   nextTick(() => {
-    let ele = document.getElementById('article-doc-name-' + curDoc.value.id)
-    if (ele) ele.focus()
+    let ele = document.getElementById('article-doc-name-' + curDoc.value.id) as HTMLInputElement
+    if (ele) {
+      ele.focus()
+      // 输入框中的名称包含后缀, 只选中主文件名, 避免误删后缀
+      ele.setSelectionRange(0, getFilePrefix(curDoc.value.name).length)
+    }
   })
 }
 
@@ -637,6 +639,59 @@ const changeArticleNameInput = (data: DocTree): boolean => {
     return true
   }
 }
+
+/**
+ * 焦点是否停留在输入类元素上
+ * 重命名输入框、搜索框等输入控件中按下 F2 时不做处理
+ */
+const isFocusOnEditable = (): boolean => {
+  const active = document.activeElement as HTMLElement | null
+  if (!active) return false
+  const tagName = active.tagName
+  return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT'
+}
+
+/**
+ * F2 重命名当前选中的节点
+ *
+ * 图片文档树只允许重命名图片文件, 文件夹与文档库根目录不支持重命名
+ */
+const handleF2Rename = (event: KeyboardEvent) => {
+  if (event.key !== 'F2' || event.repeat) return
+  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+  // 正在重命名中, 或焦点在其他输入框中时不处理
+  if (isNotBlank(notAllowDragId.value) || isFocusOnEditable()) return
+  if (!DocTreeRef.value) return
+
+  // getCurrentNode 返回的是节点上的 data
+  const doc = DocTreeRef.value.getCurrentNode() as DocTree | null
+  if (!doc || doc.type !== 'PICTURE' || Number(doc.id) <= 0) return
+
+  event.preventDefault()
+  curDoc.value = doc
+  rename()
+}
+
+/**
+ * 文章树与图片树都可能被 keep-alive 缓存,
+ * 只在当前激活时监听按键, 避免缓存中的组件重复响应 F2
+ */
+let isF2Bound = false
+const bindF2Keydown = () => {
+  if (isF2Bound) return
+  document.addEventListener('keydown', handleF2Rename)
+  isF2Bound = true
+}
+const unbindF2Keydown = () => {
+  if (!isF2Bound) return
+  document.removeEventListener('keydown', handleF2Rename)
+  isF2Bound = false
+}
+
+onMounted(() => bindF2Keydown())
+onActivated(() => bindF2Keydown())
+onDeactivated(() => unbindF2Keydown())
+onBeforeUnmount(() => unbindF2Keydown())
 
 //#endregion
 

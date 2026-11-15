@@ -1,0 +1,685 @@
+/**
+ * ============================================================================
+ * Milkdown 官方组件样式（表格 / 列表 / 代码块）
+ * ============================================================================
+ *
+ * 这三个功能用的是 `@milkdown/components` 提供的组件：
+ *   - tableBlock          -> .milkdown-table-block
+ *   - listItemBlockComponent -> .milkdown-list-item-block
+ *   - codeBlockComponent  -> .milkdown-code-block
+ *
+ * **组件本身不带任何样式**，官方 playground / Crepe 的外观全部来自
+ * `@milkdown/crepe` 的 theme CSS。为了不在项目里引入整个 Crepe，
+ * 这里把该主题中与这三个组件相关的部分原样搬过来，只做两处调整：
+ *
+ *   1. 选择器前缀 `.milkdown` -> `.bl-milkdown`（本项目编辑器根节点的 class）
+ *   2. 颜色 / 字体等设计变量 `--crepe-*` 统一在下面映射到项目主题变量，
+ *      因此明暗主题切换时会自动跟随，不需要重新生成样式
+ *
+ * 该文件由 `scripts/milkdown` 的使用方直接 import（见 ArticleIndex.vue），
+ * 升级 milkdown 时对比 `node_modules/@milkdown/crepe/lib/theme/common/*.css` 同步即可。
+ */
+
+/* --------------------------------------------------------------------------
+ * 设计变量映射（Crepe 主题 -> Blossom 主题）
+ * -------------------------------------------------------------------------- */
+.bl-milkdown {
+  --crepe-color-surface: var(--bl-html-color);
+  --crepe-color-surface-low: var(--el-fill-color-light);
+  --crepe-color-on-surface: var(--bl-text-color);
+  --crepe-color-on-surface-variant: var(--bl-text-color);
+  --crepe-color-outline: var(--el-border-color);
+  --crepe-color-primary: var(--el-color-primary);
+  --crepe-color-hover: var(--el-fill-color);
+  --crepe-color-selected: var(--el-color-primary-light-8);
+  --crepe-color-secondary: var(--el-fill-color-light);
+  --crepe-shadow-1: 0 2px 10px rgba(0, 0, 0, 0.12);
+  --crepe-font-default: inherit;
+  --crepe-font-code: var(--bl-code-font-family, 'Consolas', 'Menlo', 'Monaco', monospace);
+  --crepe-base-font-size: 15px;
+}
+
+/* ==========================================================================
+ * 表格
+ * ========================================================================== */
+.bl-milkdown .milkdown-table-block {
+  display: block;
+  margin: 15px 0;
+}
+
+.bl-milkdown .milkdown-table-block th,
+.bl-milkdown .milkdown-table-block td {
+  border: 1px solid color-mix(in srgb, var(--crepe-color-outline), transparent 80%);
+  padding: 4px 16px;
+}
+
+.bl-milkdown .milkdown-table-block th .ProseMirror-selectednode,
+.bl-milkdown .milkdown-table-block td .ProseMirror-selectednode {
+  background-color: transparent !important;
+}
+
+.bl-milkdown .milkdown-table-block th:has(.ProseMirror-selectednode),
+.bl-milkdown .milkdown-table-block td:has(.ProseMirror-selectednode) {
+  outline: 1px solid var(--crepe-color-primary);
+  outline-offset: -1px;
+}
+
+.bl-milkdown .milkdown-table-block .selectedCell::after {
+  background-color: var(--crepe-color-selected);
+  opacity: 0.4;
+}
+
+.bl-milkdown .milkdown-table-block .selectedCell ::-moz-selection {
+  background: transparent;
+}
+
+.bl-milkdown .milkdown-table-block .selectedCell ::selection {
+  background: transparent;
+}
+
+.bl-milkdown .milkdown-table-block .drag-preview {
+  background-color: var(--crepe-color-surface);
+  opacity: 0.4;
+  position: absolute;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  outline: 1px solid var(--crepe-color-primary);
+  outline-offset: -1px;
+}
+
+.bl-milkdown .milkdown-table-block .drag-preview[data-show='false'] {
+  display: none;
+}
+
+.bl-milkdown .milkdown-table-block .drag-preview th:has(.ProseMirror-selectednode),
+.bl-milkdown .milkdown-table-block .drag-preview td:has(.ProseMirror-selectednode) {
+  outline: none;
+}
+
+.bl-milkdown .milkdown-table-block .handle {
+  position: absolute;
+  font-size: calc(var(--crepe-base-font-size, 16px) * 0.875);
+  /* 新增行列提示的显示动画 */
+  transition: opacity 0.7s ease-in-out;
+}
+
+.bl-milkdown .milkdown-table-block .handle[data-show='false'] {
+  opacity: 0;
+}
+
+.bl-milkdown .milkdown-table-block svg {
+  fill: var(--crepe-color-outline);
+}
+
+/* 表格单元格拖动手柄 */
+.bl-milkdown .milkdown-table-block .cell-handle {
+  z-index: 50;
+  left: -999px;
+  top: -999px;
+  cursor: grab;
+  background-color: var(--crepe-color-surface);
+  color: var(--el-color-primary);
+  border: 1px solid var(--el-color-primary);
+  border-radius: 10px;
+  box-shadow: var(--crepe-shadow-1);
+  transition:
+    background-color 0.5s ease-in-out,
+    opacity 0.3s;
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle:hover {
+  background-color: var(--crepe-color-hover);
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle:has(.button-group:hover) {
+  background-color: var(--crepe-color-surface);
+}
+
+/* 列拖动手柄 */
+.bl-milkdown .milkdown-table-block .cell-handle[data-role='col-drag-handle'] {
+  transform: translateY(50%);
+  padding: 0 6px;
+  width: 28px;
+  height: 16px;
+}
+
+/* 行拖动手柄 */
+.bl-milkdown .milkdown-table-block .cell-handle[data-role='row-drag-handle'] {
+  transform: translateX(50%);
+  padding: 6px 0;
+  width: 16px;
+  height: 28px;
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle .button-group {
+  position: absolute;
+  transform: translateX(-50%);
+  left: 50%;
+  top: -50px;
+  display: flex;
+  border: 2px solid var(--el-color-primary);
+  border-radius: 6px;
+  background-color: var(--crepe-color-surface);
+  box-shadow: var(--crepe-shadow-1);
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle .button-group::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  height: 8px;
+  background-color: transparent;
+  width: 100%;
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle .button-group[data-show='false'] {
+  display: none;
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle .button-group button {
+  cursor: pointer;
+  margin: 6px;
+  padding: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border: 1px solid var(--el-color-primary);
+  border-radius: 4px;
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle .button-group button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle .button-group button:hover {
+  background-color: var(--el-color-primary-light-8);
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle .button-group button:active {
+  background: var(--crepe-color-selected);
+}
+
+.bl-milkdown .milkdown-table-block .cell-handle:hover {
+  opacity: 1;
+}
+
+.bl-milkdown .milkdown-table-block .line-handle {
+  z-index: 20;
+  background-color: var(--crepe-color-primary);
+}
+
+.bl-milkdown .milkdown-table-block .line-handle:hover {
+  opacity: 1;
+}
+
+/* 新增行的按钮 */
+.bl-milkdown .milkdown-table-block .line-handle .add-button {
+  cursor: pointer;
+  color: var(--el-color-primary);
+  border: 1px solid var(--el-color-primary);
+  border-radius: 10px;
+  background-color: var(--crepe-color-surface);
+  box-shadow: var(--crepe-shadow-1);
+  transition: background-color 0.2s ease-in-out;
+}
+
+.bl-milkdown .milkdown-table-block .line-handle .add-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.bl-milkdown .milkdown-table-block .line-handle .add-button:hover {
+  background-color: var(--crepe-color-hover);
+}
+
+.bl-milkdown .milkdown-table-block .line-handle .add-button:active {
+  background: var(--crepe-color-selected);
+}
+
+.bl-milkdown .milkdown-table-block .line-handle[data-role='x-line-drag-handle'] {
+  height: 1px;
+  z-index: 2;
+}
+
+.bl-milkdown .milkdown-table-block .line-handle[data-role='x-line-drag-handle'] .add-button {
+  position: absolute;
+  transform: translateX(-50%) translateY(-50%);
+  padding: 6px 0;
+  width: 16px;
+  height: 28px;
+}
+
+.bl-milkdown .milkdown-table-block .line-handle[data-role='y-line-drag-handle'] {
+  width: 1px;
+  z-index: 1;
+}
+
+.bl-milkdown .milkdown-table-block .line-handle[data-role='y-line-drag-handle'] .add-button {
+  position: absolute;
+  transform: translateY(-50%) translateX(-50%);
+  padding: 0 6px;
+  width: 28px;
+  height: 16px;
+}
+
+.bl-milkdown .milkdown-table-block .line-handle[data-display-type='indicator'] .add-button {
+  display: none;
+}
+
+.bl-milkdown .milkdown-table-block.readonly .handle {
+  display: none;
+}
+
+/* ==========================================================================
+ * 列表
+ * ========================================================================== */
+.bl-milkdown .milkdown-list-item-block {
+  display: block;
+  padding: 0;
+}
+
+.bl-milkdown .milkdown-list-item-block > .list-item {
+  display: flex;
+  align-items: flex-start;
+}
+
+.bl-milkdown .milkdown-list-item-block > .list-item > .children {
+  min-width: 0;
+  flex: 1;
+}
+
+.bl-milkdown .milkdown-list-item-block li {
+  gap: 10px;
+}
+
+.bl-milkdown .milkdown-list-item-block li .label-wrapper {
+  color: var(--crepe-color-outline);
+}
+
+.bl-milkdown .milkdown-list-item-block li .label-wrapper svg {
+  fill: var(--crepe-color-outline);
+}
+
+.bl-milkdown .milkdown-list-item-block li .label-wrapper {
+  height: 32px;
+  width: 24px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bl-milkdown .milkdown-list-item-block li .label-wrapper .label {
+  height: 32px;
+  padding: 4px 0;
+  width: 24px;
+  text-align: right;
+}
+
+.bl-milkdown .milkdown-list-item-block li .label-wrapper .checked,
+.bl-milkdown .milkdown-list-item-block li .label-wrapper .unchecked {
+  cursor: pointer;
+}
+
+.bl-milkdown .milkdown-list-item-block li .label-wrapper .readonly {
+  cursor: not-allowed;
+}
+
+/* ==========================================================================
+ * 代码块
+ * ========================================================================== */
+.bl-milkdown .milkdown-code-block {
+  display: block;
+  position: relative;
+  padding: 8px;
+  margin: 4px 0;
+  border: 1px solid var(--bl-code-block-border-color);
+  border-radius: 6px;
+  background: var(--bl-preview-pre-bg-color);
+  box-shadow: var(--bl-preview-pre-box-shadow);
+}
+
+.bl-milkdown .milkdown-code-block .cm-content {
+  background: var(--bl-preview-pre-bg-color);
+}
+
+.bl-milkdown .milkdown-code-block .cm-gutter {
+  background: var(--bl-preview-pre-bg-color);
+}
+
+.bl-milkdown .milkdown-code-block .cm-activeLineGutter {
+  background-color: transparent;
+}
+
+.bl-milkdown .milkdown-code-block .language-picker {
+  padding-top: 10px;
+  width: -moz-max-content;
+  width: max-content;
+  position: absolute;
+  z-index: 999;
+}
+
+.bl-milkdown .milkdown-code-block .hidden {
+  display: none !important;
+}
+
+.bl-milkdown .milkdown-code-block.selected {
+  outline: 1px solid var(--crepe-color-primary);
+}
+
+.bl-milkdown .milkdown-code-block .milkdown-code-block-placeholder {
+  margin: 0;
+  padding: 4px 0;
+  font-family: var(--crepe-font-code, monospace);
+  font-size: calc(var(--crepe-base-font-size, 16px) * 0.875);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.bl-milkdown .milkdown-code-block .milkdown-code-block-placeholder code {
+  font-family: inherit;
+}
+
+.bl-milkdown .milkdown-code-block .cm-editor {
+  outline: none !important;
+  background: var(--crepe-color-surface);
+}
+
+.bl-milkdown .milkdown-code-block .cm-gutters {
+  border-right: none;
+  background: var(--crepe-color-surface);
+}
+
+.bl-milkdown .milkdown-code-block .cm-panel {
+  font-family: var(--crepe-font-default);
+  background: var(--crepe-color-surface);
+  color: var(--crepe-color-on-surface);
+}
+
+.bl-milkdown .milkdown-code-block .cm-panel input {
+  caret-color: var(--crepe-color-outline);
+  border-radius: 4px;
+  background: var(--crepe-color-surface-low);
+}
+
+.bl-milkdown .milkdown-code-block .cm-panel > button {
+  text-transform: capitalize;
+  background: var(--crepe-color-surface-low);
+  color: var(--crepe-color-on-surface-variant);
+  border: 1px solid var(--crepe-color-outline);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.bl-milkdown .milkdown-code-block .cm-panel > button:hover {
+  background: var(--crepe-color-hover);
+}
+
+.bl-milkdown .milkdown-code-block .cm-panel > label {
+  display: inline-flex;
+  align-items: center;
+  text-transform: capitalize;
+}
+
+.bl-milkdown .milkdown-code-block .cm-panel > label input[type='checkbox'] {
+  border-radius: 4px;
+  cursor: pointer;
+  -moz-appearance: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--crepe-color-surface-low);
+  width: 1.15em;
+  height: 1.15em;
+  border: 1px solid var(--crepe-color-outline);
+  display: grid;
+  place-content: center;
+}
+
+.bl-milkdown .milkdown-code-block .cm-panel > label input[type='checkbox']::before {
+  content: '';
+  transform-origin: bottom left;
+  width: 0.65em;
+  height: 0.65em;
+  transform: scale(0);
+  transition: 120ms transform ease-in-out;
+  box-shadow: inset 1em 1em var(--crepe-color-outline);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+}
+
+.bl-milkdown .milkdown-code-block .cm-panel > label input[type='checkbox']:checked::before {
+  transform: scale(1);
+}
+
+.bl-milkdown .milkdown-code-block .tools {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.bl-milkdown .milkdown-code-block .tools input {
+  caret-color: var(--crepe-color-outline);
+}
+
+.bl-milkdown .milkdown-code-block .tools .tools-button-group {
+  display: flex;
+  gap: 2px;
+}
+
+.bl-milkdown .milkdown-code-block .tools .tools-button-group button {
+  background: var(--crepe-color-secondary);
+  font-size: calc(var(--crepe-base-font-size, 16px) * 0.75);
+  font-weight: 300;
+  font-family: var(--crepe-font-default);
+  padding: 4px 10px;
+  color: var(--crepe-color-on-surface-variant);
+  cursor: pointer;
+  border: 1px solid var(--crepe-color-outline);
+  border-radius: 4px;
+  line-height: 16px;
+  transition: opacity 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* opacity: 0; 永远显示复制按钮*/
+  gap: 4px;
+}
+
+.bl-milkdown .milkdown-code-block .tools .tools-button-group button svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--crepe-color-on-surface-variant);
+}
+
+.bl-milkdown .milkdown-code-block .tools .tools-button-group button:first-child {
+  /* border-top-left-radius: 100px;
+  border-bottom-left-radius: 100px; */
+}
+
+.bl-milkdown .milkdown-code-block .tools .tools-button-group button:last-child {
+  /* border-top-right-radius: 100px;
+  border-bottom-right-radius: 100px; */
+}
+
+.bl-milkdown .milkdown-code-block .tools .language-button {
+  display: flex;
+  align-items: center;
+  font-family: var(--crepe-font-default);
+  gap: 6px;
+  padding: 2px 4px 2px 8px;
+  background: var(--crepe-color-surface-low);
+  color: var(--crepe-color-on-surface-variant);
+  border-radius: 4px;
+  border: 1px solid var(--crepe-color-outline);
+  font-size: calc(var(--crepe-base-font-size, 16px) * 0.75);
+  font-weight: 600;
+  line-height: 16px;
+  margin-bottom: 8px;
+  /* opacity: 0; 永远显示语言选择按钮*/
+  cursor: pointer;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.bl-milkdown .milkdown-code-block .tools .language-button:hover {
+  background: var(--crepe-color-hover);
+}
+
+.bl-milkdown .milkdown-code-block .tools .language-button .expand-icon {
+  transition: transform 0.2s ease-in-out;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.bl-milkdown .milkdown-code-block .tools .language-button .expand-icon svg {
+  width: 14px;
+  height: 14px;
+  color: var(--crepe-color-outline);
+}
+
+.bl-milkdown .milkdown-code-block .tools .language-button[data-expanded='true'] .expand-icon {
+  transform: rotate(180deg);
+}
+
+.bl-milkdown .milkdown-code-block .tools .language-button .expand-icon svg:focus,
+.bl-milkdown .milkdown-code-block .tools .language-button .expand-icon:focus-visible {
+  outline: none;
+}
+
+.bl-milkdown .milkdown-code-block:hover .language-button {
+  /* opacity: 1; */
+}
+
+.bl-milkdown .milkdown-code-block:hover .tools-button-group > button {
+  /* opacity: 1; */
+}
+
+.bl-milkdown .milkdown-code-block .list-wrapper {
+  background: var(--crepe-color-surface-low);
+  border: 1px solid var(--bl-code-block-border-color);
+  border-radius: 6px;
+  box-shadow: var(--crepe-shadow-1);
+  width: 240px;
+  padding-top: 0px;
+}
+
+.bl-milkdown .milkdown-code-block .language-list {
+  height: 410px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  margin: 0;
+  padding: 0;
+}
+
+.bl-milkdown .milkdown-code-block .language-list-item {
+  cursor: pointer;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 22px;
+  font-size: calc(var(--crepe-base-font-size, 16px) * 0.875);
+  font-weight: 300;
+  line-height: 15px;
+}
+
+.bl-milkdown .milkdown-code-block .language-list-item:hover {
+  background: var(--crepe-color-hover);
+}
+
+.bl-milkdown .milkdown-code-block .language-list-item:focus-visible {
+  outline: none;
+  background: var(--crepe-color-hover);
+}
+
+.bl-milkdown .milkdown-code-block .language-list-item .leading,
+.bl-milkdown .milkdown-code-block .language-list-item .leading svg {
+  width: 24px;
+  height: 24px;
+}
+
+.bl-milkdown .milkdown-code-block .language-list-item.no-result {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.bl-milkdown .milkdown-code-block .language-list-item.no-result:hover {
+  background: transparent;
+}
+
+.bl-milkdown .milkdown-code-block .search-box {
+  display: flex;
+  align-items: center;
+  padding: 6px 6px;
+  /* margin: 0 12px 8px; */
+  background: transparent;
+  border-bottom: 1px solid var(--bl-code-block-border-color);
+  gap: 8px;
+  /* outline: 1px solid var(--crepe-color-primary); */
+}
+
+.bl-milkdown .milkdown-code-block .search-box:has(input:focus) {
+  outline: 0px solid var(--crepe-color-primary);
+}
+
+.bl-milkdown .milkdown-code-block .search-box .search-input {
+  width: 100%;
+  color: var(--crepe-color-on-surface);
+}
+
+.bl-milkdown .milkdown-code-block .search-box .search-icon {
+  display: none;
+}
+
+.bl-milkdown .milkdown-code-block .search-box .clear-icon {
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+}
+
+.bl-milkdown .milkdown-code-block .search-box .clear-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--crepe-color-primary);
+  fill: var(--crepe-color-primary);
+}
+
+.bl-milkdown .milkdown-code-block .search-box .clear-icon:hover {
+  background: var(--crepe-color-hover);
+}
+
+.bl-milkdown .milkdown-code-block .search-box input {
+  font-family: var(--crepe-font-default);
+  font-size: calc(var(--crepe-base-font-size, 16px) * 0.875);
+  line-height: 20px;
+  /* background: transparent; */
+}
+
+.bl-milkdown .milkdown-code-block .search-box input:focus {
+  outline: none;
+}
+
+.bl-milkdown .milkdown-code-block .preview-panel .preview-divider {
+  height: 1px;
+  opacity: 0.2;
+  background: var(--crepe-color-outline);
+  margin: 6px 0;
+}
+
+.bl-milkdown .milkdown-code-block .preview-panel .preview-label {
+  margin: 6px 0;
+  font-size: calc(var(--crepe-base-font-size, 16px) * 0.75);
+  color: color-mix(in srgb, var(--crepe-color-on-surface), transparent 40%);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-family: var(--crepe-font-default);
+}
+
+.bl-milkdown .milkdown-code-block .preview-panel .preview {
+  text-align: center;
+  overflow-x: auto;
+}

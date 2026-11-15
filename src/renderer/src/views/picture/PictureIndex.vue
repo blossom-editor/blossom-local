@@ -89,7 +89,7 @@
                   <bl-row>图片大小: {{ formatFileSize(pic.size) }}</bl-row>
                   <bl-row>上传时间: {{ pic.creTime }}</bl-row>
                   <bl-row>图片路径: {{ pic.path }}</bl-row>
-                  <bl-col v-if="!isEmpty(pic.articleLinks)" align="flex-start">
+                  <bl-col v-if="!isEmptyArr(pic.articleLinks)" align="flex-start">
                     <span style="color: var(--el-color-warning)">引用文章:</span>
                     <div v-for="article in pic!.articleLinks" style="margin-left: 13px">《{{ article.name }}》</div>
                   </bl-col>
@@ -154,7 +154,7 @@ import { picCacheWrapper, picCacheRefresh, copyMarkdownUrl, copyUrl, pictureUseN
 import { pictureDeleteBatchApi, pictureInfoApi, pictureListApi } from '@renderer/api/picture'
 // utils
 import Notify from '@renderer/scripts/notify'
-import { isEmpty, isNotBlank, isNull } from '@renderer/assets/utils/obj'
+import { isEmptyArr, isNotBlank, isNull } from '@renderer/assets/utils/obj'
 import { formatFileSize, getFilePrefix, getFileSuffix, isImage } from '@renderer/assets/utils/util'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
 // component

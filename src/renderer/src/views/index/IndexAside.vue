@@ -114,6 +114,7 @@ const isActive = (path: string): string => {
     background-color: var(--bl-html-color);
   }
 
+  // 普通左侧菜单
   .aside-item-container {
     @include box(100%, calc(100% - 105px));
     @include flex(column, space-between, center);
@@ -135,6 +136,9 @@ const isActive = (path: string): string => {
       .is-active {
         background: var(--el-color-primary-light-5);
         color: #ffffff;
+        &:hover {
+          color: #ffffff !important;
+        }
       }
 
       .active-shadow-heavy {
@@ -152,9 +156,10 @@ const isActive = (path: string): string => {
         @include font(25px);
         width: 48px;
         padding: 5px 0;
-        margin: 0 1px 5px 0;
+        margin: 0 1px 10px 0;
         border-radius: 10px;
         transition:
+          color 0.3s,
           background-color 0.3s,
           box-shadow 0.3s;
         cursor: pointer;
@@ -165,7 +170,7 @@ const isActive = (path: string): string => {
         }
 
         &:hover {
-          background-color: var(--el-color-primary-light-5);
+          background-color: var(--el-color-primary-light-6);
           box-shadow: 2px 4px 7px 2px rgba(0, 0, 0, 0.2);
         }
 
@@ -209,6 +214,7 @@ const isActive = (path: string): string => {
     @include themeShadow(2px 0 6px rgba(49, 49, 49, 0.3), 2px 2px 3px rgb(21, 21, 21));
   }
 
+  // 简单的左侧菜单
   .aside-item-container-simple {
     @include box(100%, 100%);
     @include flex(column, space-between, center);

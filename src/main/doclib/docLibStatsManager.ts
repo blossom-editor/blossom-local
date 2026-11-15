@@ -6,6 +6,7 @@ import { sysFolder, docLibStatsFile, isSysFile } from './docLibManager'
 import { countWords } from '../article/fileUtils'
 import { nowYMD, nowYM } from '../date'
 import { DEFAULT_ID, createDefaultBigIntStats, decodeSpace, encodeSpace, extractFileName, getUniqueId, isHttp, traceLog, warnLog } from '../utils'
+import { buildCodeMask } from './markdownCode'
 
 /**
  * 文档库统计信息管理, 包含文档库的文章数统计, 图片数统计, 全量文档的文章和图片对应关系, 全量
@@ -570,11 +571,20 @@ function findPicNamesByMarkdownId(map: Map<string, PicToMd>, markdownId: string)
 
 /**
  * 提取图片和链接
+ *
+ * 用 `./markdownCode` 的代码区标记（渲染进程 `article.ts` 有一份逐行副本）：
+ * 代码块 / 行内代码里的 `![...]()`、`[...]()` 只是示例文本，
+ * 不能记进图片和文章的引用关系（否则图片管理、双链图表会出现假引用）。
+ *
+ * 这里用**标记数组**而不是占位符字符串：扫描仍读原文，`raw` 才能保持原始切片，
+ * 重命名图片 / 文章时要靠它回写 markdown 文件。
+ *
  * @param markdown
  * @returns
  */
-const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkMatch)[] => {
+export const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkMatch)[] => {
   const results: (ImageMatch | LinkMatch)[] = []
+  const codeMask = buildCodeMask(markdown)
   const len = markdown.length
   let i = 0
 
@@ -594,6 +604,12 @@ const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkMatch)[]
   }
 
   while (i < len) {
+    // 代码区整段跳过：既避免把示例语法记成引用，也省掉在代码块里
+    // 为找不到 ')' 的 `![` 一路扫到文末的开销
+    if (codeMask[i] === 1) {
+      i++
+      continue
+    }
     const ch = markdown[i]
     let isPicture = false
     let startIdx = i
@@ -654,6 +670,15 @@ const extractImagesAndLinksFast = (markdown: string): (ImageMatch | LinkMatch)[]
       continue
     }
     const endIdx = i + 1 // 包含 ')'
+
+    // 双重保险（应对跨越代码区边界的畸形片段）：
+    // - startIdx 在代码区：整个引用都是示例代码
+    // - url 起始字符在代码区：`![alt](`code`)` 这类「正文开头、地址是代码」的假引用
+    // 只判断这两个点，不按整个范围判断 —— alt / 链接文字里可以合法包含行内代码。
+    if (codeMask[startIdx] === 1 || codeMask[urlStart] === 1) {
+      i = endIdx
+      continue
+    }
 
     results.push({
       type: isPicture ? 'PICTURE' : 'LINK',

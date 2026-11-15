@@ -67,6 +67,8 @@ export interface EditorStyle {
   fontFamily: string
   // 编辑器的字体大小
   fontSize: string
+  // 多行代码块（CodeMirror）的字体大小
+  codeFontSize: string
   // 默认的代码块语言
   defaultPreLanguage: string
   // 编辑器是否超出自动换行
@@ -131,6 +133,7 @@ export const useConfigStore = defineStore('configStore', {
       ...{
         fontFamily: "'Jetbrains Mono', sans-serif",
         fontSize: '15px',
+        codeFontSize: '13px',
         defaultPreLanguage: '',
         isAutoBreakLine: true,
         isShowPreLineNumber: false,

@@ -5,7 +5,7 @@ body {
 }
 
 * {
-  font-family: 'Jetbrains Mono', 'Consolas', 'Menlo', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
+  font-family: 'Jetbrains Mono', 'Consolas', 'Menlo', 'Alibaba PuHuiTi 2.0', 'Microsoft YaHei', '微软雅黑', Arial, sans-serif;
   box-sizing: border-box;
   user-select: none;
 }

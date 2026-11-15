@@ -45,7 +45,7 @@
               <bl-row class="task-title" just="space-between">
                 <div>{{ t.taskName }}</div>
               </bl-row>
-              <bl-row class="task-tags" v-if="!isEmpty(t.taskTags)">
+              <bl-row class="task-tags" v-if="!isEmptyArr(t.taskTags)">
                 <bl-tag v-for="tag in t.taskTags" :key="tag" :size="11">{{ tag }}</bl-tag>
               </bl-row>
               <div class="task-content">{{ t.taskContent }}</div>
@@ -63,7 +63,7 @@
               <bl-row class="task-title" just="space-between">
                 <div>{{ t.taskName }}</div>
               </bl-row>
-              <bl-row class="task-tags" v-if="!isEmpty(t.taskTags)">
+              <bl-row class="task-tags" v-if="!isEmptyArr(t.taskTags)">
                 <bl-tag v-for="tag in t.taskTags" :key="tag" :size="11">{{ tag }}</bl-tag>
               </bl-row>
               <div class="task-content">{{ t.taskContent }}</div>
@@ -82,7 +82,7 @@
               <bl-row class="task-title" just="space-between">
                 <div>{{ t.taskName }}</div>
               </bl-row>
-              <bl-row class="task-tags" v-if="!isEmpty(t.taskTags)">
+              <bl-row class="task-tags" v-if="!isEmptyArr(t.taskTags)">
                 <bl-tag v-for="tag in t.taskTags" :key="tag" :size="11">{{ tag }}</bl-tag>
               </bl-row>
               <div class="task-content">{{ t.taskContent }}</div>
@@ -99,10 +99,9 @@
 import { computed, ref } from 'vue'
 import { todosApi, tasksApi } from '@renderer/api/todo'
 import { TaskInfo } from './scripts/types'
-import { isEmpty } from 'lodash'
 import { getDateFormat } from '@renderer/assets/utils/util'
 import { Local } from '@renderer/assets/utils/storage'
-import { isBlank } from '@renderer/assets/utils/obj'
+import { isBlank, isEmptyArr } from '@renderer/assets/utils/obj'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useConfigStore } from '@renderer/stores/config'
 

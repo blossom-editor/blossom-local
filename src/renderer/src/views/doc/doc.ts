@@ -1,5 +1,4 @@
-import { isNull } from '@renderer/assets/utils/obj'
-import { isEmpty } from 'lodash'
+import { isNull, isEmptyArr } from '@renderer/assets/utils/obj'
 import { Ref } from 'vue'
 import type { InjectionKey } from 'vue'
 
@@ -104,7 +103,7 @@ export const getDocById = (articleId: string, trees: DocTree[]): DocTree | undef
     let tree = trees[i]
     if (tree.id == articleId) {
       target = tree
-    } else if (!isEmpty(tree.children)) {
+    } else if (!isEmptyArr(tree.children)) {
       target = getDocById(articleId, tree.children!)
     }
     if (target != undefined) {
@@ -126,7 +125,7 @@ export const getDocByPath = (path: string, trees: DocTree[]): DocTree | undefine
     let tree = trees[i]
     if (tree.path == path) {
       target = tree
-    } else if (!isEmpty(tree.children)) {
+    } else if (!isEmptyArr(tree.children)) {
       target = getDocByPath(path, tree.children!)
     }
     if (target != undefined) {
@@ -147,7 +146,7 @@ export const getDocByPath = (path: string, trees: DocTree[]): DocTree | undefine
 //   if (!target) {
 //     return []
 //   }
-//   if (isEmpty(result)) {
+//   if (isEmptyArr(result)) {
 //     result = [treeToInfo(target)]
 //   } else {
 //     result!.push(treeToInfo(target))
@@ -177,7 +176,7 @@ export const getCDocsByPid = (id: string, trees: DocTree[]): DocInfo[] => {
 const treeToArrays = (trees: DocTree[], result: DocInfo[]) => {
   for (let i = 0; i < trees.length; i++) {
     let tree = trees[i]
-    if (!isEmpty(tree.children)) {
+    if (!isEmptyArr(tree.children)) {
       treeToArrays(tree.children!, result)
     }
     result.push(treeToInfo(tree))

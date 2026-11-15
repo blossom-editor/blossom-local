@@ -15,7 +15,7 @@
         <div class="iconbl bl-a-texteditorsave-line" @click="emits('save')"></div>
       </el-tooltip>
       <el-tooltip
-        content="开启/关闭全屏预览"
+        content="开启/关闭 Markdown 源码分屏"
         popper-class="is-small"
         effect="light"
         placement="top"
@@ -23,18 +23,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-eye-line" @click="emits('previewFullScreen')"></div>
-      </el-tooltip>
-      <el-tooltip
-        content="开启/关闭全屏编辑"
-        popper-class="is-small"
-        effect="light"
-        placement="top"
-        transition="none"
-        :hide-after="0"
-        :show-arrow="false"
-        :offset="10">
-        <div class="iconbl bl-expansion-line" @click="emits('editorFullScreen')"></div>
+        <div :class="['iconbl bl-code-view', sourceVisible ? 'is-tool-active' : '']" @click="emits('toggleSource')"></div>
       </el-tooltip>
 
       <!--  -->
@@ -48,7 +37,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-bold" @click="emits('bold')"></div>
+        <div class="iconbl bl-bold" @click="emits('command', 'bold')"></div>
       </el-tooltip>
       <el-tooltip
         content="斜体"
@@ -59,7 +48,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-italic" @click="emits('italic')"></div>
+        <div class="iconbl bl-italic" @click="emits('command', 'italic')"></div>
       </el-tooltip>
       <el-tooltip
         content="删除线"
@@ -70,7 +59,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-strikethrough" @click="emits('strike')"></div>
+        <div class="iconbl bl-strikethrough" @click="emits('command', 'strike')"></div>
       </el-tooltip>
       <el-tooltip
         content="上标"
@@ -81,7 +70,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-a-texteditorsuperscript-line" @click="emits('sup')"></div>
+        <div class="iconbl bl-a-texteditorsuperscript-line" @click="emits('command', 'sup')"></div>
       </el-tooltip>
       <el-tooltip
         content="下标"
@@ -92,10 +81,10 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-a-texteditorsubscript-line" @click="emits('sub')"></div>
+        <div class="iconbl bl-a-texteditorsubscript-line" @click="emits('command', 'sub')"></div>
       </el-tooltip>
       <el-tooltip
-        content="删除线"
+        content="分割线"
         popper-class="is-small"
         effect="light"
         placement="top"
@@ -103,7 +92,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-separator" @click="emits('separator')"></div>
+        <div class="iconbl bl-separator" @click="emits('command', 'separator')"></div>
       </el-tooltip>
 
       <!--  -->
@@ -121,13 +110,13 @@
           <div class="iconbl bl-a-rightsmallline-line"></div>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="emits('blockquote')">⚪ Normal</el-dropdown-item>
-              <el-dropdown-item @click="emits('blockquoteBlock')">⚫ Black</el-dropdown-item>
-              <el-dropdown-item @click="emits('blockquoteGreen')">🟢 Green</el-dropdown-item>
-              <el-dropdown-item @click="emits('blockquoteYellow')">🟡 Yellow</el-dropdown-item>
-              <el-dropdown-item @click="emits('blockquoteRed')">🔴 Red</el-dropdown-item>
-              <el-dropdown-item @click="emits('blockquoteBlue')">🔵 Blue</el-dropdown-item>
-              <el-dropdown-item @click="emits('blockquotePurple')">🟣 Purple</el-dropdown-item>
+              <el-dropdown-item @click="emits('command', 'blockquote')">⚪ Normal</el-dropdown-item>
+              <el-dropdown-item @click="emits('command', 'blockquoteBlack')">⚫ Black</el-dropdown-item>
+              <el-dropdown-item @click="emits('command', 'blockquoteGreen')">🟢 Green</el-dropdown-item>
+              <el-dropdown-item @click="emits('command', 'blockquoteYellow')">🟡 Yellow</el-dropdown-item>
+              <el-dropdown-item @click="emits('command', 'blockquoteRed')">🔴 Red</el-dropdown-item>
+              <el-dropdown-item @click="emits('command', 'blockquoteBlue')">🔵 Blue</el-dropdown-item>
+              <el-dropdown-item @click="emits('command', 'blockquotePurple')">🟣 Purple</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
@@ -141,7 +130,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-single-quotes-r" @click="emits('code')"></div>
+        <div class="iconbl bl-single-quotes-r" @click="emits('command', 'code')"></div>
       </el-tooltip>
       <el-tooltip
         content="多行代码块"
@@ -152,7 +141,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-double-quotes-r" @click="emits('pre')"></div>
+        <div class="iconbl bl-double-quotes-r" @click="emits('command', 'pre')"></div>
       </el-tooltip>
       <el-tooltip
         content="单选框"
@@ -163,7 +152,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-a-underbox-line" @click="emits('checkbox')"></div>
+        <div class="iconbl bl-a-underbox-line" @click="emits('command', 'checkbox')"></div>
       </el-tooltip>
       <el-tooltip
         content="无序列表"
@@ -174,7 +163,7 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-list-unordered" @click="emits('unordered')"></div>
+        <div class="iconbl bl-list-unordered" @click="emits('command', 'unordered')"></div>
       </el-tooltip>
       <el-tooltip
         content="有序列表"
@@ -185,11 +174,8 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-list-ordered" @click="emits('ordered')"></div>
+        <div class="iconbl bl-list-ordered" @click="emits('command', 'ordered')"></div>
       </el-tooltip>
-
-      <!-- 表格及其他 -->
-      <div class="divider"></div>
       <el-tooltip
         content="表格"
         popper-class="is-small"
@@ -199,33 +185,33 @@
         :hide-after="0"
         :show-arrow="false"
         :offset="10">
-        <div class="iconbl bl-table-" @click="emits('table')"></div>
-      </el-tooltip>
-      <el-tooltip
-        content="图片链接"
-        popper-class="is-small"
-        effect="light"
-        placement="top"
-        transition="none"
-        :hide-after="0"
-        :show-arrow="false"
-        :offset="10">
-        <div class="iconbl bl-image--line" @click="emits('image')"></div>
-      </el-tooltip>
-      <el-tooltip
-        content="链接"
-        popper-class="is-small"
-        effect="light"
-        placement="top"
-        transition="none"
-        :hide-after="0"
-        :show-arrow="false"
-        :offset="10">
-        <div class="iconbl bl-link-m" @click="emits('link')"></div>
+        <div class="iconbl bl-table-" @click="emits('command', 'table')"></div>
       </el-tooltip>
 
       <!-- 其他工具 -->
       <div class="divider"></div>
+      <el-tooltip
+        content="回到顶部"
+        popper-class="is-small"
+        effect="light"
+        placement="top"
+        transition="none"
+        :hide-after="0"
+        :show-arrow="false"
+        :offset="10">
+        <div class="iconbl bl-a-doubleonline-line" @click="emits('scrollTop')"></div>
+      </el-tooltip>
+      <el-tooltip
+        content="前往底部"
+        popper-class="is-small"
+        effect="light"
+        placement="top"
+        transition="none"
+        :hide-after="0"
+        :show-arrow="false"
+        :offset="10">
+        <div class="iconbl bl-a-doubleunderline-line" @click="emits('scrollBottom')"></div>
+      </el-tooltip>
       <el-tooltip
         content="快捷键说明"
         popper-class="is-small"
@@ -265,7 +251,7 @@
     </div>
   </div>
 
-  <!-- 导入 -->
+  <!-- 快捷键说明弹窗 -->
   <el-dialog
     v-model="isShowHotKeyDialog"
     class="bl-dialog-fixed-body"
@@ -284,32 +270,16 @@ import { secondsToDatetime, formateMs } from '@renderer/assets/utils/util'
 import { ElNotification } from 'element-plus'
 import ShortcutKeyDesc from './ShortcutkeyDesc.vue'
 
-const emits = defineEmits([
-  'save',
-  'editorFullScreen',
-  'previewFullScreen',
-  'bold',
-  'italic',
-  'strike',
-  'sup',
-  'sub',
-  'separator',
-  'blockquote',
-  'blockquoteBlock',
-  'blockquoteGreen',
-  'blockquoteYellow',
-  'blockquoteRed',
-  'blockquoteBlue',
-  'blockquotePurple',
-  'code',
-  'pre',
-  'unordered',
-  'ordered',
-  'checkbox',
-  'table',
-  'image',
-  'link'
-])
+const emits = defineEmits(['save', 'command', 'toggleSource', 'scrollTop', 'scrollBottom'])
+
+/**
+ * 工具栏按钮 => milkdown 命令名
+ * 页面层统一用 `runCommand(name)` 转发给编辑器，工具栏本身不关心编辑器实现
+ */
+const props = defineProps({
+  /** 是否正在显示源码分屏，用于高亮按钮 */
+  sourceVisible: { type: Boolean, default: false }
+})
 
 onUnmounted(() => {
   stop()
@@ -376,19 +346,21 @@ const handleShowHotKeyDialog = () => {
 
 <style scoped lang="scss">
 .editor-tools-root {
-  @include box(calc(100% - 20px), 35px);
-  @include themeShadow(0 1px 4px 1px #d3d3d3, 0 1px 4px 1px rgb(20, 20, 20));
+  @include box(calc(100%), 35px);
+  @include themeShadow(0 0 4px 0px #d3d3d3, 0 0 4px 0px rgb(7, 7, 7));
   border-radius: 5px;
   position: relative;
   overflow: hidden;
 
+  // 番茄钟进度条
   .tomato-bell {
     @include box(100%, 100%);
     background-color: var(--el-color-primary-light-5);
+    border-radius: 5px;
+    box-shadow: 0 0 10px 1px var(--el-color-primary);
     transform: translateX(100%);
     position: absolute;
     right: 0;
-    border-radius: 5px;
     transition: 0.3s;
     z-index: 1;
   }
@@ -396,22 +368,31 @@ const handleShowHotKeyDialog = () => {
   .tools-container {
     @include box(100%, 100%);
     @include flex(row, flex-start, center);
-    @include themeBg(#efefef80, #8a8a8a4a);
+    @include themeBg(#efefef80, #5151514E);
     padding: 0 5px;
     position: absolute;
-    z-index: 2;
     overflow: hidden;
+    z-index: 2;
 
     & > div {
       @include themeColor(#5b5b5b, #909090);
-      @include themeBorder(1px, #a7a7a7, #1c1c1c);
-      margin: 0 5px;
+      // @include themeBorder(1px, #cbcbcb, #000000);
+      margin: 0 2px;
       padding: 3px;
       border-radius: 3px;
       transition: 0.3s;
+      font-size: 18px;
       cursor: pointer;
 
       &:hover {
+        color: #ffffff;
+        background-color: var(--el-color-primary);
+        box-shadow: 0 0 10px 1px var(--el-color-primary);
+        border-color: transparent;
+      }
+
+      // 处于激活状态（例如源码分屏已打开）
+      &.is-tool-active {
         background-color: var(--el-color-primary);
         color: #ffffff;
       }
@@ -419,14 +400,19 @@ const handleShowHotKeyDialog = () => {
 
     .divider {
       @include box(2px, 60%);
-      min-width: 2px;
-      max-width: 2px;
+      min-width: 1px;
+      max-width: 1px;
       padding: 0;
-      border: 0;
+      margin: 0 15px;
+      &:hover {
+        background-color: transparent;
+        box-shadow: none;
+      }
     }
   }
 }
 </style>
+
 <!--
 快捷键说明为弹出框 需要设置全局的样式
 -->

@@ -5,7 +5,7 @@ const blossom = {
   SYS: {
     NAME: 'Blossom Local',
     FULL_NAME: 'BLOSSOM-LOCAL',
-    VERSION: 'v0.0.1',
+    VERSION: 'v1.0.0',
 
     //
     DOC: 'https://www.blossom-editor.org/',

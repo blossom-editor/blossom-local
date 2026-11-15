@@ -62,7 +62,7 @@
     </bl-row>
 
     <div class="web-item-container">
-      <div v-if="isEmpty(data)" class="placeholder">
+      <div v-if="isEmptyArr(data)" class="placeholder">
         无收藏网址，点击上方 <span class="iconbl bl-add-line" style="padding-right: 10px"></span>添加
       </div>
       <div v-for="(collect, index) in data" @click="closeForm">
@@ -96,11 +96,10 @@
 import { ref } from 'vue'
 import { ElMessageBox } from 'element-plus'
 import { webAllApi, webSaveApi, webDelApi } from '@renderer/api/web'
-import { isNotBlank, isNotNull } from '@renderer/assets/utils/obj'
+import { isNotBlank, isNotNull, isEmptyArr } from '@renderer/assets/utils/obj'
 import { openExtenal, openNewIconWindow } from '@renderer/assets/utils/electron'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { ViewStyle, useConfigStore } from '@renderer/stores/config'
-import { isEmpty } from 'lodash'
 
 const configStore = useConfigStore()
 const viewStyle = ref<ViewStyle>(configStore.viewStyle)
@@ -113,7 +112,7 @@ useLifecycle(
 const data = ref<any>([])
 const getWebAll = () => {
   webAllApi().then((resp) => {
-    if (isEmpty(resp.data.daily) && isEmpty(resp.data.work) && isEmpty(resp.data.other)) {
+    if (isEmptyArr(resp.data.daily) && isEmptyArr(resp.data.work) && isEmptyArr(resp.data.other)) {
       data.value = []
       return
     }

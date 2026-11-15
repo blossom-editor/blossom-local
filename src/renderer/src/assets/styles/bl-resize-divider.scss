@@ -1,6 +1,17 @@
 .resize-divider-vertical {
   width: 1px;
   height: 100%;
+  /*
+   * ⚠️ 必须禁止收缩，否则这条 1px 会变成「0px / 1px 反复横跳」。
+   *
+   * 它是 flex 行里的一个 item（默认 `flex: 0 1 auto`，可收缩），而它右侧的编辑区
+   * 用的是 `width: 100%`，两者相加本就超出可用宽度，浏览器会按比例分摊这点亏空：
+   * 分割条实际算出 0.99x px，落到像素网格时在 1px / 0px 之间取整。
+   * 编辑区随之整体左移 1px、宽度在 896 / 897 之间变化，
+   * 而取哪一侧取决于此刻内容的亚像素状态 —— 滚动就会触发，表现为「布局会变」。
+   * 实测（SP2-文章，滚动到代码块不同位置）：本元素 1px ↔ 0px，编辑区 896 ↔ 897。
+   */
+  flex: none;
   background-color: var(--el-border-color);
   position: relative;
   z-index: 1001;

@@ -127,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onBeforeUnmount, nextTick, computed, watch } from 'vue'
+import { ref, onMounted, onActivated, onDeactivated, onBeforeUnmount, nextTick, computed, watch } from 'vue'
 import { useConfigStore } from '@renderer/stores/config'
 import { useDocLibStore } from '@renderer/stores/docLib'
 // element plus
@@ -140,14 +140,13 @@ import { ArrowRightBold, Rank, Close } from '@element-plus/icons-vue'
 import { docTreeApi, openFileLocation } from '@renderer/api/docLib'
 import { deleteFileApi, articleUpdNameApi, moveFileApi, createFolderApi, createMarkdownApi } from '@renderer/api/blossom'
 import { DefaultDocTree } from '@renderer/views/doc/doc'
-import { getChildFileCountColor } from '@renderer/views/doc/doc-tree'
+import { DOC_LIB_ROOT_FOLDER_ID, getChildFileCountColor } from '@renderer/views/doc/doc-tree'
 import { isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
 // util
-import { isEmpty } from 'lodash'
 import { pathJoin, platformText, inValidateFileName } from '@renderer/assets/utils/util'
-import { isNotBlank, isBlank } from '@renderer/assets/utils/obj'
+import { isNotBlank, isBlank, isEmptyArr } from '@renderer/assets/utils/obj'
 import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // components
 import ArticleTreeWorkbench from './ArticleTreeWorkbench.vue'
@@ -208,7 +207,7 @@ const docTreeData = ref<DocTree[]>([]) // 文档菜单
  * 定位到当前打开的文章
  */
 const collimationCurrentArticle = () => {
-  if (!isEmpty(docTreeData.value) && isNotBlank(articleCurrnetChoiseId.value)) {
+  if (!isEmptyArr(docTreeData.value) && isNotBlank(articleCurrnetChoiseId.value)) {
     DocTreeRef.value.setCurrentKey(articleCurrnetChoiseId.value)
     nextTick(() => {
       const ele = document.getElementById('article-doc-wrapper-' + articleCurrnetChoiseId.value)
@@ -225,7 +224,7 @@ const collimationCurrentArticle = () => {
 const refreshDocTree = () => {
   getDocTree(() => {
     nextTick(() => {
-      if (!isEmpty(docTreeData.value)) {
+      if (!isEmptyArr(docTreeData.value)) {
         if (isNotBlank(articleCurrnetChoiseId.value)) {
           DocTreeRef.value.setCurrentKey(articleCurrnetChoiseId.value)
         } else if (isNotBlank(docTreeCurrentChoiseId.value)) {
@@ -408,7 +407,7 @@ const collapseAll = () => {
  */
 const collapseChild = (doc: DocTree) => {
   if (doc.type === 'FOLDER' || doc.type === 'ARTICLE') {
-    if (isEmpty(doc.children)) {
+    if (isEmptyArr(doc.children)) {
       docTreeCurrentExpandIdSet.value.delete(doc.id)
     } else {
       for (let i = 0; i < doc.children!.length; i++) {
@@ -554,8 +553,12 @@ const rename = () => {
   curDoc.value.updn = true
   notAllowDragId.value = curDoc.value.id
   nextTick(() => {
-    let ele = document.getElementById('article-doc-name-' + curDoc.value.id)
-    if (ele) ele.focus()
+    let ele = document.getElementById('article-doc-name-' + curDoc.value.id) as HTMLInputElement
+    if (ele) {
+      ele.focus()
+      // 名称中不含后缀, 直接全选, 便于直接输入新名称
+      ele.select()
+    }
   })
 }
 
@@ -615,6 +618,61 @@ const blurArticleNameInput = (doc: DocTree) => {
       getDocTree()
     })
 }
+
+// ======================== F2 快捷键重命名 ==============================
+/**
+ * 焦点是否停留在输入类元素上
+ * 重命名输入框、搜索框等输入控件中按下 F2 时不做处理
+ */
+const isFocusOnEditable = (): boolean => {
+  const active = document.activeElement as HTMLElement | null
+  if (!active) return false
+  const tagName = active.tagName
+  return tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT'
+}
+
+/**
+ * F2 重命名当前选中的节点, 文件夹与文章均支持
+ *
+ * 当前节点取自树组件的高亮项, 未选中任何节点时不处理
+ */
+const handleF2Rename = (event: KeyboardEvent) => {
+  if (event.key !== 'F2' || event.repeat) return
+  if (event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return
+  // 正在重命名中, 或焦点在其他输入框中时不处理
+  if (isNotBlank(notAllowDragId.value) || isFocusOnEditable()) return
+  if (!DocTreeRef.value) return
+
+  // getCurrentNode 返回的是节点上的 data
+  const doc = DocTreeRef.value.getCurrentNode() as DocTree | null
+  // 文档库根目录不允许重命名
+  if (!doc || isBlank(doc.id) || doc.id === DOC_LIB_ROOT_FOLDER_ID) return
+
+  event.preventDefault()
+  curDoc.value = doc
+  rename()
+}
+
+/**
+ * 文章树与图片树都可能被 keep-alive 缓存,
+ * 只在当前激活时监听按键, 避免缓存中的组件重复响应 F2
+ */
+let isF2Bound = false
+const bindF2Keydown = () => {
+  if (isF2Bound) return
+  document.addEventListener('keydown', handleF2Rename)
+  isF2Bound = true
+}
+const unbindF2Keydown = () => {
+  if (!isF2Bound) return
+  document.removeEventListener('keydown', handleF2Rename)
+  isF2Bound = false
+}
+
+onMounted(() => bindF2Keydown())
+onActivated(() => bindF2Keydown())
+onDeactivated(() => unbindF2Keydown())
+onBeforeUnmount(() => unbindF2Keydown())
 
 /**
  * 复制双链引用
@@ -725,7 +783,7 @@ const deleteDoc = () => {
       let node: Node = DocTreeRef.value.getNode(curDoc.value.id)
       if (node.parent) {
         const parent = node.parent
-        if (isEmpty(parent.childNodes)) {
+        if (isEmptyArr(parent.childNodes)) {
           docTreeCurrentExpandIdSet.value.delete(parent.data.id)
         }
       }

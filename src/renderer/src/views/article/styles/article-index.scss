@@ -2,15 +2,13 @@
   @include box(100%, 100%);
   @include flex(row, flex-start, center);
 
-  .editor-resize-divider {
-    width: 2px;
-  }
-
   // 文档
   .doc-container {
     @include flex(column, flex-start, center);
     height: 100%;
     min-width: 250px;
+    /* 宽度由 useResizeVertical 写在内联 style 上，不参与 flex 伸缩 */
+    flex: none;
     font-weight: 300;
 
     .doc-tree-menu-container {
@@ -29,13 +27,25 @@
 
   // 编辑器内容
   .editor-container {
-    @include box(100%, 100%);
+    /*
+     * 刻意不用 `width: 100%`：
+     * 这里是 flex 行（.index-article-root）的 item，而「文档树 250px + 分割条 1px
+     * + 100%」本身就超出可用宽度，宽度只能靠 flex 收缩算出来。收缩会把分割条那
+     * 1px 摊成小数，落到像素网格时在 1px / 0px 之间取整，编辑区跟着左右跳 1px
+     * （详见 bl-resize-divider.scss 的注释）。
+     * `flex-basis: 0` + `flex-grow: 1` 表示「直接吃掉剩余空间」：
+     * 宽度 = 容器 - 250 - 1，是个确定的整数，与内容、滚动位置都无关。
+     */
+    flex: 1 1 0%;
+    width: auto;
+    min-width: 0;
+    height: 100%;
     position: relative;
     background-color: #ffffff00;
 
     $heightTools: 50px;
     $heightStatus: 28px;
-    $heightEP: calc(100% - #{$heightStatus} - #{$heightTools});
+    $heightBody: calc(100% - #{$heightStatus} - #{$heightTools});
 
     .editor-tools {
       @include box(100%, $heightTools);
@@ -43,160 +53,99 @@
       border-bottom: 1px solid var(--el-border-color);
     }
 
-    .editor-preview {
-      @include box(100%, $heightEP);
-      @include flex(row, flex-start, center);
+    /**
+     * 主体区：所见即所得编辑器 + （可选）源码分屏 + 右侧目录
+     * 三栏都用 flex 排布，目录栏与源码分屏的宽度在各自组件里定义
+     */
+    .editor-body {
+      @include box(100%, $heightBody);
+      @include flex(row, flex-start, stretch);
       position: relative;
       font-family: inherit;
       font-size: inherit;
+      /*
+       * 用 clip 而不是 hidden：
+       * `overflow: hidden` 的盒子仍然是「滚动容器」，任何一处 `scrollIntoView`
+       * （包括第三方组件内部的调用）都能把它滚走 —— 一旦被滚走，整个编辑区 +
+       * 目录栏会一起上移，底部露出空白，而且没有滚动条可以还原。
+       * `overflow: clip` 只裁剪、不成为滚动容器，从根上杜绝这种「幽灵滚动」。
+       */
+      overflow: clip;
 
-      .ep-placeholder {
-        position: absolute;
-        z-index: 1999;
+      /**
+       * 编辑器列：占满剩余宽度，占位层只覆盖这一列，
+       * 这样未选中文章时右侧目录栏依然可见
+       */
+      .editor-main {
+        position: relative;
+        flex: 1;
+        min-width: 0;
         height: 100%;
-        width: calc(100% - 1px);
-        background-color: var(--bl-html-color);
-        overflow: hidden;
-        right: 0;
-      }
-
-      .gutter-holder {
-        @include box(50px, 100%);
-        display: var(--bl-cm-gutters-display);
-        position: absolute;
-        background-color: var(--bl-editor-gutters-bg-color);
-        border-right: 1px solid var(--bl-editor-gutters-border-color);
-        top: 0;
-        left: 0;
-        z-index: 1;
-      }
-
-      .editor-codemirror {
-        @include box(50%, 100%);
+        @include flex(row, flex-start, stretch);
+        /*
+         * 必须显式写 inherit：
+         * main.css 里有全局规则 `* { font-family: 'Jetbrains Mono', ... }`，
+         * `.editor-main` 没有声明字体时会被这条规则命中，导致下面所有元素
+         * 都继承 Jetbrains，而不是「设置 - 编辑器字体」里选中的字体。
+         */
         font-family: inherit;
-        font-size: inherit;
-        overflow: scroll;
-        z-index: 2;
-        box-shadow: var(--bl-editor-box-shadow-inset);
 
-        // &::before {
-        //   content: '';
-        //   height: 100%;
-        //   width: 100%;
-        //   display: block;
-        //   position: absolute;
-        //   z-index: 10;
-        // }
-
-        /* 定义滑块 内阴影+圆角 */
-        &::-webkit-scrollbar-thumb {
-          border-radius: 0;
+        /**
+         * 编辑区内阴影
+         *
+         * 不能直接给 `.editor-wysiwyg`（滚动容器）加 inset box-shadow：
+         * 阴影会跟着内容一起滚动，而且会被子元素的背景色盖住。
+         * 这里用一层不接收鼠标事件的覆盖层，固定在编辑区四边。
+         */
+        &::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          pointer-events: none;
+          z-index: 5;
+          box-shadow: var(--bl-editor-box-shadow-inset, none);
         }
 
-        :deep(*) {
-          font-family: inherit;
-          font-size: inherit;
-        }
-
-        :deep(.cm-editor) {
-          background-color: transparent;
-        }
-
-        :deep(.cm-line) {
-          caret-color: var(--bl-editor-caret-color) !important;
-        }
-
-        :deep(.cm-cursor) {
-          border-color: var(--bl-editor-caret-color) !important;
-        }
-
-        :deep(.cm-focused) {
-          outline: none;
-        }
-
-        // 选中内容的颜色
-        :deep(.cm-selectionBackground) {
-          background: var(--bl-editor-selection-bg-color);
+        .ep-placeholder {
+          position: absolute;
+          z-index: 1999;
+          height: 100%;
+          width: 100%;
+          background-color: var(--bl-html-color);
+          overflow: hidden;
+          right: 0;
         }
       }
 
-      .operator {
-        @include themeBorder(2px, #d8d8d841, #ffffff12);
-        width: 20px;
-        height: 75px;
-        padding-top: 5px;
-        background-color: var(--bl-html-color);
-        border-top-right-radius: 8px;
-        border-bottom-right-radius: 8px;
-        position: absolute;
-        bottom: 10%;
-        left: calc(50% - 0.5px);
-        z-index: 4;
-        text-align: center;
-        transition: border 0.3s;
-        cursor: pointer;
-
-        &:hover {
-          border: 2px solid var(--el-border-color);
-          .iconbl {
-            color: var(--el-border-color);
-          }
-        }
-
-        .iconbl {
-          @include themeColor(#d8d8d841, #ffffff12);
-          line-height: 20px;
-          font-size: 16px;
-          transition: color 0.3s;
-          &:hover {
-            color: var(--el-color-primary-light-3);
-          }
-          &:active {
-            transform: scale(0.9);
-          }
-        }
-        .bl-admonish-line {
-          font-size: 14px;
-        }
-
-        .bl-refresh-line {
-          font-size: 14px;
-        }
-
-        .bl-eye-line {
-          font-size: 18px;
-          margin-bottom: 7px;
-          transform: rotate(90deg);
-          &:active {
-            transform: scale(0.9) rotate(90deg);
-          }
-        }
-
-        .bl-scroll {
-          font-size: 19px;
-          margin-left: -2px;
-          margin-bottom: 2px;
-        }
-      }
-
-      .preview-marked {
-        @include box(50%, 100%);
-        overflow-y: scroll;
+      /**
+       * milkdown 挂载容器，同时承担滚动职责
+       * （编辑器内容本身不滚动，避免出现双层滚动条）
+       */
+      .editor-wysiwyg {
+        flex: 1;
+        min-width: 0;
+        height: 100%;
+        overflow-y: auto;
         overflow-x: hidden;
-        word-wrap: break-word;
-        padding: 10px 20px 0 30px;
-        z-index: 3;
+        /*
+         * 关掉浏览器的「滚动锚定」（scroll anchoring）。
+         *
+         * 默认行为：视口上方的内容一旦变高（图片加载出固有尺寸、代码块测量高度、
+         * 公式渲染完成…），Chromium 会自动把 scrollTop 加上这段高度，用来保持
+         * 眼前内容不动。实测在长文里插入 215px 内容，scrollTop 会自己从 1500
+         * 跳到 1715 —— 用户看到的就是「滚动条莫名其妙自己滚了一小下」。
+         *
+         * 编辑器里这种自动调整只会带来干扰（正文高度本来就频繁变化），关掉它，
+         * 滚动位置只由用户 / 我们自己的滚动代码决定。
+         */
+        overflow-anchor: none;
         font-family: inherit;
         font-size: inherit;
+        background-color: var(--bl-editor-content-bg, var(--bl-preview-bg-color));
 
         /* 定义滑块 内阴影+圆角 */
         &::-webkit-scrollbar-thumb {
           border-radius: 0;
-        }
-
-        :deep(.katex > *) {
-          font-size: 1.2em !important;
-          font-family: 'KaTeX_Size1', sans-serif !important;
         }
       }
     }
@@ -206,11 +155,98 @@
       border-top: 1px solid var(--el-border-color);
       z-index: 2;
     }
+
     ::-webkit-scrollbar {
       width: 8px;
     }
     ::-webkit-scrollbar-thumb {
       border-radius: 3px !important;
+    }
+  }
+}
+
+/**
+ * 图片设置面板
+ *
+ * 通过 Teleport 挂到 body，位置用 fixed 跟随图片；
+ * scoped 样式依然生效（Vue 会给 teleport 出去的节点打上 data-v 属性）。
+ */
+.bl-image-tooltip {
+  position: fixed;
+  z-index: 3100;
+  width: 268px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--el-border-color-light);
+  background-color: var(--bl-html-color);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+  color: var(--bl-text-color);
+  font-size: 12px;
+
+  .bl-image-tooltip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    & + .bl-image-tooltip-row {
+      margin-top: 8px;
+    }
+
+    .label {
+      flex: none;
+      width: 30px;
+      color: var(--bl-text-color-light);
+    }
+
+    .spacer {
+      flex: 1;
+    }
+
+    /* 地址输入框占满剩余宽度 */
+    .el-input {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  .bl-image-tooltip-tip {
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--bl-text-color-light);
+  }
+}
+
+/*
+ * 图片面板的宽度单位切换（px / %）
+ * 不用 el-select：fixed 浮层里的下拉弹层定位不可靠
+ */
+.bl-unit-switch {
+  display: flex;
+  border: 1px solid var(--el-border-color);
+  border-radius: 4px;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1;
+
+  .unit-item {
+    padding: 5px 8px;
+    cursor: pointer;
+    color: var(--bl-text-color);
+    background-color: var(--bl-html-color);
+    user-select: none;
+    transition: 0.15s;
+
+    & + .unit-item {
+      border-left: 1px solid var(--el-border-color);
+    }
+
+    &:hover {
+      color: var(--el-color-primary);
+    }
+
+    &.is-active {
+      background-color: var(--el-color-primary);
+      color: #ffffff;
     }
   }
 }

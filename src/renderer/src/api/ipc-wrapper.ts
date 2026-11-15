@@ -17,7 +17,7 @@ if (!rawInvoke) {
  * @returns {Promise<any>}
  */
 export const invoke = async (channel: string, ...args: any[]): Promise<any> => {
-  console.log(`==================================< 请求拦截器 ${channel} >==================================`)
+  // console.log(`==================================< 请求拦截器 ${channel} >==================================`)
   // 在文档库内的请求
   if (inDocLibRequest(args)) {
     const docLib = Local.get(DOC_LIB_CUR_KEY)
@@ -56,9 +56,9 @@ export const invoke = async (channel: string, ...args: any[]): Promise<any> => {
   }
 
   try {
-    console.warn(`[IPC >>>> ${channel} ] `, args)
+    // console.warn(`[IPC >>>> ${channel} ] `, args)
     const r: R<any> = await rawInvoke(channel, ...args)
-    console.warn(`[IPC <<<< ${channel} ] `, r)
+    // console.warn(`[IPC <<<< ${channel} ] `, r)
 
     if (!isSuccessR(r)) {
       Notify.error(r.msg, r.code)

@@ -6,7 +6,7 @@
     <span v-else class="iconbl bl-article-line container-operator" @click="showStarCard(true)" />
   </bl-row>
   <div class="article-stars-root">
-    <div v-if="isEmpty(articles)" class="placeholder">无收藏文章</div>
+    <div v-if="isEmptyArr(articles)" class="placeholder">无收藏文章</div>
     <div
       v-else
       v-for="article in articles"
@@ -32,7 +32,7 @@ import { ref, nextTick } from 'vue'
 import { useConfigStore } from '@renderer/stores/config'
 import type { ViewStyle } from '@renderer/stores/config'
 import { openExtenal } from '@renderer/assets/utils/electron'
-import { isEmpty } from 'lodash'
+import { isEmptyArr } from '@renderer/assets/utils/obj'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 
 const configStore = useConfigStore()

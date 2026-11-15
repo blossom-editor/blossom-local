@@ -51,7 +51,16 @@ import { parseTocAsync } from './scripts/article'
 import { isHttp } from '@renderer/assets/utils/util'
 import { protocolWrapper } from '../picture/scripts/picture'
 import type { Toc } from './scripts/article'
-import marked, { renderBlockquote, renderCode, renderCodespan, renderHeading, renderImage, renderTable, renderLink, renderHtml } from './scripts/markedjs'
+import marked, {
+  renderBlockquote,
+  renderCode,
+  renderCodespan,
+  renderHeading,
+  renderImage,
+  renderTable,
+  renderLink,
+  renderHtml
+} from './scripts/markedjs'
 import { useArticleHtmlEvent } from './scripts/article-html-event'
 import AppHeader from '@renderer/components/AppHeader.vue'
 
@@ -171,10 +180,18 @@ const { articleReferenceView } = useArticleHtmlEvent(ArticleViewRef)
   .preview {
     @include box(100%, 100%);
     font-size: 15px;
-    padding: 30px;
+    padding: 30px 100px;
     overflow-y: scroll;
     overflow-x: hidden;
     line-height: 23px;
+
+    :deep(ol) {
+      padding-left: 1.5em !important;
+    }
+
+    :deep(ul) {
+      padding-left: 1em !important;
+    }
 
     :deep(*) {
       font-size: inherit;

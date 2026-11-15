@@ -104,7 +104,7 @@
 
             <div v-if="showAnyTime" class="task-times">创建于: {{ t.creTime }}</div>
             <div v-if="isNotBlank(t.deadLine)" class="dead-line task-times">截止至: {{ t.deadLine }}</div>
-            <bl-row class="task-tags" v-if="!isEmpty(t.taskTags)">
+            <bl-row class="task-tags" v-if="!isEmptyArr(t.taskTags)">
               <bl-tag v-for="tag in t.taskTags" :key="tag" :size="11">{{ tag }}</bl-tag>
             </bl-row>
             <el-input
@@ -160,7 +160,7 @@
             <div v-if="showAnyTime" class="task-times">创建于: {{ t.creTime }}</div>
             <div v-if="showAnyTime" class="task-times">开始于: {{ t.startTime }}</div>
             <div v-if="isNotBlank(t.deadLine)" class="dead-line task-times">截止至: {{ t.deadLine }}</div>
-            <bl-row class="task-tags" v-if="!isEmpty(t.taskTags)">
+            <bl-row class="task-tags" v-if="!isEmptyArr(t.taskTags)">
               <bl-tag v-for="tag in t.taskTags" :key="tag" :size="11">{{ tag }}</bl-tag>
             </bl-row>
             <el-input
@@ -218,7 +218,7 @@
             <div v-if="showAnyTime" class="task-times">开始于: {{ t.startTime }}</div>
             <div v-if="showAnyTime" class="task-times">结束于: {{ t.endTime }}</div>
             <div v-if="isNotBlank(t.deadLine)" class="dead-line task-times">截止至: {{ t.deadLine }}</div>
-            <bl-row class="task-tags" v-if="!isEmpty(t.taskTags)">
+            <bl-row class="task-tags" v-if="!isEmptyArr(t.taskTags)">
               <bl-tag v-for="tag in t.taskTags" :key="tag" :size="11">{{ tag }}</bl-tag>
             </bl-row>
             <el-input
@@ -293,11 +293,10 @@
 <script setup lang="ts">
 import { useConfigStore } from '@renderer/stores/config'
 import { computed, nextTick, onMounted, onUnmounted, Ref, ref } from 'vue'
-import { isBlank, isNotBlank } from '@renderer/assets/utils/obj'
+import { isBlank, isNotBlank, isEmptyArr } from '@renderer/assets/utils/obj'
 import { tasksApi, addTaskApi, updTaskApi, toWaitingApi, toProcessingApi, toCompletedApi, exportTodoApi, taskTransferApi } from '@renderer/api/todo'
 import { TaskInfo, TaskStatus, TodoType } from './scripts/types'
 import { getDateFormat } from '@renderer/assets/utils/util'
-import { isEmpty } from 'lodash'
 import Notify from '@renderer/scripts/notify'
 import TaskInfoComponent from './TaskInfo.vue'
 import { dayjs, ElMessageBox } from 'element-plus'
