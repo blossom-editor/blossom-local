@@ -4,9 +4,11 @@
     v-model:visible="popoverVisible"
     placement="top"
     trigger="click"
+    transition="none"
     :width="325"
     :show-arrow="false"
     :hide-after="0"
+    :show-after="0"
     popper-class="web-collect-popover"
     @show="loadConfig()">
     <template #reference>

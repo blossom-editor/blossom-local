@@ -75,6 +75,8 @@ export interface EditorStyle {
   isAutoBreakLine: boolean
   // 是否显示代码块行数
   isShowPreLineNumber: boolean
+  // 是否显示编辑器底部栏的 AI 模型余额入口, 默认关闭
+  isShowDocBottomAi: boolean
   // 最大渲染字数
   maxWordsCount: number
 }
@@ -137,6 +139,7 @@ export const useConfigStore = defineStore('configStore', {
         defaultPreLanguage: '',
         isAutoBreakLine: true,
         isShowPreLineNumber: false,
+        isShowDocBottomAi: false,
         maxWordsCount: 200000
       },
       ...Local.get(EDITOR_STYLE_KEY)

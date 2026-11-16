@@ -207,6 +207,12 @@
               <el-switch v-model="isShowEditorBoxShadowInset" size="default" style="margin-right: 10px" @change="changeEditorBoxShadowInset" />
             </bl-row>
             <div class="conf-tip">开启后, 编辑器会显示一个内部阴影, 使其有更明显的边界效果</div>
+
+            <bl-row class="prop-row">
+              <div class="prop">底部栏AI模型入口</div>
+              <el-switch v-model="configEditorStyleForm.isShowDocBottomAi" size="default" style="margin-right: 10px" @change="changeEditorStyle" />
+            </bl-row>
+            <div class="conf-tip">开启后, 编辑器底部栏会显示 AI 模型及余额入口, 默认关闭。</div>
           </div>
         </el-tab-pane>
 

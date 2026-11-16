@@ -1,14 +1,15 @@
 <template>
   <div class="tree-doc-bottom">
     <!-- AI 模型余额: 入口展示、弹层列表、设置弹窗与查询逻辑都在组件内部 -->
-    <AticleTreeDocBottomAI v-model:active-name="activeAiModel"></AticleTreeDocBottomAI>
-    <div></div>
+    <AticleTreeDocBottomAI v-if="configStore.editorStyle.isShowDocBottomAi" v-model:active-name="activeAiModel"></AticleTreeDocBottomAI>
+    <div class="display-placeholder"></div>
     <!-- 网页收藏: 图标分组、大小切换、JSON 设置都在组件内部 -->
     <AticleTreeDocBottomWebCollect v-model:icon-size="webIconSize"></AticleTreeDocBottomWebCollect>
   </div>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useConfigStore } from '@renderer/stores/config'
 import AticleTreeDocBottomAI from './AticleTreeDocBottomAI.vue'
 import AticleTreeDocBottomWebCollect from './AticleTreeDocBottomWebCollect.vue'
 
@@ -19,7 +20,11 @@ import AticleTreeDocBottomWebCollect from './AticleTreeDocBottomWebCollect.vue'
  * - 每个功能封装为独立组件, 通过 props / emits 暴露对外接口
  * - AI 模型余额: 通过 activeName 决定底部栏展示哪个已配置模型
  * - 网页收藏: 通过 iconSize 决定图标大小(大图标每行 5 个, 小图标每行 8 个)
+ *
+ * 不要写成 `const { editorStyle } = useConfigStore()`: 解构后拿到的是普通对象,
+ * store 里 editorStyle 整体替换后开关就不会跟随响应, 所以统一通过 store 读取。
  */
+const configStore = useConfigStore()
 
 /** 底部栏当前展示的 AI 模型 name, 由 AI 组件通过 update:activeName 回写 */
 const activeAiModel = ref<string>('')
