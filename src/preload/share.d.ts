@@ -256,3 +256,28 @@ declare interface ArticleRefNode {
 declare interface ArticleRefLink { source: string; target: string }
 declare interface ArticleRefReq { onlyInner: boolean; articleId?: string }
 declare interface ArticleRefRes { nodes: ArticleRefNode[];  links: ArticleRefLink[] }
+
+//#region 网页收藏 >============================================================================================================
+
+/** 网页收藏的配置接口, 只需要文档库路径 */
+declare interface WebCollectReq extends Base {}
+
+/** 网页收藏配置文件的读取/保存结果 */
+declare interface WebCollectRes {
+  /** 配置文件所在目录: <docLibPath>/.blossom/web-collect, 图标图片也放在这里 */
+  folderPath: string
+  /** 配置文件的完整路径 */
+  filePath: string
+  /** 配置文件的原始内容, 文件不存在时为空字符串 */
+  content: string
+  /** 目录下可用的图标文件名 */
+  icons: string[]
+}
+
+declare interface WebCollectSaveReq extends Base { content: string }
+
+/** 打开网页收藏中 type 为 app 的本地应用 */
+declare interface WebCollectOpenAppReq extends Base { appPath: string }
+
+//#endregion
+

@@ -5,7 +5,7 @@
       <div class="doc-tree-menu-container">
         <ArticleTreeDocs @click-doc="clickCurDoc" @clear-cur-doc="clearCurDoc" ref="ArticleTreeDocsRef"></ArticleTreeDocs>
       </div>
-      <div class="doc-tree-bottom"></div>
+      <AticleTreeDocBottom></AticleTreeDocBottom>
     </div>
     <div class="resize-divider-vertical" ref="ResizeDocsDividerRef"></div>
 
@@ -202,6 +202,7 @@ import EditorTools from './EditorTools.vue'
 import EditorToc from './EditorToc.vue'
 import EditorSourcePane from './EditorSourcePane.vue'
 import EditorSearch from './EditorSearch.vue'
+import AticleTreeDocBottom from './AticleTreeDocBottom.vue'
 // ts
 import { treeToInfo, provideKeyCurArticleInfo, isArticle, DefaultDocTree, getDocByPath } from '@renderer/views/doc/doc'
 import { ArticleReference, countWords, parseImageRefs } from './scripts/article'
