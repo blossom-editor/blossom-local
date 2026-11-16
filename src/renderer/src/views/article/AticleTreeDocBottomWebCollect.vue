@@ -858,6 +858,7 @@ defineExpose({
   }
 
   .json-hint-sub {
+    width: 70%;
     height: var(--json-hint-sub-height);
     margin-top: 0;
     opacity: 0.75;
