@@ -12,7 +12,7 @@
     popper-class="web-collect-popover"
     @show="loadConfig()">
     <template #reference>
-      <div class="web-collect" title="网页收藏">
+      <div class="web-collect" title="网页收藏 (Alt + 2)">
         <div class="iconbl bl-adhibition-line"></div>
       </div>
     </template>
@@ -141,7 +141,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onActivated, onBeforeUnmount, onDeactivated, onMounted, ref } from 'vue'
 import { Document, FolderOpened, Loading, MagicStick, RefreshLeft, WarningFilled } from '@element-plus/icons-vue'
 import { webCollectOpenAppApi, webCollectOpenFolderApi, webCollectReadApi, webCollectSaveApi } from '@renderer/api/webCollect'
 import { Local } from '@renderer/assets/utils/storage'
@@ -484,13 +484,60 @@ const saveSetting = async (): Promise<void> => {
   }
 }
 
+// ==================== 快捷键 ====================
+
+/**
+ * Alt + 2: 打开 / 关闭快捷收藏弹层
+ *
+ * 和 ArticleIndex 里的 Alt+1 保持一致, 挂在 document 的捕获阶段:
+ * 编辑器与代码块都是 contenteditable, 普通监听会被输入框逻辑吞掉。
+ * 设置弹窗打开时不响应, 避免和弹窗内的按键冲突。
+ */
+const onGlobalKeydown = (event: KeyboardEvent): void => {
+  if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
+  if (event.key !== '2' && event.code !== 'Digit2') return
+  if (settingVisible.value) return
+  event.preventDefault()
+  popoverVisible.value = !popoverVisible.value
+}
+
+/**
+ * 快捷键绑定（幂等）
+ *
+ * 本页被 keep-alive 缓存, 只靠 onMounted / onBeforeUnmount 会在切到别的页面后
+ * 仍然响应 Alt+2 (组件没有卸载), 所以 onActivated 再绑一次、onDeactivated 解绑。
+ */
+let keysBound = false
+const bindKeys = (): void => {
+  if (keysBound) return
+  document.addEventListener('keydown', onGlobalKeydown, true)
+  keysBound = true
+}
+const unbindKeys = (): void => {
+  if (!keysBound) return
+  document.removeEventListener('keydown', onGlobalKeydown, true)
+  keysBound = false
+}
+
 // ==================== 生命周期 ====================
 
 onMounted(() => {
   // 把本地记录的图标大小同步给父级, 便于外部读取
   emits('update:iconSize', size.value)
   loadConfig()
+  // onActivated 与 onMounted 的先后顺序不固定, 两边都调, bindKeys 内部保证幂等
+  bindKeys()
 })
+
+onActivated(bindKeys)
+
+onDeactivated(() => {
+  // 页面被切走时收起弹层, 免得回来时还挂着
+  popoverVisible.value = false
+  unbindKeys()
+})
+
+onBeforeUnmount(unbindKeys)
 
 // ==================== 对外暴露 ====================
 
@@ -526,6 +573,7 @@ defineExpose({
 // popover 与 dialog 的内容会被挂载到 body 上, 无法使用 scoped, 因此统一写在这里
 .web-collect-popover {
   padding: 12px;
+  margin-left: 10px;
 
   .web-collect-panel {
     width: 300px !important;
