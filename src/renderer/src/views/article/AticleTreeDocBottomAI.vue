@@ -43,7 +43,7 @@
       </div>
 
       <div v-if="configuredModels.length === 0" class="ai-model-empty">
-        <span>尚未配置 AI 模型的 Key</span>
+        <span>尚未配置</span>
         <el-button type="primary" text size="small" @click="openSetting">去配置</el-button>
       </div>
       <div v-else class="ai-model-list">
@@ -252,7 +252,7 @@ const configuredModels = computed<AiModelView[]>(() =>
   })
 )
 
-const activeLabel = computed<string>(() => (activeProvider.value ? `${activeProvider.value.label}：` : 'AI 余额：'))
+const activeLabel = computed<string>(() => (activeProvider.value ? `${activeProvider.value.label}：` : '模型余额：'))
 
 const activeBalance = computed<string>(() => (activeProvider.value ? balanceTextOf(activeProvider.value.name) : '未配置'))
 

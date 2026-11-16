@@ -11,7 +11,7 @@
     @show="loadConfig()">
     <template #reference>
       <div class="web-collect" title="网页收藏">
-        <div class="iconbl bl-apps-line"></div>
+        <div class="iconbl bl-adhibition-line"></div>
       </div>
     </template>
 
@@ -19,7 +19,7 @@
       <div :class="['web-collect-panel', isSmall ? 'size-small' : 'size-large']">
         <!-- 头部: 标题 + 大小切换 + 设置 -->
         <div class="panel-header">
-          <span class="panel-title">网页收藏</span>
+          <span class="panel-title">快捷收藏</span>
           <div class="panel-actions">
             <el-tooltip
               :content="isSmall ? '使用大图标' : '使用小图标'"
@@ -52,8 +52,8 @@
         </div>
 
         <div v-else-if="panelGroups.length === 0" class="panel-state panel-empty">
-          <span class="iconbl bl-apps-line empty-icon"></span>
-          <span class="empty-text">还没有收藏的网页</span>
+          <span class="iconbl bl-adhibition-line empty-icon"></span>
+          <span>还没有收藏的网页</span>
           <el-button type="primary" size="small" @click="openSetting">去配置</el-button>
         </div>
 
@@ -103,42 +103,34 @@
   </el-popover>
 
   <!-- 网页收藏设置 -->
-  <el-dialog v-model="settingVisible" class="dialog-web-collect" title="网页收藏设置" width="720px" append-to-body :close-on-click-modal="false">
-    <div class="web-setting">
-      <div class="setting-toolbar">
-        <div class="file-path">
-          <el-icon><Document /></el-icon>
-          <span class="path-text" :title="filePath">{{ filePath || '配置文件路径读取中...' }}</span>
-        </div>
-        <div class="toolbar-actions">
-          <el-button size="small" text :icon="FolderOpened" @click="openFolder">打开目录</el-button>
-          <el-button size="small" text :icon="RefreshLeft" @click="loadConfig()">重新读取</el-button>
-          <el-button size="small" text :icon="MagicStick" :disabled="!!editorError" @click="formatJson">格式化</el-button>
-        </div>
+  <el-dialog v-model="settingVisible" class="dialog-web-collect" title="快捷收藏设置" width="720px" append-to-body :close-on-click-modal="false">
+    <div class="setting-toolbar">
+      <div class="file-path">
+        <el-icon><Document /></el-icon>
+        <span class="path-text" :title="filePath">{{ filePath || '配置文件路径读取中...' }}</span>
       </div>
-
-      <el-input
-        v-model="jsonText"
-        class="json-editor"
-        type="textarea"
-        :rows="14"
-        resize="vertical"
-        spellcheck="false"
-        placeholder="在此填写网页收藏的 JSON 配置" />
-
-      <div v-if="editorError" class="json-error">
-        <el-icon><WarningFilled /></el-icon>
-        <span>{{ editorError }}</span>
+      <div class="toolbar-actions">
+        <el-button size="small" text :icon="FolderOpened" @click="openFolder">打开目录</el-button>
+        <el-button size="small" text :icon="RefreshLeft" @click="loadConfig()">重新读取</el-button>
+        <el-button size="small" text :icon="MagicStick" :disabled="!!editorError" @click="formatJson">格式化</el-button>
       </div>
-      <div v-else class="json-hint">共 {{ editorGroups.length }} 个分组 / {{ editorCount }} 个网页; icon 填本目录下的图片文件名.</div>
-      <div class="json-hint json-hint-sub">type 填 app 时 url 写本地应用路径, 点击图标用系统默认方式打开</div>
-
-      <div v-if="iconFiles.length > 0" class="icon-files">
-        <span class="icon-files-label">目录中的图标</span>
-        <span v-for="name in iconFiles" :key="name" class="icon-chip">{{ name }}</span>
-      </div>
-      <div v-else class="icon-files icon-files-empty">目录中还没有图标图片, 点「打开目录」把图片放进去即可</div>
     </div>
+
+    <el-input
+      v-model="jsonText"
+      class="json-editor"
+      type="textarea"
+      :rows="18"
+      resize="vertical"
+      spellcheck="false"
+      placeholder="在此填写网页收藏的 JSON 配置" />
+
+    <div v-if="editorError" class="json-error">
+      <el-icon><WarningFilled /></el-icon>
+      <span>{{ editorError }}</span>
+    </div>
+    <div v-else class="json-hint">共 {{ editorGroups.length }} 个分组 / {{ editorCount }} 个网页; icon 填本目录下的图片文件名.</div>
+    <div class="json-hint json-hint-sub">type 填 app 时 url 写本地应用路径, 点击图标用系统默认方式打开</div>
     <template #footer>
       <el-button @click="settingVisible = false">取消</el-button>
       <el-button type="primary" :loading="saving" :disabled="!!editorError" @click="saveSetting">保存</el-button>
@@ -523,7 +515,7 @@ defineExpose({
   }
 
   .iconbl {
-    font-size: 18px;
+    font-size: 21px;
   }
 }
 </style>
@@ -581,8 +573,8 @@ defineExpose({
     color: var(--el-text-color-secondary);
 
     .empty-icon {
-      font-size: 26px;
-      opacity: 0.45;
+      font-size: 30px;
+      opacity: 0.4;
     }
 
     .empty-text {
@@ -732,29 +724,43 @@ defineExpose({
 }
 
 .dialog-web-collect {
+  --el-dialog-margin-top: 10vh;
+  --header-height: 35px;
+  --footer-height: 50px;
+  // 内部各部分高度
+  --setting-toolbar-height: 25px;
+  --json-hint-height: 35px;
+  --json-hint-sub-height: 25px;
+
+  height: 80%;
+
   .el-dialog__header {
-    padding: 15px 20px;
+    height: var(--header-height);
+    padding: 5px 20px;
     margin: 0;
     border-bottom: 1px solid var(--el-border-color);
   }
 
   .el-dialog__body {
+    height: calc(100% - var(--header-height) - var(--footer-height));
     padding: 16px 20px 0 20px;
   }
 
   .el-dialog__footer {
+    height: var(--footer-height);
     padding: 12px 20px 16px 20px;
   }
 
   .setting-toolbar {
     @include flex(row, space-between, center);
-    gap: 12px;
+    height: var(--setting-toolbar-height);
+    gap: 5px;
     margin-bottom: 10px;
   }
 
   .file-path {
     @include flex(row, flex-start, center);
-    gap: 6px;
+    gap: 3px;
     min-width: 0;
     font-size: 12px;
     color: var(--el-text-color-secondary);
@@ -770,20 +776,22 @@ defineExpose({
   .toolbar-actions {
     @include flex(row, flex-end, center);
     flex-shrink: 0;
-    gap: 2px;
   }
 
   .json-editor {
+    height: calc(100% - var(--json-hint-height) - var(--json-hint-sub-height));
     textarea {
       font-family: 'JetBrains Mono', 'Consolas', 'Menlo', monospace;
       font-size: 12.5px;
-      line-height: 1.7;
+      line-height: 1.4;
       tab-size: 2;
+      height: 100%;
     }
   }
 
   .json-error {
     @include flex(row, flex-start, flex-start);
+    height: var(--json-hint-height);
     gap: 6px;
     margin-top: 8px;
     font-size: 12px;
@@ -793,55 +801,16 @@ defineExpose({
   }
 
   .json-hint {
+    height: var(--json-hint-height);
     margin-top: 8px;
     font-size: 12px;
     color: var(--el-text-color-secondary);
   }
 
   .json-hint-sub {
-    margin-top: 2px;
+    height: var(--json-hint-sub-height);
+    margin-top: 0;
     opacity: 0.75;
-  }
-
-  .icon-files {
-    @include flex(row, flex-start, center);
-    flex-wrap: wrap;
-    gap: 6px;
-    max-height: 62px;
-    margin-top: 10px;
-    padding-top: 10px;
-    overflow-y: auto;
-    border-top: 1px dashed var(--el-border-color-lighter);
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      border-radius: 3px;
-      background-color: var(--el-border-color);
-    }
-
-    .icon-files-label {
-      margin-right: 2px;
-      font-size: 12px;
-      color: var(--el-text-color-secondary);
-    }
-
-    .icon-chip {
-      padding: 1px 6px;
-      font-size: 11px;
-      line-height: 17px;
-      border-radius: 4px;
-      color: var(--el-text-color-regular);
-      background-color: var(--el-fill-color-light);
-      font-family: 'JetBrains Mono', 'Consolas', 'Menlo', monospace;
-    }
-  }
-
-  .icon-files-empty {
-    font-size: 12px;
-    color: var(--el-text-color-secondary);
   }
 }
 </style>

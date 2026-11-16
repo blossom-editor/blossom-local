@@ -2,7 +2,7 @@
   <div class="tree-doc-bottom">
     <!-- AI 模型余额: 入口展示、弹层列表、设置弹窗与查询逻辑都在组件内部 -->
     <AticleTreeDocBottomAI v-model:active-name="activeAiModel"></AticleTreeDocBottomAI>
-
+    <div></div>
     <!-- 网页收藏: 图标分组、大小切换、JSON 设置都在组件内部 -->
     <AticleTreeDocBottomWebCollect v-model:icon-size="webIconSize"></AticleTreeDocBottomWebCollect>
   </div>
