@@ -1,5 +1,7 @@
 import { isNull } from '@renderer/assets/utils/obj'
 import { randomInt } from '@renderer/assets/utils/util'
+import { headingRuns } from './heading-runs'
+import type { HeadingRun } from './heading-runs'
 
 /**
  * 临时内容的 localStorage key
@@ -49,9 +51,19 @@ export interface ArticleReference {
  * 目录结构
  */
 export interface Toc {
+  /** 标题纯文本 */
   content: string
+  /** 标题级别对应的 class（`toc-1` ~ `toc-6`） */
   clazz: string
+  /** 标题元素 id，点击目录时用它滚动定位 */
   id: string
+  /**
+   * 按颜色切分后的标题文字
+   *
+   * 与编辑器右侧目录（`milkdown/editor.ts` 的 `HeadingItem.runs`）同一份实现，
+   * 见 `scripts/heading-runs.ts`：只有正文里被上色的那几个字才带 color。
+   */
+  runs: HeadingRun[]
 }
 
 /**
@@ -92,7 +104,7 @@ export const parseTocAsync = async (ele: HTMLElement): Promise<Toc[]> => {
         level = 6
         break
     }
-    let toc: Toc = { content: content, clazz: 'toc-' + level, id: id }
+    let toc: Toc = { content: content, clazz: 'toc-' + level, id: id, runs: headingRuns(head as HTMLElement) }
     tocs.push(toc)
   }
   return tocs

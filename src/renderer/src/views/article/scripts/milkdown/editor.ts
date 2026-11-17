@@ -82,6 +82,9 @@ import { selectionTooltipPlugins, configureSelectionTooltip } from './plugins/se
 import { searchPluginKey, searchPlugins } from './plugins/search'
 import { insertMarkdown as insertMarkdownCommand, runCommand } from './commands'
 import type { EditorCommandName } from './commands'
+/** 标题按颜色切段（右侧目录用），与只读预览窗口共用同一份实现 */
+import { headingRuns } from '../heading-runs'
+import type { HeadingRun } from '../heading-runs'
 
 import { REQUEST_EVENT } from './constants'
 import type { EditorRequestDetail } from './constants'
@@ -109,14 +112,25 @@ export interface SearchResult {
   current: number
 }
 
+/** 目录项里的一段文字 */
+export type { HeadingRun }
+
 /** 目录项 */
 export interface HeadingItem {
   /** 标题级别 1-6 */
   level: number
-  /** 标题纯文本 */
+  /** 标题纯文本（悬停提示 / 判断是否空标题用） */
   text: string
   /** 在同类元素中的序号，用于点击时定位 DOM */
   index: number
+  /**
+   * 按颜色切分后的标题文字
+   *
+   * 颜色取自标题里的 `<font color="...">`（见 plugins/font-color.ts）。
+   * 拆成多段是为了和正文一致：只有被上色的那几个字在目录里变色，
+   * 而不是整行跟着变。没有任何颜色时，这里就是一整段无色文字。
+   */
+  runs: HeadingRun[]
 }
 
 /**
@@ -665,7 +679,9 @@ export class WysiwygEditor {
     return Array.from(nodes).map((el, index) => ({
       level: Number(el.tagName.substring(1)),
       text: el.textContent ?? '',
-      index
+      index,
+      // 正文里给标题上的局部文字颜色，按段带到目录
+      runs: headingRuns(el)
     }))
   }
 

@@ -20,7 +20,9 @@
         :class="['toc-item', `toc-${head.level}`]"
         :title="head.text"
         @click="emits('clickHeading', head.index)">
-        {{ head.text || '（无标题文字）' }}
+        <!-- 按正文里的着色切段渲染：只有被上色的那几段变色，其余跟随主题 -->
+        <span v-for="(run, runIndex) in head.runs" :key="runIndex" :style="run.color ? { color: run.color } : undefined">{{ run.text }}</span>
+        <template v-if="head.runs.length === 0">（无标题文字）</template>
       </div>
     </div>
 
@@ -122,6 +124,7 @@ const collapsed = ref(false)
     .toc-item {
       padding: 3px 8px;
       font-size: 12px;
+      /* 基础色；局部着色由内部 span 的内联 style 覆盖（见 getHeadings 的 runs） */
       color: var(--bl-text-color);
       cursor: pointer;
       white-space: nowrap;

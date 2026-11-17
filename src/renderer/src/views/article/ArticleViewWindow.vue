@@ -17,7 +17,8 @@
       </div>
       <div class="toc-content">
         <div v-for="toc in tocs" :key="toc.id" :class="['toc-item', toc.clazz]" @click="toScroll(toc.id)">
-          {{ toc.content }}
+          <!-- 与正文一致的局部着色：只有被上色的那几段变色，其余跟随目录样式 -->
+          <span v-for="(run, runIndex) in toc.runs" :key="runIndex" :style="run.color ? { color: run.color } : undefined">{{ run.text }}</span>
         </div>
       </div>
     </div>
