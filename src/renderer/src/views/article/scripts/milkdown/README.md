@@ -22,7 +22,9 @@ milkdown/
     ├── image.ts           # 图片 NodeView（协议转换、alt 样式标记、尺寸预留、编辑按钮）
     ├── drag-guard.ts      # 禁止在编辑器内拖动文字 / 图片
     ├── empty-block-drag.ts # 从空段落按下拖动时自己扩展选区（浏览器原生不支持）
-    ├── link.ts            # 链接点击拦截（单击移光标 / Ctrl+单击打开）+ `[文字](地址)` 输入规则
+    ├── link.ts            # 链接点击拦截（单击移光标 / Ctrl+单击打开）+ `[文字](地址)` 输入规则 + 链接 mark 不向后延伸
+    ├── backspace.ts       # 空段落紧跟分割线 / 公式块时，Backspace 删除空段落并选中该块
+    ├── paste.ts           # 从 VSCode 复制的内容按普通文本黏贴（跳过 milkdown 的代码块分支）
     ├── link-edit.ts       # 链接输入浮层（官方 LinkEditTooltip 的等价实现）
     ├── search.ts          # 正文查找（Ctrl+F）的命中高亮装饰
     ├── slash.ts           # 输入 "/" 唤起的命令菜单
@@ -184,6 +186,7 @@ const plugin = (ctx) => async () => {
 | 选中文字 → 工具条「设为链接」 | 在选区上方就地弹出输入框，回车即应用 |
 | Alt+K | 光标已在链接里 → 进入编辑态；否则在选区上方弹出空输入框 |
 | 输入 `[文字](地址 "标题")` | 输入到右括号时自动转成真正的链接 |
+| 光标停在链接末尾继续输入 | 新增的文字是**普通文本**，不会被并进 `<a>`（link mark 的 `inclusive` 已关掉，见 `plugins/link.ts` 的 `configureLinkMark`） |
 | 悬停链接 | 弹出官方链接浮层：点 🔗 复制地址、点 ✎ 就地编辑（输入框替换浮层）、点 ✕ 移除链接 |
 | 单击图片 | 只选中图片（不弹面板），右上角浮现「编辑」按钮；不会弹出文字格式工具条 |
 | 点击图片「编辑」按钮 | 弹出图片设置面板，可改宽度（px / %）与阴影，实时写回 alt |
@@ -199,9 +202,23 @@ const plugin = (ctx) => async () => {
 | 选中文字 | 出现两行浮动工具条：第一行预设颜色（直接点，另有「清除」），第二行加粗 / 斜体 / 删除线 / 行内代码 / 设为链接；已生效的格式会高亮 |
 | 拖拽正文（选中的文字 / 图片） | 已禁用，拖不起来（选字时手一抖不会把整段搬走）；代码块里的代码同样拖不出去；表格的行 / 列手柄仍可拖动 |
 | 拖入或黏贴图片 | 自动上传到文档库并插入 `![](文件名)` |
+| 从 VSCode 复制内容后黏贴 | 按普通文本插入（一行一段，不转成代码块、不做 markdown 解析），见 `plugins/paste.ts` |
+| 选中分割线按回车 | 插入一个空段落，光标落在里面（ProseMirror 的 `createParagraphNear`） |
+| 空段落紧跟分割线 / 公式块时按 Backspace | 删除这个空段落，并保持分割线 / 公式块被选中（milkdown 默认会只选中上方节点、空段落留着），见 `plugins/backspace.ts` |
 | Ctrl/Cmd + S | 保存；绑定在 document 捕获阶段，光标在代码块（CodeMirror）、查找框等任意位置都能触发 |
 | 右键 → 复制 | 与 Ctrl+C 相同（浏览器原生 copy，含 text/html） |
 | 右键 → 黏贴 | 与 Ctrl+V 相同（派发原生 paste 事件） |
+
+### 三处「第三方既有行为」的兼容处理
+
+这几条都来自 milkdown / ProseMirror 的内部行为，项目里没有可配置的开关，
+只能在集成层做最小接管（各文件头部注释记录了原因、影响范围与触发条件）：
+
+| 现象 | 根因 | 处理 |
+| ---- | ---- | ---- |
+| 从 VSCode 复制代码，黏贴后被包成多行代码块 | `@milkdown/plugin-clipboard` 的 `handlePaste` 写死了 VSCode 分支：剪贴板带 `vscode-editor-data` 就把内容塞进 `code_block`，`mode` 当语言 | 用 `editorViewOptionsCtx.handlePaste` 抢先接管这一种黏贴，其余返回 false 交回原流程（`plugins/paste.ts`） |
+| 黏贴链接后接着输入，文字被并进 `<a>` | link mark 的 `inclusive` 默认 `true` —— mark 在结束位置**之后**仍然生效 | schema 构建前把 link 的 `inclusive` 改成 `false`（`plugins/link.ts` 的 `configureLinkMark`） |
+| 选中分割线回车出空行，Backspace 只选中分割线、空行留着 | milkdown 把基础键位表的 Backspace 从 `joinBackward` 换成了 `joinTextblockBackward`，「删掉空块并选中上方节点」那段逻辑再也走不到 | 以更高优先级补一条 Backspace，命中条件时调用 `joinBackward`（`plugins/backspace.ts`） |
 
 ## 七、图片宽度与阴影的存储格式
 

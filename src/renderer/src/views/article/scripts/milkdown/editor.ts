@@ -9,33 +9,35 @@
  *
  * ## 组成
  *
- * | 模块 | 作用 |
- * | ---- | ---- |
- * | preset/commonmark | 标准 markdown（标题、列表、引用、代码块、图片、链接…） |
- * | preset/gfm | GFM 扩展（表格、任务列表、删除线、自动链接） |
- * | plugin/history | 撤销 / 重做 |
- * | plugin/listener | 文档变化、选区变化、焦点变化回调 |
- * | plugin/clipboard | 复制黏贴时保留 markdown 结构 |
- * | plugin/indent | Tab / Shift-Tab 缩进列表 |
- * | plugin/upload | 拖拽 / 黏贴图片时的上传插槽 |
- * | plugin/cursor | 拖拽光标与 gap cursor |
- * | plugin/trailing | 文档末尾自动补一个空段落，方便在结尾继续输入 |
- * | plugins/math | LaTeX 公式（remark-math + katex） |
- * | plugins/sup-sub | 上标 / 下标（`<sup>` / `<sub>`） |
- * | plugins/font-color | 文字颜色（`<font color>`） |
- * | plugins/block-marker | 彩色引用、容器表格的视觉装饰 |
- * | plugins/table | 官方 table-block（增删行列、拖拽、对齐） |
- * | plugins/code-block | 官方 code-block（CodeMirror：语言选择、语法高亮、复制） |
- * | plugins/list-item | 官方 list-item-block（任务列表复选框可点击） |
- * | plugins/image | 图片协议转换与 alt 样式标记 |
- * | plugins/drag-guard | 禁止在编辑器内拖动文字 / 图片（表格行列手柄除外） |
- * | plugins/empty-block-drag | 从空段落按下拖动时手动扩展选区（浏览器原生不支持） |
- * | plugins/link | 链接点击拦截（单击移光标 / Ctrl+单击打开）+ `[文字](地址)` 输入规则 |
- * | component/link-tooltip | 官方链接浮层：悬停预览（复制/编辑/删除）+ 选区上方输入链接 |
- * | plugins/link-edit | 链接输入浮层（官方 LinkEditTooltip 的等价实现，额外保留 title） |
- * | plugins/search | 正文查找（Ctrl+F）的命中高亮 |
- * | plugins/slash | `/` 快捷插入菜单 |
- * | plugins/selection-tooltip | 选中文字后的浮动工具条（颜色 + 格式 + 设为链接） |
+ * | 模块                      | 作用                                                            |
+ * | ------------------------- | --------------------------------------------------------------- |
+ * | preset/commonmark         | 标准 markdown（标题、列表、引用、代码块、图片、链接…）          |
+ * | preset/gfm                | GFM 扩展（表格、任务列表、删除线、自动链接）                    |
+ * | plugin/history            | 撤销 / 重做                                                     |
+ * | plugin/listener           | 文档变化、选区变化、焦点变化回调                                |
+ * | plugin/clipboard          | 复制黏贴时保留 markdown 结构                                    |
+ * | plugin/indent             | Tab / Shift-Tab 缩进列表                                        |
+ * | plugin/upload             | 拖拽 / 黏贴图片时的上传插槽                                     |
+ * | plugin/cursor             | 拖拽光标与 gap cursor                                           |
+ * | plugin/trailing           | 文档末尾自动补一个空段落，方便在结尾继续输入                    |
+ * | plugins/math              | LaTeX 公式（remark-math + katex）                               |
+ * | plugins/sup-sub           | 上标 / 下标（`<sup>` / `<sub>`）                                |
+ * | plugins/font-color        | 文字颜色（`<font color>`）                                      |
+ * | plugins/block-marker      | 彩色引用、容器表格的视觉装饰                                    |
+ * | plugins/table             | 官方 table-block（增删行列、拖拽、对齐）                        |
+ * | plugins/code-block        | 官方 code-block（CodeMirror：语言选择、语法高亮、复制）         |
+ * | plugins/list-item         | 官方 list-item-block（任务列表复选框可点击）                    |
+ * | plugins/image             | 图片协议转换与 alt 样式标记                                     |
+ * | plugins/drag-guard        | 禁止在编辑器内拖动文字 / 图片（表格行列手柄除外）               |
+ * | plugins/empty-block-drag  | 从空段落按下拖动时手动扩展选区（浏览器原生不支持）              |
+ * | plugins/link              | 链接点击拦截（单击移光标 / Ctrl+单击打开）+ `[文字](地址)` 输入规则 + 链接 mark 不向后延伸 |
+ * | plugins/backspace         | 空段落紧跟分割线 / 公式块时，Backspace 删除空段落并选中该块     |
+ * | plugins/paste             | 从 VSCode 复制的内容按普通文本黏贴（不走 milkdown 的代码块分支）|
+ * | component/link-tooltip    | 官方链接浮层：悬停预览（复制/编辑/删除）+ 选区上方输入链接      |
+ * | plugins/link-edit         | 链接输入浮层（官方 LinkEditTooltip 的等价实现，额外保留 title） |
+ * | plugins/search            | 正文查找（Ctrl+F）的命中高亮                                    |
+ * | plugins/slash             | `/` 快捷插入菜单                                                |
+ * | plugins/selection-tooltip | 选中文字后的浮动工具条（颜色 + 格式 + 设为链接）                |
  */
 
 // ProseMirror 基础样式（选区、表格、拖拽光标），milkdown 不自带主题时需要显式引入
@@ -75,7 +77,9 @@ import { listItemPlugins, configureListItem } from './plugins/list-item'
 import { imageNodeView } from './plugins/image'
 import { dragGuardPlugins } from './plugins/drag-guard'
 import { emptyBlockDragPlugins } from './plugins/empty-block-drag'
-import { linkPlugins } from './plugins/link'
+import { linkPlugins, configureLinkMark } from './plugins/link'
+import { backspacePlugins } from './plugins/backspace'
+import { handleVSCodePaste } from './plugins/paste'
 import { configureBlLinkEdit } from './plugins/link-edit'
 import { slashPlugins, configureSlash } from './plugins/slash'
 import { selectionTooltipPlugins, configureSelectionTooltip } from './plugins/selection-tooltip'
@@ -308,7 +312,16 @@ export class WysiwygEditor {
             // 这两个 class 是样式挂载点：bl-preview 复用旧预览样式，bl-milkdown 是编辑器专属样式
             class: 'bl-milkdown bl-preview',
             spellcheck: 'false'
-          }
+          },
+          /*
+           * 从 VSCode 复制的内容按普通文本黏贴。
+           *
+           * 放在这里而不是写成 `$prose` 插件：`EditorView.someProp` 先看编辑器自身的 props、
+           * 再按顺序看插件 props，所以它一定排在 milkdown 的 clipboard 插件之前
+           *（那个插件里有一段写死的 VSCode 分支，会把内容包成代码块）。
+           * 其它黏贴它返回 false，交回 milkdown 原流程。详见 plugins/paste.ts。
+           */
+          handlePaste: handleVSCodePaste
         })
 
         // ---------- 文档变化回调 ----------
@@ -398,6 +411,8 @@ export class WysiwygEditor {
       // 从空行（空段落）按下拖动时，浏览器不会原生划选，这里补一段
       .use(emptyBlockDragPlugins)
       .use(linkPlugins)
+      // 空段落紧跟在分割线 / 公式块后面时，Backspace 删掉空段落并选中上方节点
+      .use(backspacePlugins)
       // 官方链接浮层（playground 同款）：悬停显示「复制 / 编辑 / 删除」，
       // 选中文字后由「设为链接」按钮 / Alt+K 在选区上方弹出输入框
       .use(linkTooltipPlugin)
@@ -410,6 +425,9 @@ export class WysiwygEditor {
       // 这里的 config 必须在 use 之后执行，保证对应的 ctx slice 已注册
       .config(configureSlash)
       .config(configureSelectionTooltip)
+      // 链接 mark 默认 inclusive=true（结束位置之后仍然生效），
+      // 会让链接末尾接着输入的文字也被包进 <a>；这里在 schema 构建前改掉
+      .config(configureLinkMark)
       // 官方链接浮层必须先注册，再覆盖它自己的编辑浮层（顺序不能反）
       .config(configureLinkTooltip)
       .config(configureLinkTooltipChinese)

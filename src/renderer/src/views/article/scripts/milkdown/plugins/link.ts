@@ -22,7 +22,8 @@
  *    （读已有 markdown），没有「打字时识别」的规则，所以这里自己补一条。
  */
 
-import type { MilkdownPlugin } from '@milkdown/kit/ctx'
+import type { Ctx, MilkdownPlugin } from '@milkdown/kit/ctx'
+import type { MarkSchema } from '@milkdown/kit/transformer'
 import { $inputRule, $prose } from '@milkdown/kit/utils'
 import { Plugin, PluginKey, TextSelection } from '@milkdown/kit/prose/state'
 import { InputRule } from '@milkdown/kit/prose/inputrules'
@@ -159,6 +160,40 @@ export const linkInputRule = $inputRule((ctx) => {
     }
   )
 })
+
+/** 链接 mark 的 schema 工厂（milkdown 从 ctx 里取出它来构建 schema） */
+type LinkSchemaFactory = (inner: Ctx) => MarkSchema
+
+/** 包一层工厂，把 link 的 `inclusive` 改成 false */
+const withInclusiveFalse =
+  (getSchema: LinkSchemaFactory): LinkSchemaFactory =>
+  (inner: Ctx): MarkSchema => ({
+    ...getSchema(inner),
+    inclusive: false
+  })
+
+/**
+ * 链接 mark 不「向后延伸」：在链接末尾继续输入的文字是普通文本
+ *
+ * ProseMirror 的 `MarkSpec.inclusive` 默认是 `true` —— mark 在结束位置**之后**
+ * 依然生效；于是光标停在链接末尾时 `$from.marks()` 会带上 link，
+ * 接着输入的字就被吞进 `<a>` 里（黏贴链接后继续打字最明显）。
+ *
+ * 这里在 schema 构建之前把 link 的 `inclusive` 改成 `false`：
+ *
+ * - 只影响「结束边界」这一个位置：链接内部、链接开头的行为都不变
+ * - 解析（`[文字](地址)`）、序列化、链接浮层（`link-edit.ts`）都不读这个属性
+ * - 选区刚好覆盖整个链接时，链接文字本身仍然带着 link mark，复制 / 加粗都正常
+ *
+ * 之所以要放在 `.config()` 里：milkdown 的 schema 在 `SchemaReady` 之前
+ * 由 ctx 里的 spec 工厂构建，`linkSchema.key` 存的就是这个工厂，
+ * 包一层、返回改过的 spec，就等于给内置 schema 打了一个 declarative 的补丁。
+ *
+ * @param ctx milkdown 的 Ctx（必须在 schema 构建前调用）
+ */
+export const configureLinkMark = (ctx: Ctx): void => {
+  ctx.update(linkSchema.key, withInclusiveFalse)
+}
 
 /** 插件集合（`$prose` / `$inputRule` 返回的不是数组，统一 flat 一层） */
 export const linkPlugins = [linkClickPlugin, linkInputRule].flat() as unknown as MilkdownPlugin[]
