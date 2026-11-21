@@ -49,7 +49,7 @@ milkdown/
 
 编辑内容
   ProseMirror 事务
-    -> listener.updated() -> onChange()      只通知「变了」，不做序列化
+    -> docChangePlugin（view.update，同步）-> onChange()   只通知「变了」，不做序列化
     -> 防抖 refreshViewData()
          -> wysiwyg.getMarkdown()            序列化（同时做 URL 归一化）
          -> 目录 / 源码分屏 / 图片列表 / 字数
@@ -60,6 +60,13 @@ milkdown/
     -> wysiwyg.getMarkdown() -> save-article-content IPC -> 写 .md
     -> 主进程 DocLibStatsManager.updateM2P_P2M_M2M() 重新解析引用关系
 ```
+
+⚠️ 变化通知必须是 **同步** 的，不能用 `@milkdown/plugin/listener` 的 `updated`：它是 200ms 防抖，
+回调里的 doc 取的是「它最后一次记录的事务」，而 `syncHeadingIdPlugin` 会在标题文字变化后
+再补一个 `addToHistory: false` 的事务（listener 会主动忽略），于是回调里的 doc 永远比当前 doc
+少一次 id 同步 —— 只改标题的编辑会被当成「过期事务」丢掉，表现为「改标题不标脏（保存无效）+
+右侧目录不刷新」。现在的 `docChangePlugin` 直接比较 `view.state.doc !== prevState.doc`，
+整篇替换期间用 `applying` 屏蔽。
 
 **关键点**：保存到磁盘的永远是标准 markdown，与旧版完全一致，因此主进程的
 `docLibStatsManager`（文章↔文章、文章↔图片引用解析）、双链引用图表都不需要为

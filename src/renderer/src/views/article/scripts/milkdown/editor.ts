@@ -14,7 +14,6 @@
  * | preset/commonmark         | 标准 markdown（标题、列表、引用、代码块、图片、链接…）          |
  * | preset/gfm                | GFM 扩展（表格、任务列表、删除线、自动链接）                    |
  * | plugin/history            | 撤销 / 重做                                                     |
- * | plugin/listener           | 文档变化、选区变化、焦点变化回调                                |
  * | plugin/clipboard          | 复制黏贴时保留 markdown 结构                                    |
  * | plugin/indent             | Tab / Shift-Tab 缩进列表                                        |
  * | plugin/upload             | 拖拽 / 黏贴图片时的上传插槽                                     |
@@ -49,7 +48,6 @@ import { Editor, commandsCtx, defaultValueCtx, editorViewCtx, editorViewOptionsC
 import { commonmark, toggleEmphasisCommand, toggleInlineCodeCommand, toggleStrongCommand } from '@milkdown/kit/preset/commonmark'
 import { gfm, insertTableCommand, toggleStrikethroughCommand } from '@milkdown/kit/preset/gfm'
 import { history } from '@milkdown/kit/plugin/history'
-import { listener, listenerCtx } from '@milkdown/kit/plugin/listener'
 import { clipboard } from '@milkdown/kit/plugin/clipboard'
 import { indent } from '@milkdown/kit/plugin/indent'
 import { upload, uploadConfig } from '@milkdown/kit/plugin/upload'
@@ -281,6 +279,40 @@ export class WysiwygEditor {
     })
 
     /**
+     * 文档变化通知（同步）
+     *
+     * 不再用 `@milkdown/plugin/listener` 的 `updated` —— 它是 **200ms 防抖**，
+     * 回调里的 `doc` 是「它最后一次记录到的事务」携带的文档，而
+     * commonmark 预设的 `syncHeadingIdPlugin` 会在**标题文字变化之后**再补发一个
+     * `addToHistory: false` 的事务去同步 heading 的 id（见
+     * `node_modules/@milkdown/preset-commonmark/lib/index.js` 的 `syncHeadingIdPlugin`）。
+     * listener 会主动忽略 `addToHistory: false` 的事务，于是防抖回调里的 doc
+     * 永远停在「标题文字已经改了、id 还没改」那一版，与当前 doc 不是同一个对象。
+     *
+     * 之前的写法用 `doc !== 当前 doc` 判断「事务已过期」，结果是：
+     * **只改标题**的编辑会被整条丢掉 → 页面收不到 `onChange`
+     * → 不标脏（保存被跳过）+ 不刷新目录，正是这个 bug 的根因。
+     *
+     * 改成在 `view.update` 里同步判断：doc 真的变了就通知。
+     * - 整篇替换（切换文章）由 `this.applying` 屏蔽，不会把刚打开的文章标脏
+     * - 同步通知没有「防抖窗口」，打完字立刻切文章也不会漏掉最后一次改动
+     */
+    const docChangePlugin = $prose(() => {
+      const key = new PluginKey('BL_DOC_CHANGE')
+      return new Plugin({
+        key,
+        view: () => ({
+          update: (view, prevState) => {
+            if (this.applying) return
+            if (view.state.doc === prevState.doc) return
+            this.dirty = true
+            onChange?.()
+          }
+        })
+      })
+    })
+
+    /**
      * 链接浮层的两处定制
      *
      * 1. 文案中文化（官方默认是英文 + emoji 图标）
@@ -323,27 +355,6 @@ export class WysiwygEditor {
            */
           handlePaste: handleVSCodePaste
         })
-
-        // ---------- 文档变化回调 ----------
-        ctx
-          .get(listenerCtx)
-          .updated((editorCtx: any, doc: any) => {
-            if (this.applying) return
-            /*
-             * ⚠️ `listener.updated` 是 **200ms 防抖**的，而 `applying` 一个微任务就复位了。
-             * 「刚打完字就切文章」时，回调会在 200ms 后才执行，手里拿着**上一篇**的
-             * 事务（`doc` 是旧文档）；此时 `applying` 早已是 false，于是这篇刚打开、
-             * 一个字没改的文章会被标成「有未保存内容」，还会触发一次多余保存。
-             *
-             * 判据：回调里的 doc 必须就是当前文档，否则说明这是整篇替换前残留的事务。
-             */
-            if (doc !== editorCtx.get(editorViewCtx).state.doc) return
-            this.dirty = true
-            onChange?.()
-          })
-          .blur(() => {
-            // 失焦时不做处理，保留扩展点
-          })
       })
 
       // ---------- 预设 ----------
@@ -352,7 +363,6 @@ export class WysiwygEditor {
 
       // ---------- 官方插件 ----------
       .use(history)
-      .use(listener)
       .use(clipboard)
       .use(indent)
       .use(cursor)
@@ -417,6 +427,8 @@ export class WysiwygEditor {
       // 选中文字后由「设为链接」按钮 / Alt+K 在选区上方弹出输入框
       .use(linkTooltipPlugin)
       .use(shortcutPlugin)
+      // 文档变化通知（同步，取代 plugin/listener 的 200ms 防抖回调）
+      .use(docChangePlugin)
       .use(slashPlugins)
       .use(selectionTooltipPlugins)
       .use(searchPlugins)
@@ -476,7 +488,11 @@ export class WysiwygEditor {
       this.editor.action(replaceAll(markdown ?? '', true))
       this.dirty = false
     } finally {
-      // 等一次微任务，确保 listener 的同步回调已经执行完
+      /*
+       * 等一次宏任务再复位：`replaceAll` 会重建 EditorState，随后
+       * `syncHeadingIdPlugin` 还会补一个同步 heading id 的事务，
+       * 这些都属于「整篇替换」的一部分，不能被当成用户编辑标脏。
+       */
       setTimeout(() => (this.applying = false), 0)
     }
   }
