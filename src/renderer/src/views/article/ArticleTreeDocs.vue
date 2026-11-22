@@ -1,7 +1,7 @@
 <template>
   <!-- 文件夹操作 -->
   <div class="doc-tree-operator">
-     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文章">
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文章">
       <div class="iconbl bl-fileadd-line" @click="addArticleToRoot()"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文件夹">
@@ -34,7 +34,9 @@
         </template>
       </el-input>
     </div>
-    <div class="iconbl bl-correlation-line" @click="openArticleReferenceWindow()"></div>
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="引用知识网络">
+      <div class="iconbl bl-correlation-line" @click="openArticleReferenceWindow()"></div>
+    </el-tooltip>
   </div>
   <!--   -->
   <div

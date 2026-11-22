@@ -16,6 +16,7 @@ const isMac = platform() === 'darwin'
 export const keymaps = {
   save: isMac ? '⌘ S' : 'Ctrl + S',
   hideDocs: isMac ? '⌘ 1' : 'Alt + 1',
+  openWebCollect: isMac ? '⌘ 2' : 'Alt + 2',
 
   blod: isMac ? '⌘ B' : 'Ctrl + B（或 Alt + B）',
   italic: isMac ? '⌘ I' : 'Ctrl + I（或 Alt + I）',

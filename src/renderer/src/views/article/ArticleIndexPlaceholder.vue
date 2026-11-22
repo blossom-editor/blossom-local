@@ -1,32 +1,25 @@
 <template>
   <div class="article-index-placeholder-root">
-    <bl-row just="center" align="flex-end">
-      <!-- <div class="iconbl bl-delete-line">
-        <div class="desc-line">
-          <div class="desc-text">文章回收站</div>
-        </div>
-      </div> -->
-      <!-- <div class="iconbl bl-search-line">
-        <div class="desc-line">
-          <div class="desc-text">全文搜索</div>
-        </div>
-      </div>
-      <div class="iconbl bl-a-fileadd-line">
+    <!-- <bl-row just="center" align="flex-end">
+      <div class="iconbl bl-fileadd-line">
         <div class="desc-line">
           <div class="desc-text">新增文档</div>
         </div>
-      </div> -->
-      <!-- <div class="iconbl bl-correlation-line">
+      </div>
+      <div class="iconbl bl-correlation-line">
         <div class="desc-line">
           <div class="desc-text">引用知识网络</div>
         </div>
-      </div> -->
-    </bl-row>
-    <!-- <bl-row just="center"> -->
+      </div>
+    </bl-row> -->
     <div class="keymaps-container">
       <bl-row>
         <div class="label">隐藏菜单</div>
         <div class="key">{{ keymaps.hideDocs }}</div>
+      </bl-row>
+      <bl-row>
+        <div class="label">网页收藏</div>
+        <div class="key">{{ keymaps.openWebCollect }}</div>
       </bl-row>
       <bl-row>
         <div class="label">斜杠命令</div>
@@ -41,8 +34,6 @@ import { keymaps } from './scripts/editor-tools'
 </script>
 
 <style scoped lang="scss">
-@import '../doc/tree-workbench.scss';
-
 .article-index-placeholder-root {
   @include box(100%, 100%);
   @include flex(column, center, center);
@@ -86,9 +77,8 @@ import { keymaps } from './scripts/editor-tools'
     }
   }
 
-  .bl-search-line {
+  .bl-fileadd-line {
     font-size: 22px;
-    padding-bottom: 5px;
     .desc-line {
       border-left: none;
       border-bottom: none;
@@ -121,15 +111,14 @@ import { keymaps } from './scripts/editor-tools'
   }
 
   .bl-correlation-line {
-    font-size: 40px;
-    padding-bottom: 0px;
+    font-size: 22px;
 
     .desc-line {
       border-top: none;
       border-right: none;
       height: 20px;
       width: 30px;
-      left: 20px;
+      left: 13px;
 
       .desc-text {
         left: 35px;

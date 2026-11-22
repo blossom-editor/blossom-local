@@ -12,7 +12,7 @@
     popper-class="web-collect-popover"
     @show="loadConfig()">
     <template #reference>
-      <div class="web-collect" title="网页收藏 (Alt + 2)">
+      <div class="web-collect">
         <div class="iconbl bl-adhibition-line"></div>
       </div>
     </template>
