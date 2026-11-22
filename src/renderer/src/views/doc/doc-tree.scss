@@ -1,12 +1,13 @@
-.doc-workbench {
-  @include box(100%, 50px);
-}
+$operator-height: 50px;
+$trees-height: calc(100% - $operator-height);
 
 // 操作树状菜单的工具栏
 .doc-tree-operator {
-  @include box(100%, 30px);
-  @include flex(row, center, center);
+  @include box(100%, $operator-height);
+  @include flex(row, center, flex-end);
   @include themeColor(#909399, #969696);
+  border-bottom: 1px solid var(--el-border-color);
+  padding-bottom: 5px;
   position: relative;
 
   .iconbl {
@@ -62,7 +63,8 @@
 }
 
 .doc-trees-container {
-  @include box(100%, calc(100% - 80px));
+  @include box(100%, $trees-height);
+  padding-top: 5px;
   overflow-y: scroll;
   overflow-x: hidden;
 

@@ -1,11 +1,7 @@
 <template>
   <!-- 文件夹操作 -->
-  <div class="doc-workbench">
-    <ArticleTreeWorkbench ref="ArticleTreeWorkbenchRef"> </ArticleTreeWorkbench>
-  </div>
-  <!--   -->
   <div class="doc-tree-operator">
-    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文章">
+     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文章">
       <div class="iconbl bl-fileadd-line" @click="addArticleToRoot()"></div>
     </el-tooltip>
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="根目录下新建文件夹">
@@ -38,7 +34,9 @@
         </template>
       </el-input>
     </div>
+    <div class="iconbl bl-correlation-line" @click="openArticleReferenceWindow()"></div>
   </div>
+  <!--   -->
   <div
     ref="DocTreeContainer"
     class="doc-trees-container"
@@ -147,9 +145,7 @@ import { useDraggable } from '@renderer/scripts/draggable'
 // util
 import { pathJoin, platformText, inValidateFileName } from '@renderer/assets/utils/util'
 import { isNotBlank, isBlank, isEmptyArr } from '@renderer/assets/utils/obj'
-import { writeText, openNewArticleWindow } from '@renderer/assets/utils/electron'
-// components
-import ArticleTreeWorkbench from './ArticleTreeWorkbench.vue'
+import { writeText, openNewArticleWindow, openNewArticleReferenceWindow } from '@renderer/assets/utils/electron'
 
 // const route = useRoute()
 const docLibStore = useDocLibStore()
@@ -342,6 +338,10 @@ const showTreeFilter = () => {
   if (isShowTreeFilter.value) {
     DocTreeSearchInput.value.focus()
   }
+}
+
+const openArticleReferenceWindow = () => {
+  openNewArticleReferenceWindow()
 }
 
 /**

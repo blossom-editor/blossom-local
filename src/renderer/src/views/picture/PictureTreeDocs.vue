@@ -1,8 +1,4 @@
 <template>
-  <!-- 文件夹操作 -->
-  <div class="doc-workbench">
-    <Workbench></Workbench>
-  </div>
   <div class="doc-tree-operator">
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="查看根目录图片">
       <div class="iconbl bl-a-boxchoice-line" @click="clickRootDoc()"></div>
@@ -37,6 +33,7 @@
         </template>
       </el-input>
     </div>
+    <div class="iconbl" style="width: 24px;user-select: none"></div>
   </div>
   <div
     ref="DocTreeContainer"
@@ -141,7 +138,6 @@ import { isBlank, isNotBlank, isEmptyArr } from '@renderer/assets/utils/obj'
 import { getFilePrefix, inValidateFileName, platformText } from '@renderer/assets/utils/util.js'
 // components
 import Notify from '@renderer/scripts/notify'
-import Workbench from './PictureTreeWorkbench.vue'
 import { docTreeApi, openFileLocation } from '@renderer/api/docLib'
 import { copyMarkdownUrl, copyUrl, pictureUseNotify } from './scripts/picture.js'
 
