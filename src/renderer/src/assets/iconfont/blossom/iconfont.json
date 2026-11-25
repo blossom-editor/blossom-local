@@ -6,6 +6,27 @@
   "description": "",
   "glyphs": [
     {
+      "icon_id": "44599170",
+      "name": "close-all",
+      "font_class": "close-all",
+      "unicode": "e61d",
+      "unicode_decimal": 58909
+    },
+    {
+      "icon_id": "39180594",
+      "name": "pin-fill",
+      "font_class": "pin-fill",
+      "unicode": "e7b0",
+      "unicode_decimal": 59312
+    },
+    {
+      "icon_id": "39180619",
+      "name": "pin",
+      "font_class": "pin",
+      "unicode": "e7b3",
+      "unicode_decimal": 59315
+    },
+    {
       "icon_id": "5203274",
       "name": "瞄准",
       "font_class": "collimation",
