@@ -191,6 +191,17 @@
       <!-- 其他工具 -->
       <div class="divider"></div>
       <el-tooltip
+        :content="position === 'top' ? '标签页停靠在左侧' : '标签页停靠在顶部'"
+        popper-class="is-small"
+        effect="light"
+        placement="top"
+        transition="none"
+        :hide-after="0"
+        :show-arrow="false"
+        :offset="10">
+        <div :class="['iconbl', position === 'top' ? 'bl-layout-column-line' : 'bl-a-listview-line']" @click="togglePosition"></div>
+      </el-tooltip>
+      <el-tooltip
         content="回到顶部"
         popper-class="is-small"
         effect="light"
@@ -269,6 +280,7 @@ import { computed, onUnmounted, ref } from 'vue'
 import { secondsToDatetime, formateMs } from '@renderer/assets/utils/util'
 import { ElNotification } from 'element-plus'
 import ShortcutKeyDesc from './ShortcutkeyDesc.vue'
+import { position, togglePosition } from './scripts/article-tabs'
 
 const emits = defineEmits(['save', 'command', 'toggleSource', 'scrollTop', 'scrollBottom'])
 

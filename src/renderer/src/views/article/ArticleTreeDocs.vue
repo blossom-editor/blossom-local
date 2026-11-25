@@ -144,6 +144,7 @@ import { DOC_LIB_ROOT_FOLDER_ID, getChildFileCountColor } from '@renderer/views/
 import { isShowSvg } from '@renderer/views/doc/doc-tree-detail'
 import { useLifecycle } from '@renderer/scripts/lifecycle'
 import { useDraggable } from '@renderer/scripts/draggable'
+import { trackTab, syncTabsFromTree, closeTab, openRequest } from './scripts/article-tabs'
 // util
 import { pathJoin, platformText, inValidateFileName } from '@renderer/assets/utils/util'
 import { isNotBlank, isBlank, isEmptyArr } from '@renderer/assets/utils/obj'
@@ -175,6 +176,11 @@ watch(
 
 //#region ----------------------------------------< 树状列表 >--------------------------------------
 let editorLoadingTimeout: NodeJS.Timeout
+/**
+ * 文档树还没渲染时挂起的标签页打开请求
+ * (首次加载 / 刚切换文档库时 DocTreeRef 还不存在, 不能把这种"找不到"当成脏标签)
+ */
+let pendingOpenId = ''
 const DocTreeRef = ref()
 const docTreeLoading = ref(true) // 文档菜单的加载动画
 const docTreeData = ref<DocTree[]>([]) // 文档菜单
@@ -234,6 +240,24 @@ const refreshDocTree = () => {
 }
 
 /**
+ * 写入文档树数据, 并顺带校正标签页
+ *
+ * 所有"刷新树"的地方都走这里, 以后新增刷新点也不会漏掉标签页同步:
+ * 重命名要跟着改标题, 删除(尤其是删文件夹)要把对应标签剪掉
+ */
+const applyDocTree = (data?: DocTree[]) => {
+  docTreeData.value = data ?? []
+  syncTabsFromTree(docTreeData.value)
+  // 树是 v-if 渲染的, 要到下一帧 DocTreeRef 才存在, 挂起的打开请求在这里补上
+  nextTick(() => {
+    if (!pendingOpenId || !DocTreeRef.value) return
+    const id = pendingOpenId
+    pendingOpenId = ''
+    openDocFromTab(id)
+  })
+}
+
+/**
  * 获取文档树状列表
  *
  * @param callback 查询后的回调方法
@@ -242,7 +266,7 @@ const getDocTree = (callback?: () => void) => {
   startLoading()
   docTreeApi({ type: 'ARTICLE' })
     .then((resp) => {
-      docTreeData.value = resp.data!
+      applyDocTree(resp.data)
       if (callback) callback()
     })
     .finally(() => endLoading())
@@ -262,6 +286,10 @@ const clickCurDoc = (tree: DocTree, node: Node, treeNode: TreeNode, event: Mouse
   }
   closeTreeDocsMenuShow(event)
   setDocTreeCurrentKey({ id: tree.id, parentId: node.parent.data.id, type: tree.type }, node, treeNode, event)
+  // 只有文章进标签页, 文件夹点击只是选中
+  if (tree.type === 'ARTICLE') {
+    trackTab({ id: tree.id, name: tree.formatName || tree.name, path: tree.path })
+  }
   emits('clickDoc', tree)
 }
 
@@ -331,6 +359,60 @@ const setDocTreeCurrentKey = (tree: { id: string; parentId: string; type: DocTyp
     DocTreeRef.value.setCurrentKey(tree.id)
   }
 }
+
+/**
+ * 从标签页打开文章
+ *
+ * 与「点击树节点」走完全相同的路径: 先选中节点, 再 emits('clickDoc'),
+ * 文章加载、切换前保存、滚动位置记忆全部由 ArticleIndex 的 clickCurDoc 负责,
+ * 这里不重复实现任何加载逻辑
+ */
+const openDocFromTab = (id: string) => {
+  const tree = DocTreeRef.value
+  if (!tree) {
+    // 树还没渲染(首次加载 / 刚切换文档库): 不能当成脏数据, 挂起到数据到位
+    pendingOpenId = id
+    return
+  }
+  const node: Node | null = tree.getNode(id)
+  if (!node || node.data.type !== 'ARTICLE') {
+    // 树已就绪且确实没有这个节点: 标签是脏数据(文件已被删除)
+    closeTab(id)
+    return
+  }
+
+  // 有筛选时节点是隐藏的, 先清空筛选(watch 会调用 DocTreeRef.filter(''))
+  if (isNotBlank(treeFilterText.value)) {
+    treeFilterText.value = ''
+  }
+
+  // 展开所有上级, 让高亮节点真正出现在 DOM 里
+  node.expand(undefined, true)
+  // expand() 不会触发 @nodeExpand, 展开集合必须手工维护,
+  // 否则刷新文档树后 default-expanded-keys 里没有这些 id, 又会折叠回去
+  let parent = node.parent
+  while (parent && parent.level > 0) {
+    docTreeCurrentExpandIdSet.value.add(parent.data.id)
+    parent = parent.parent
+  }
+
+  setDocTreeCurrentKey({ id, parentId: node.parent?.data?.id ?? '', type: 'ARTICLE' })
+  emits('clickDoc', node.data)
+
+  // 展开后节点位置才稳定, 等一次渲染 + 一帧再滚动到可见
+  nextTick(() => {
+    requestAnimationFrame(() => {
+      const ele = document.getElementById('article-doc-wrapper-' + id)
+      if (ele && DocTreeContainer.value) {
+        ;(DocTreeContainer.value as Element).scrollTop = ele.offsetTop
+      }
+    })
+  })
+}
+
+watch(openRequest, (req) => {
+  if (req) openDocFromTab(req.id)
+})
 
 /**
  * 显示过滤框
@@ -468,7 +550,7 @@ const handleDrop = (drag: Node, enter: Node, dropType: NodeDropType, _event: Dra
     return
   }
   moveFileApi(req!)
-    .then((resp) => (docTreeData.value = resp.data!))
+    .then((resp) => applyDocTree(resp.data))
     .catch(() => getDocTree())
 }
 
@@ -613,7 +695,7 @@ const blurArticleNameInput = (doc: DocTree) => {
   articleUpdNameApi(req)
     .then((resp) => {
       resetUpdateState()
-      docTreeData.value = resp.data!
+      applyDocTree(resp.data)
     })
     .catch(() => {
       resetUpdateState()
@@ -732,7 +814,7 @@ const addFile = (parentPath: string, docTree: DocTree[] | undefined, type: DocTy
     newPath = newPath + '' + folderSuffix + '.md'
     createMarkdownApi({ path: newPath }).then((resp) => {
       if (resp.ok) {
-        docTreeData.value = resp.data!.docTree!
+        applyDocTree(resp.data!.docTree)
         renameNewFile(resp.data!.newFileId, parentId)
       }
     })
@@ -740,7 +822,7 @@ const addFile = (parentPath: string, docTree: DocTree[] | undefined, type: DocTy
     newPath = newPath + '' + folderSuffix
     createFolderApi({ path: newPath }).then((resp) => {
       if (resp.ok) {
-        docTreeData.value = resp.data!.docTree!
+        applyDocTree(resp.data!.docTree)
         renameNewFile(resp.data!.newFileId, parentId)
       }
     })
@@ -790,7 +872,7 @@ const deleteDoc = () => {
         }
       }
       if (resp.data) {
-        docTreeData.value = resp.data
+        applyDocTree(resp.data)
       }
 
       emits('clearCurDoc', curDoc.value)

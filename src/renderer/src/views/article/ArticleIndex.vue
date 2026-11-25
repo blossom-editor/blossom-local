@@ -9,6 +9,9 @@
     </div>
     <div class="resize-divider-vertical" ref="ResizeDocsDividerRef"></div>
 
+    <!-- 标签页（左侧停靠）：与顶部挂载点共用同一份状态，由 position 决定挂在哪一侧 -->
+    <ArticleTabs v-if="tabs.length > 0 && position === 'left'" layout="left" @close-article="closeCurArticleByTab"></ArticleTabs>
+
     <!-- 编辑区 -->
     <div class="editor-container" ref="EditorContainerRef" v-loading="editorLoading" element-loading-text="正在读取文章内容...">
       <!-- 工具栏 -->
@@ -22,6 +25,9 @@
           @scroll-bottom="scrollToBottom">
         </EditorTools>
       </div>
+
+      <!-- 标签页（顶部停靠）：工具栏下方、正文上方 -->
+      <ArticleTabs v-if="tabs.length > 0 && position === 'top'" layout="top" @close-article="closeCurArticleByTab"></ArticleTabs>
 
       <!-- 主体：所见即所得编辑器 + 源码分屏 + 右侧目录 -->
       <div class="editor-body" :style="editorFontStyle">
@@ -197,6 +203,7 @@ import { isElectron, pathJoin } from '@renderer/assets/utils/util'
 import { openExtenal, readText, openNewArticleWindow } from '@renderer/assets/utils/electron'
 // component
 import ArticleTreeDocs from './ArticleTreeDocs.vue'
+import ArticleTabs from './ArticleTabs.vue'
 import ArticleIndexPlaceholder from './ArticleIndexPlaceholder.vue'
 import EditorTools from './EditorTools.vue'
 import EditorToc from './EditorToc.vue'
@@ -206,6 +213,7 @@ import AticleTreeDocBottom from './AticleTreeDocBottom.vue'
 // ts
 import { treeToInfo, provideKeyCurArticleInfo, isArticle, DefaultDocTree, getDocByPath } from '@renderer/views/doc/doc'
 import { ArticleReference, countWords, parseImageRefs } from './scripts/article'
+import { tabs, position } from './scripts/article-tabs'
 import { picCacheWrapper, protocolWrapper, picCacheRefresh, uploadForm, DefaultPicture } from '@renderer/views/picture/scripts/picture'
 import { useResizeVertical } from '@renderer/scripts/resize-devider-vertical'
 import { useArticleHtmlEvent } from './scripts/article-html-event'
@@ -474,6 +482,19 @@ const clearCurDoc = (tree: DocTree) => {
   if (curDoc.value && curDoc.value!.id === tree.id) {
     curDoc.value = undefined
   }
+}
+
+/**
+ * 关闭最后一个标签页
+ *
+ * 标签页全部关掉 = 没有打开的文档, 所以正文也要一起收尾。
+ * 清空之前先保存, 语义与 clearCurDoc 一致但不会丢掉未保存的内容。
+ */
+const closeCurArticleByTab = async () => {
+  await saveCurArticleContent(true)
+  curArticle.value = undefined
+  curDoc.value = undefined
+  setNewState('')
 }
 
 /**
