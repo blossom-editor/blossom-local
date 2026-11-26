@@ -103,7 +103,7 @@ const buildWindow = (_title: string): BrowserWindow => {
   Menu.setApplicationMenu(null)
   let win = new BrowserWindow({
     show: true,
-    width: 1400,
+    width: 1500,
     height: 1022,
     minWidth: 972,
     minHeight: 700,
