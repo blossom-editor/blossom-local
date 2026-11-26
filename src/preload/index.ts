@@ -89,6 +89,14 @@ const rednerToIpc = {
     ipcRenderer.send('open-new-article-referece-window', article)
   },
   /**
+   * 新窗口查看文章引用（WebGL 渲染）
+   * @param article 查看指定文章的引用关系
+   * @returns
+   */
+  openNewArticleGraphSigmaWindow: (article?: any): void => {
+    ipcRenderer.send('open-new-article-graph-sigma-window', article)
+  },
+  /**
    * 新窗口查看文章编辑历史记录
    * @param article 文章信息
    * @returns

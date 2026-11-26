@@ -206,7 +206,7 @@ const initTray = () => {
  * articleReference: 文章引用网络
  * articleLog: 文章编辑记录
  */
-type WindowType = 'article' | 'wlIcon' | 'articleReference' | 'articleLog'
+type WindowType = 'article' | 'wlIcon' | 'articleReference' | 'articleGraphSigma' | 'articleLog'
 const newWindowMaps = new Map<string, BrowserWindow | undefined>()
 
 /**
@@ -232,6 +232,8 @@ function createNewWindow(windowType: WindowType, title: string, id?: number) {
     path = '/iconListIndexWindow'
   } else if (windowType === 'articleReference') {
     path = '/articleReferenceWindow?articleId=' + id
+  } else if (windowType === 'articleGraphSigma') {
+    path = '/articleGraphSigma?articleId=' + id
   } else if (windowType === 'articleLog') {
     path = '/articleHistory?articleId=' + id
   }
@@ -418,6 +420,18 @@ const initOnMainWindow = (mainWindow: BrowserWindow): void => {
       id = article.id
     }
     createNewWindow('articleReference', name, id)
+  })
+  /**
+   * 文章引用网络（WebGL 渲染）
+   */
+  ipcMain.on('open-new-article-graph-sigma-window', (_: IpcMainEvent, article?: any): void => {
+    let name = '文章引用网络 (WebGL)'
+    let id: number | undefined
+    if (article) {
+      name = article.name + '引用网络 (WebGL)'
+      id = article.id
+    }
+    createNewWindow('articleGraphSigma', name, id)
   })
   /**
    * 文章编辑记录

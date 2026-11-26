@@ -88,6 +88,19 @@ export const openNewArticleReferenceWindow = (article?: any) => {
 }
 
 /**
+ * 打开文章引用窗口（WebGL 版）
+ * @param article 指定文章的引用
+ */
+export const openNewArticleGraphSigmaWindow = (article?: any) => {
+  if (isElectron()) {
+    window.electronAPI.openNewArticleGraphSigmaWindow(article)
+  } else {
+    const href = router.resolve({ name: 'ArticleGraphSigma', path: `/articleGraphSigma`, query: { articleId: article?.id } })
+    window.open(href.href, '_blank')
+  }
+}
+
+/**
  * 使用默认浏览器打开链接
  * @param url 访问链接
  */

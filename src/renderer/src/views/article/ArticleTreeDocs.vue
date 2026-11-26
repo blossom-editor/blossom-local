@@ -37,6 +37,9 @@
     <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="引用知识网络">
       <div class="iconbl bl-correlation-line" @click="openArticleReferenceWindow()"></div>
     </el-tooltip>
+    <el-tooltip effect="light" popper-class="is-small" placement="top" :hide-after="0" content="引用知识网络 (WebGL / sigma)">
+      <div class="iconbl bl-a-relation3-line" @click="openArticleGraphSigmaWindow()"></div>
+    </el-tooltip>
   </div>
   <!--   -->
   <div
@@ -148,7 +151,12 @@ import { trackTab, syncTabsFromTree, closeTab, openRequest } from './scripts/art
 // util
 import { pathJoin, platformText, inValidateFileName } from '@renderer/assets/utils/util'
 import { isNotBlank, isBlank, isEmptyArr } from '@renderer/assets/utils/obj'
-import { writeText, openNewArticleWindow, openNewArticleReferenceWindow } from '@renderer/assets/utils/electron'
+import {
+  writeText,
+  openNewArticleWindow,
+  openNewArticleReferenceWindow,
+  openNewArticleGraphSigmaWindow
+} from '@renderer/assets/utils/electron'
 
 // const route = useRoute()
 const docLibStore = useDocLibStore()
@@ -426,6 +434,10 @@ const showTreeFilter = () => {
 
 const openArticleReferenceWindow = () => {
   openNewArticleReferenceWindow()
+}
+
+const openArticleGraphSigmaWindow = () => {
+  openNewArticleGraphSigmaWindow()
 }
 
 /**

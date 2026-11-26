@@ -12,6 +12,7 @@ import IconListIndex from '@renderer/components/IconList.vue'
 // 新窗口页面
 import ArticleViewWindow from '@renderer/views/article/ArticleViewWindow.vue'
 import ArticleReference from '@renderer/views/article/ArticleReferenceChartGraph.vue'
+import ArticleGraphSigma from '@renderer/views/article/ArticleGraphSigma.vue'
 
 router.addRoute({
   path: '/',
@@ -49,5 +50,11 @@ router.addRoute({
   path: '/articleReferenceWindow',
   name: 'ArticleReferenceWindow',
   component: ArticleReference,
+  meta: { keepAlive: true }
+})
+router.addRoute({
+  path: '/articleGraphSigma',
+  name: 'ArticleGraphSigma',
+  component: ArticleGraphSigma,
   meta: { keepAlive: true }
 })

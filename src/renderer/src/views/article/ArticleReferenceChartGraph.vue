@@ -51,15 +51,29 @@ import { isNotBlank, isNotNull } from '@renderer/assets/utils/obj'
 import { getPrimaryColor } from '@renderer/scripts/global-theme'
 import AppHeader from '@renderer/components/AppHeader.vue'
 import createLayout from 'mgraph.forcelayout'
-import createGraph, { NodeId } from 'mgraph.graph'
+import createGraph from 'mgraph.graph'
 
-const graph = createGraph()
-const layout = createLayout(graph, {
+/**
+ * 力布局只用于「预算坐标」，算完即弃。
+ * mgraph 的 layout 绑定在 graph 实例上，且 dispose 之后不能复用；
+ * 旧实现把 graph/layout 放在模块作用域反复使用，第二次加载时链路会重复累加、
+ * 位置还带着上一轮的状态，越点越慢。
+ */
+const LAYOUT_OPTIONS = {
   dimensions: 2, // 默认为2D[reference:4]
   springLength: 2, // 理想边长[reference:5]
   springCoefficient: 0.8, // 弹簧强度[reference:6]
   gravity: -25 // 重力 (负值为斥力)[reference:7]
-})
+}
+
+// 大图降级阈值：超过后关掉标签避让和邻接聚焦，这两项在大图上都要遍历全图
+const LABEL_NODE_LIMIT = 200
+const LABEL_OVERLAP_LIMIT = 800
+const FOCUS_ADJACENCY_LIMIT = 800
+// 边符号是大图绘制成本的大头，超过该节点数就只画线
+const EDGE_SYMBOL_LIMIT = 500
+// 放大到该倍率以上才显示标签
+const LABEL_ZOOM_THRESHOLD = 1.5
 
 //////////////
 
@@ -79,7 +93,6 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', windowResize)
-  layout.dispose()
 })
 
 // -------------------- data
@@ -133,6 +146,9 @@ const getArticleRefList = (onlyInner: boolean) => {
     if (!resp.data || !resp.data.nodes) {
       return
     }
+
+    // 连接数单遍统计，原来每个节点都要扫一遍全部 links（O(n×m)）
+    const degree = buildDegreeMap(resp.data.links)
     nodes = resp.data!.nodes.map((node: ArticleRefNode) => {
       if (node.type == 'INNER_ARTICLE') {
         node.itemStyle = inner.itemStyle
@@ -146,73 +162,79 @@ const getArticleRefList = (onlyInner: boolean) => {
         node.label = outside.label
         stat.value.outside += 1
       }
-      node.symbolSize = getLinkCount(node.id, resp.data!.links)
+      // 与原 getLinkCount 等价：基数 10，每连接 +1，上限 50
+      node.symbolSize = Math.min(10 + (degree.get(node.id) ?? 0), 50)
       return node
     })
     links = resp.data.links
 
-    nodes.forEach((node: { id: NodeId }) => {
-      graph.addNode(node.id)
-    })
-
-    links.forEach((link: { source: NodeId; target: NodeId }) => {
-      graph.addLink(link.source, link.target)
-    })
-
     let start = Date.now()
-    const iterations = 200
-    for (let i = 0; i < iterations; i++) {
-      if (layout.step()) {
-        break
+    const positions = precomputeLayout(nodes, links)
+    nodes.forEach((node: { id: string; x: number; y: number }) => {
+      const pos = positions.get(node.id)
+      if (pos) {
+        node.x = pos.x
+        node.y = pos.y
       }
-    }
-    console.log(`layout took ${Date.now() - start}ms`)
-
-    start = Date.now()
-    graph.forEachNode((graphNode: any) => {
-      const pos = layout.getNodePosition(graphNode.id)
-      nodes.forEach((data: { id: any; x: number; y: number }) => {
-        if (data.id === graphNode.id) {
-          data.x = pos.x
-          data.y = pos.y
-        }
-      })
     })
-
-    console.log(`getNodePosition took ${Date.now() - start}ms`)
+    console.log(`layout + position map took ${Date.now() - start}ms`)
 
     start = Date.now()
     randerChat2(nodes)
     console.log(`randerChat2 took ${Date.now() - start}ms`)
-
-    layout.dispose()
-    //
   })
 }
 
 /**
- * 统计节点被被链接的数量, 用于计算 symbolSize
- * @param name  节点名称
- * @param links 全部节点关系
+ * 单遍统计每个节点的连接数，用于计算 symbolSize。
+ * 旧实现每算一个节点都要从头发扫一遍全部 links，整体是 O(n×m)。
  */
-const getLinkCount = (name: string, links: ArticleRefLink[]): number => {
-  let count: number = 10
-  for (let i = 0; i < links.length; i++) {
-    if (count >= 50) {
+const buildDegreeMap = (allLinks: ArticleRefLink[]): Map<string, number> => {
+  const degree = new Map<string, number>()
+  if (!allLinks) {
+    return degree
+  }
+  for (let i = 0; i < allLinks.length; i++) {
+    const link = allLinks[i]
+    degree.set(link.source, (degree.get(link.source) ?? 0) + 1)
+    degree.set(link.target, (degree.get(link.target) ?? 0) + 1)
+  }
+  return degree
+}
+
+/**
+ * 用力布局预跑若干步，拿到 id -> 坐标 的映射。
+ * 图和布局实例都是本次专用的，算完立刻 dispose，避免跨次加载互相污染。
+ */
+const precomputeLayout = (
+  graphNodes: { id: string }[],
+  graphLinks: ArticleRefLink[]
+): Map<string, { x: number; y: number }> => {
+  const positions = new Map<string, { x: number; y: number }>()
+  const layoutGraph = createGraph()
+  const forceLayout = createLayout(layoutGraph, LAYOUT_OPTIONS)
+
+  graphNodes.forEach((node) => layoutGraph.addNode(node.id))
+  graphLinks.forEach((link) => layoutGraph.addLink(link.source, link.target))
+
+  const iterations = 200
+  for (let i = 0; i < iterations; i++) {
+    if (forceLayout.step()) {
       break
     }
-    let link = links[i]
-    if (link.source == name) {
-      count += 1
-    }
-    if (link.target == name) {
-      count += 1
-    }
   }
-  return count
+
+  layoutGraph.forEachNode((graphNode) => {
+    const pos = forceLayout.getNodePosition(graphNode.id)
+    positions.set(graphNode.id as string, { x: pos.x, y: pos.y })
+  })
+
+  forceLayout.dispose()
+  return positions
 }
 
 const randerChat2 = (nodes1: any[]) => {
+  const useEdgeSymbol = nodes1.length <= EDGE_SYMBOL_LIMIT
   chartGraph.setOption({
     tooltip: {
       // position: [20, 50],
@@ -259,7 +281,7 @@ const randerChat2 = (nodes1: any[]) => {
         zoom: 0.5,
         roam: true,
         label: {
-          show: nodes1.length > 200 ? false : true,
+          show: nodes1.length > LABEL_NODE_LIMIT ? false : true,
           position: 'bottom',
           // formatter: '{b}'
           formatter: (param: any) => {
@@ -271,18 +293,25 @@ const randerChat2 = (nodes1: any[]) => {
           }
         },
         labelLayout: {
-          hideOverlap: true // 标签重叠时进行遮盖
+          // 标签避让要遍历全部标签做碰撞检测，大图直接关掉
+          hideOverlap: nodes1.length <= LABEL_OVERLAP_LIMIT
         },
         lineStyle: {
           color: isDark.value ? '#5E5E5E' : '#7E7E7E',
           width: 1,
           curveness: 0 // 直线或曲线
         },
-        edgeSymbol: ['circle', 'arrow'], // 箭头的开始, 结束图形
-        edgeSymbolSize: [0, 5], // 箭头的开始, 结束图形大小
+        // 每条边会额外建 2 个符号图元，实测占绘制开销的三分之二：
+        // 4000 节点 314ms → 44ms，1000 节点 34ms → 11ms（见 .bench 压测）
+        // 起点的 circle 尺寸本来就是 0，纯白建一个图元，无论多少节点都不需要；
+        // 箭头在边少时还能看出方向，边一多只是噪点，一并关掉
+        edgeSymbol: useEdgeSymbol ? ['none', 'arrow'] : ['none', 'none'], // 箭头的开始, 结束图形
+        edgeSymbolSize: useEdgeSymbol ? [0, 5] : [0, 0], // 箭头的开始, 结束图形大小
         // =========== 高亮状态的图形样式 ===========
         emphasis: {
-          focus: 'adjacency', // 聚焦关系图中的邻接点和边的图形。
+          // 邻接聚焦在悬停时要算全图邻接、再把其余元素整体淡出，
+          // 节点一多每次 hover 都是全量重绘，大图只保留自身高亮
+          focus: nodes1.length > FOCUS_ADJACENCY_LIMIT ? 'none' : 'adjacency',
           scale: false,
           lineStyle: { width: 2, color: getPrimaryColor().color },
           itemStyle: { color: getPrimaryColor().color }
@@ -302,192 +331,50 @@ const randerChat2 = (nodes1: any[]) => {
     ]
   })
 
-  if (nodes1.length < 200) {
+  bindLabelToggle(nodes1.length)
+}
+
+/** 当前标签显隐状态，只在跨过阈值时同步一次 option */
+let labelsVisible = false
+
+/**
+ * 从 series model 直接读当前 zoom（O(1)）。
+ * 旧实现每帧调 getOption()，那会把整份 option（含全部节点和边）深拷贝一遍，
+ * 鼠标动一下就是一次大对象分配 + GC，这是平移缩放掉帧的主因。
+ */
+const getZoom = (): number => {
+  try {
+    const seriesModel = chartGraph.getModel()?.getSeriesByIndex(0)
+    return seriesModel?.option?.zoom ?? 1
+  } catch {
+    return 1
+  }
+}
+
+/**
+ * 大图按缩放倍率切换标签显隐。
+ * 只在状态真正变化时提交 option，且只提交 series 片段（不带 data），
+ * 避免整份图数据重新 merge。
+ */
+const bindLabelToggle = (nodeCount: number) => {
+  labelsVisible = nodeCount <= LABEL_NODE_LIMIT
+  if (nodeCount <= LABEL_NODE_LIMIT) {
     return
   }
-
-  chartGraph.on('graphroam', function (_params: any) {
-    // console.log('graphroam', params)
-    // // 1. 获取当前的 option
-    const option = chartGraph.getOption()
-    // // 2. 获取当前的缩放比例，默认是1[reference:3]
-    const currentZoom = option.series[0].zoom || 1
-    // console.log('currentZoom', currentZoom)
-    if (currentZoom > 1.5) {
-      if (option.series[0].label.show === false) {
-        option.series[0].label = { show: true }
-        option.series[0].blur.label = { show: true }
-        setOption(option)
-      }
-    } else {
-      if (option.series[0].label.show === true) {
-        option.series[0].label = { show: false }
-        option.series[0].blur.label = { show: false }
-        setOption(option)
-      }
+  // 每次重新加载都会重新绑定，先摘掉上一次的，否则监听器会越叠越多
+  chartGraph.off('graphroam')
+  chartGraph.on('graphroam', () => {
+    const next = getZoom() > LABEL_ZOOM_THRESHOLD
+    if (next === labelsVisible) {
+      return
     }
+    labelsVisible = next
+    setOption({
+      series: [{ label: { show: next }, blur: { label: { show: next } } }]
+    })
   })
 }
 
-const renderChart = () => {
-  chartGraph.setOption({
-    tooltip: {
-      // position: [20, 50],
-      triggerOn: 'click',
-      enterable: true,
-      alwaysShowContent: false,
-      borderWidth: 0,
-      borderColor: 'none',
-      padding: 0,
-      formatter: (params: any) => {
-        if (params.dataType === 'edge') {
-          return
-        }
-        let url = ''
-        if (!params.data.inner) {
-          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
-        } else {
-          url = `<div>地址: <a target="_blank" href="${params.data.url}">${params.data.url}</a></div>`
-        }
-        let type = ''
-        if (params.data.type === 'INNER_ARTICLE') {
-          type = `<div>类型: 文档库内文章</div>`
-        } else if (params.data.type === 'UNKNOWN_INNER_ARTICLE') {
-          type = `<div style="color:${innerUnknown.itemStyle.color}">类型: 未知文章, 可能已被删除或 Markdown 链接格式错误</div>`
-        } else if (params.data.type === 'PUBLIC_ARTICLE') {
-          type = `<div>类型: 外网文章</div>`
-        }
-        return `<div class="chart-graph-article-ref-tooltip" style="border:1px solid ${params.data.itemStyle.color}">
-          <div class="title">${params.data.name}</div>
-          <div class="content">
-            ${type}
-            ${url}
-          </div>
-          </div>`
-      }
-    },
-    series: [
-      {
-        type: 'graph',
-        layout: 'force', // 采用力引导布局
-        top: 100,
-        bottom: 100,
-        draggable: false,
-        symbolSize: 15,
-        // animation: false,
-        // animationDuration: 1000,
-        // animationThreshold: 500,
-        // animationEasingUpdate: 'quinticInOut',
-        zoom: 0.5,
-        roam: true,
-        label: {
-          show: false,
-          position: 'bottom',
-          formatter: '{b}'
-          // formatter: (param: any) => {
-          //   let len = param.name.length
-          //   if (len < 20) {
-          //     return param.name
-          //   }
-          //   return (param.name as string).substring(0, 15) + '...'
-          // }
-        },
-        labelLayout: {
-          // 标签重叠时进行遮盖
-          hideOverlap: true
-        },
-        // itemStyle: {
-        //   shadowColor: '#000000',
-        //   shadowBlur: 10,
-        //   shadowOffsetX: 2,
-        //   shadowOffsetY: 3
-        // },
-        // autoCurveness: true,
-        lineStyle: {
-          color: isDark.value ? '#5E5E5E' : '#7E7E7E',
-          width: 1,
-          curveness: 0 // 直线或曲线
-        },
-        force: {
-          layoutAnimation: true,
-          repulsion: 500, // 节点之间的斥力因子。
-          friction: 0.1, // 这个参数能减缓节点的移动速度. 取值范围 0 到 1, 越大越快, 值越大时, 节点之间会更加内聚, 否则会混在一起
-          gravity: 1 // 节点受到的向中心的引力因子. 该值越大, 所有节点越往中心点靠拢.
-        },
-        // 箭头的开始, 结束图形
-        edgeSymbol: ['circle', 'arrow'],
-        // 箭头的开始, 结束图形大小
-        edgeSymbolSize: [0, 9],
-        // 连线的标题
-        // edgeLabel: {
-        //   show: false,
-        //   fontSize: 10,
-        //   width: 30,
-        //   overflow: 'truncate'
-        // },
-        // =========== 高亮状态的图形样式 ===========
-        emphasis: {
-          focus: 'adjacency', // 聚焦关系图中的邻接点和边的图形。
-          scale: false,
-          lineStyle: {
-            width: 1
-          },
-          itemStyle: {
-            color: getPrimaryColor().color
-          }
-          // label: { show: true },
-          // edgeLabel: { show: false },
-        },
-        // =========== 被淡出的节点样式 ===========
-        blur: {
-          itemStyle: {
-            opacity: 0.1
-          },
-          lineStyle: {
-            opacity: 0.1
-          },
-          label: {
-            show: false
-          },
-          // 连线标题的样式
-          edgeLabel: {
-            show: false
-          }
-        },
-        data: nodes,
-        links: links
-        // categories:
-        //   nodes.length > 0
-        //     ? nodes.map((item: any) => {
-        //         return item.name
-        //       })
-        //     : ''
-      }
-    ]
-  })
-
-  chartGraph.on('graphroam', function (_params: any) {
-    // console.log('graphroam', params)
-    // // 1. 获取当前的 option
-    const option = chartGraph.getOption()
-    // // 2. 获取当前的缩放比例，默认是1[reference:3]
-    const currentZoom = option.series[0].zoom || 1
-    // console.log('currentZoom', currentZoom)
-    if (currentZoom > 1.5) {
-      if (option.series[0].label.show === false) {
-        option.series[0].label = { show: true }
-        option.series[0].blur.label = { show: true }
-        setOption(option)
-      }
-    } else {
-      if (option.series[0].label.show === true) {
-        option.series[0].label = { show: false }
-        option.series[0].blur.label = { show: false }
-        setOption(option)
-      }
-    }
-  })
-}
 
 const init = () => {
   chartGraph = echarts.init(ChartGraphRef.value)
@@ -505,10 +392,10 @@ function debounce(fn: () => void, time = 500) {
 }
 
 const setOption = (option: any) => {
+  // 只用于标签显隐这类轻量片段，120ms 足够把连续缩放合并成一次
   debounce(() => {
-    console.log('setOption')
     chartGraph.setOption(option, { lazyUpdate: true })
-  }, 500)
+  }, 120)
 }
 
 const windowResize = () => {

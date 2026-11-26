@@ -16,6 +16,11 @@
     </bl-row>
     <bl-row just="flex-end" width="260px" height="100%" class="status-item-container-right">
       <div v-show="curArticle" class="button" @click="openArticleReferenceWindow"><span class="iconbl bl-correlation-line"></span>引用</div>
+      <el-tooltip content="当前文章的引用网络（WebGL 渲染）" effect="light" placement="top" :hide-after="0" :show-after="400">
+        <div v-show="curArticle" class="button" @click="openArticleGraphSigmaWindow">
+          <span class="iconbl bl-a-relation3-line"></span>引用图
+        </div>
+      </el-tooltip>
       <div v-show="curArticle" just="center">字数:{{ formartNumber(curArticle?.words) }}</div>
       <div v-show="curArticle" just="center">渲染:{{ props.renderInterval }}ms</div>
 
@@ -30,7 +35,7 @@
 import { inject, toRaw, ref, watch } from 'vue'
 import type { Ref } from 'vue'
 import { provideKeyCurArticleInfo } from '@renderer/views/doc/doc'
-import { openNewArticleReferenceWindow } from '@renderer/assets/utils/electron'
+import { openNewArticleReferenceWindow, openNewArticleGraphSigmaWindow } from '@renderer/assets/utils/electron'
 import { formartNumber, getDateTimeFormat } from '@renderer/assets/utils/util'
 import { openFileLocation } from '@renderer/api/docLib'
 
@@ -54,6 +59,16 @@ watch(
 const openArticleReferenceWindow = () => {
   if (curArticle && curArticle.value) {
     openNewArticleReferenceWindow(toRaw(curArticle.value))
+  }
+}
+
+/**
+ * 当前文章的引用网络（WebGL）
+ * 和上面那个一样要带上 articleId，否则会画成全库图，两边看到的不是同一张
+ */
+const openArticleGraphSigmaWindow = () => {
+  if (curArticle && curArticle.value) {
+    openNewArticleGraphSigmaWindow(toRaw(curArticle.value))
   }
 }
 
