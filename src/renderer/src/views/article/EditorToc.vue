@@ -10,7 +10,7 @@
     <!-- 目录 -->
     <div class="toc-header" @click="collapsed = !collapsed">
       <span class="title">目录</span>
-      <span :class="['iconbl', collapsed ? 'bl-a-leftdirection-line' : 'bl-a-rightsmallline-line']"></span>
+      <span :class="['iconbl', collapsed ? 'bl-left-line' : 'bl-right-line']"></span>
     </div>
     <div class="toc-list" v-show="!collapsed">
       <div v-if="headings.length === 0" class="toc-empty">暂无标题</div>
@@ -27,7 +27,7 @@
     </div>
 
     <!-- 分割 + 图片 -->
-    <template v-if="!collapsed">
+    <template v-if="images.length > 0 && !collapsed">
       <div class="toc-header split">
         <span class="title">图片</span>
         <el-tooltip effect="dark" placement="right" :hide-after="0" content="重新加载图片缓存">
@@ -35,7 +35,6 @@
         </el-tooltip>
       </div>
       <div class="image-list">
-        <div v-if="images.length === 0" class="toc-empty">暂无图片</div>
         <div class="image-wrapper" v-for="image in images" :key="image.targetUrl" @click="emits('clickImage', image.targetUrl)">
           <img :src="image.targetUrl" loading="lazy" />
         </div>
@@ -65,18 +64,19 @@ const collapsed = ref(false)
 <style scoped lang="scss">
 .editor-toc-pane {
   @include box(210px, 100%);
-  min-width: 210px;
+  width: 210px;
+  max-width: 210px;
   display: flex;
   flex-direction: column;
   border-left: 1px solid var(--el-border-color);
   background-color: var(--bl-editor-gutters-bg-color);
   /* 同 `.editor-body`：clip 只裁剪，不让自己变成可被 scrollIntoView 滚走的容器 */
   overflow: clip;
-  transition: min-width 0.2s;
+  // transition: width 0.2s;
 
   &.is-collapsed {
-    min-width: 34px;
-    width: 34px;
+    min-width: 50px;
+    width: 50px;
   }
 
   .toc-header {
@@ -89,6 +89,7 @@ const collapsed = ref(false)
     cursor: pointer;
     user-select: none;
     border-bottom: 1px solid var(--el-border-color);
+    position: relative;
 
     &.split {
       border-top: 1px solid var(--el-border-color);
@@ -101,6 +102,8 @@ const collapsed = ref(false)
     }
 
     .iconbl {
+      position: absolute;
+      right: 4px;
       font-size: 11px;
       color: var(--bl-text-color-light);
       padding: 2px;

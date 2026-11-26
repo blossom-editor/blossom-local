@@ -15,17 +15,19 @@
       </el-tooltip>
     </bl-row>
     <bl-row just="flex-end" width="300px" height="100%" class="status-item-container-right">
-      <div v-show="curArticle" class="button" @click="openArticleReferenceWindow"><span class="iconbl bl-correlation-line"></span>引用</div>
       <!-- <el-tooltip content="当前文章的引用网络（WebGL 渲染）" effect="light" placement="top" :hide-after="0" :show-after="400">
         <div v-show="curArticle" class="button" @click="openArticleGraphSigmaWindow">
           <span class="iconbl bl-a-relation3-line"></span>引用图
         </div>
       </el-tooltip> -->
-      <div v-show="curArticle" just="center">字数:{{ formartNumber(curArticle?.words) }}</div>
-      <div v-show="curArticle" just="center">渲染:{{ props.renderInterval }}ms</div>
-
+      <el-tooltip :content="'渲染: ' + props.renderInterval + 'ms'" trigger="click" effect="light" placement="top" :hide-after="0">
+        <div class="words">
+          字数:<span :class="['word-count', wordCountClass()]">{{ formartNumber(curArticle?.words) }}</span>
+        </div>
+      </el-tooltip>
+      <div v-show="curArticle" class="button" @click="openArticleReferenceWindow"><span class="iconbl bl-correlation-line"></span>引用</div>
       <el-tooltip :content="'上次保存: ' + (!lastSaveTime ? '未保存' : lastSaveTime)" trigger="click" effect="light" placement="top" :hide-after="0">
-        <div v-show="curArticle">保存: <span :class="[saveStatus ? 'save-yes' : 'save-no']">●</span></div>
+        <div v-show="curArticle" class="save-time">保存: <span :class="[saveStatus ? 'save-yes' : 'save-no']">●</span></div>
       </el-tooltip>
     </bl-row>
   </div>
@@ -72,6 +74,17 @@ const openArticleGraphSigmaWindow = () => {
   }
 }
 
+const wordCountClass = () => {
+  if (!curArticle || !curArticle.value?.words) {
+    return ''
+  }
+  if (curArticle.value?.words > 100000) {
+    return 'word-count-warning'
+  } else {
+    return ''
+  }
+}
+
 const noSave = () => {
   saveStatus.value = false
 }
@@ -114,9 +127,23 @@ defineExpose({ noSave, isSave })
         @include ellipsis();
       }
     }
-
+    // 渲染时间
+    .words {
+      width: 105px;
+      .word-count-warning {
+        color: var(--el-color-warning);
+      }
+    }
+    // 引用按钮
     .button {
+      @include flex(row, center, center);
+      width: 55px;
       cursor: pointer;
+    }
+    // 保存时间
+    .save-time {
+      @include flex(row, center, center);
+      width: 50px;
     }
 
     & > div {
