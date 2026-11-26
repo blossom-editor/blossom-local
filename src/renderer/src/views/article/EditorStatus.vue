@@ -1,7 +1,7 @@
 <template>
   <div class="editor-status-root">
-    <bl-row width="calc(100% - 260px)" height="100%" class="status-item-container-left">
-      <div v-show="curArticle">{{ curArticle?.name }}</div>
+    <bl-row width="calc(100% - 300px)" height="100%" class="status-item-container-left">
+      <div v-show="curArticle" style="min-width: 140px">{{ curArticle?.name }}</div>
       <div v-show="curArticle" class="updTime">编辑:{{ curArticle?.updTime }}</div>
       <el-tooltip :content="curArticle?.path" effect="light" placement="top" :hide-after="0" :show-after="500">
         <div v-show="curArticle" class="path" @click="openFileLocation(curArticle!.path)">
@@ -14,13 +14,13 @@
         </div>
       </el-tooltip>
     </bl-row>
-    <bl-row just="flex-end" width="260px" height="100%" class="status-item-container-right">
+    <bl-row just="flex-end" width="300px" height="100%" class="status-item-container-right">
       <div v-show="curArticle" class="button" @click="openArticleReferenceWindow"><span class="iconbl bl-correlation-line"></span>引用</div>
-      <el-tooltip content="当前文章的引用网络（WebGL 渲染）" effect="light" placement="top" :hide-after="0" :show-after="400">
+      <!-- <el-tooltip content="当前文章的引用网络（WebGL 渲染）" effect="light" placement="top" :hide-after="0" :show-after="400">
         <div v-show="curArticle" class="button" @click="openArticleGraphSigmaWindow">
           <span class="iconbl bl-a-relation3-line"></span>引用图
         </div>
-      </el-tooltip>
+      </el-tooltip> -->
       <div v-show="curArticle" just="center">字数:{{ formartNumber(curArticle?.words) }}</div>
       <div v-show="curArticle" just="center">渲染:{{ props.renderInterval }}ms</div>
 
@@ -91,6 +91,15 @@ defineExpose({ noSave, isSave })
   @include font(10px, 500);
   color: var(--bl-editor-color);
   background-color: var(--bl-editor-gutters-bg-color);
+
+  @media (max-width: 1300px) {
+    .status-item-container-left {
+      .id,
+      .path {
+        display: none;
+      }
+    }
+  }
 
   .status-item-container-left,
   .status-item-container-right {
